@@ -165,7 +165,8 @@ async function deleteReminder(id) {
 
 async function getUserByOpenid(openid) {
   if (!isCloudReady()) return null;
-  const data = await _cloudQuery(USER_COL, { _openid: openid });
+  // 「仅创建者可读写」权限下不能用 _openid 过滤，直接 get() 即可，云端自动只返回当前用户的记录
+  const data = await _cloudQuery(USER_COL, {});
   return data.length > 0 ? data[0] : null;
 }
 
@@ -178,6 +179,11 @@ async function getUserByPhone(phone) {
 async function addUser(user) {
   if (!isCloudReady()) return null;
   return await _cloudAdd(USER_COL, { ...user, _createTime: Date.now() });
+}
+
+async function updateUser(id, updates) {
+  if (!isCloudReady()) return;
+  await _cloudUpdate(USER_COL, id, updates);
 }
 
 // ════════════════════════════════════════════════════
@@ -249,13 +255,13 @@ async function getStats() {
 module.exports = {
   isCloudReady,
   // cats
-  getCats, getCatById, addCat, updateCat, deleteCat,
+  getCats, getAllCats: getCats, getCatById, addCat, updateCat, deleteCat,
   // records
   getRecords, addRecord, updateRecord, deleteRecord,
   // reminders
   getReminders, addReminder, updateReminder, deleteReminder,
   // users
-  getUserByOpenid, getUserByPhone, addUser,
+  getUserByOpenid, getUserByPhone, addUser, updateUser,
   // storage
   uploadAvatar, getAvatarUrl,
   // auth

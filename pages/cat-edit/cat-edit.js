@@ -16,7 +16,7 @@ const BREEDS = [
 Page({
   data: {
     catId: '', name: '', gender: 'male', breed: '', birthday: '',
-    adoptedDate: '', note: '', avatar: '', tempAvatarPath: '',
+    adoptedDate: '', note: '', avatar: '', tempAvatarPath: '', originalAvatar: '',
     nameError: '', birthdayError: '', saving: false,
     breedList: BREEDS,
     breedPickerVisible: false, breedKeyword: '', filteredBreeds: BREEDS
@@ -35,7 +35,8 @@ Page({
     this.setData({
       name: cat.name || '', gender: cat.gender || 'male', breed: cat.breed || '',
       birthday: cat.birthday || '', adoptedDate: cat.adoptedDate || '',
-      note: cat.note || '', avatar: displayAvatar, tempAvatarPath: displayAvatar
+      note: cat.note || '', avatar: displayAvatar, tempAvatarPath: '',
+      originalAvatar: cat.avatar || ''
     });
   },
 
@@ -86,10 +87,11 @@ Page({
     this.setData({ saving: true });
     wx.showLoading({ title: '保存中...' });
 
-    const { catId, tempAvatarPath, name, gender, breed, birthday, adoptedDate, note, avatar } = this.data;
+    const { catId, tempAvatarPath, name, gender, breed, birthday, adoptedDate, note, originalAvatar } = this.data;
 
-    let newAvatar = avatar;
-    if (tempAvatarPath && tempAvatarPath !== avatar) {
+    let newAvatar = originalAvatar; // 默认用原始值
+    if (tempAvatarPath) {
+      // 用户选了新头像，上传到云存储
       newAvatar = await clouddb.uploadAvatar(tempAvatarPath, catId);
     }
 

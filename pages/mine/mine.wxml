@@ -2,7 +2,7 @@
 <view class="page">
 
   <!-- 头像卡片 -->
-  <view class="profile-card">
+  <view class="profile-card" bindtap="openEditProfile">
     <view class="profile-bg">
       <view class="avatar-wrap">
         <text class="avatar-emoji">{{avatarEmoji}}</text>
@@ -79,6 +79,20 @@
     </view>
 
     <view class="menu-divider"></view>
+    <view class="menu-group-label">账号</view>
+    <view class="menu-item" bindtap="openBindPhone">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">📱</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">绑定手机号</text>
+        <text class="menu-desc" wx:if="{{!phone}}">未绑定，绑定后可手机号登录</text>
+        <text class="menu-desc" wx:else>{{phone}} · 已绑定</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-divider"></view>
     <view class="menu-group-label">关于</view>
     <view class="menu-item" bindtap="goAbout">
       <view class="menu-icon-wrap icon-purple">
@@ -94,6 +108,75 @@
 
   <!-- 退出登录 -->
   <button class="logout-btn" bindtap="logout">退出登录</button>
+
+  <!-- 编辑个人资料底部弹窗 -->
+  <view wx:if="{{showEditModal}}" class="sheet-mask" bindtap="cancelEdit">
+    <view class="sheet-content" catchtap="stopBubble">
+      <view class="sheet-handle"></view>
+      <text class="sheet-title">编辑资料</text>
+
+      <!-- 头像选择 -->
+      <view class="avatar-picker">
+        <view wx:for="{{emojiList}}" wx:key="index"
+          class="emoji-opt {{editEmoji === item ? 'selected' : ''}}"
+          data-emoji="{{item}}"
+          bindtap="selectEmoji">
+          <text>{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 昵称输入 -->
+      <view class="edit-field">
+        <text class="edit-label">昵称</text>
+        <input class="edit-input" value="{{editNickname}}" bindinput="onNicknameInput"
+          placeholder="给自己起个名字" maxlength="20" confirm-type="done" />
+      </view>
+
+      <view class="sheet-btns">
+        <view class="sheet-btn cancel" bindtap="cancelEdit">取消</view>
+        <view class="sheet-btn confirm" bindtap="confirmEdit">保存</view>
+      </view>
+    </view>
+  </view>
+
   <view class="footer-hint">猫咪健康管家 v1.0</view>
 
+  <!-- ─── 绑定手机号底部弹窗 ─── -->
+  <view wx:if="{{showBindPhone}}" class="bindphone-mask" bindtap="closeBindPhone">
+    <view class="bindphone-sheet" catchtap="stopBubble">
+      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+      <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
+      <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可使用手机号登录</text>
+
+      <!-- 微信一键获取手机号 -->
+      <button open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber"
+        style="width:100%;background:#07C160;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;margin-bottom:0;border:none;">
+        📱 一键获取微信绑定手机号
+      </button>
+
+      <view style="display:flex;align-items:center;margin:24rpx 0;">
+        <view style="flex:1;height:2rpx;background:#eee;"></view>
+        <text style="font-size:24rpx;color:#ccc;padding:0 20rpx;">或</text>
+        <view style="flex:1;height:2rpx;background:#eee;"></view>
+      </view>
+
+      <!-- 手动输入 -->
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
+        <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
+        <input password type="text" placeholder="设置密码（至少6位）" bindinput="bindPasswordInput"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:28rpx;">
+        <input password type="text" placeholder="确认密码" bindinput="bindConfirmInput"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
+    </view>
+  </view>
 </view>

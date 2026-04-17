@@ -2,10 +2,24 @@
 <view class="container">
   <view class="page-header">
     <text class="page-title">📋 健康记录</text>
-    <text class="page-subtitle">{{catName}}</text>
   </view>
 
-  <!-- 筛选标签 -->
+  <!-- 猫咪筛选标签 -->
+  <scroll-view class="cat-tabs-scroll" scroll-x>
+    <view class="cat-tabs">
+      <view
+        wx:for="{{catOptions}}"
+        wx:key="key"
+        class="cat-tab {{currentCat === item.key ? 'active' : ''}}"
+        bindtap="setCatFilter"
+        data-cat="{{item.key}}"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 类型筛选标签 -->
   <view class="filter-tabs">
     <view
       wx:for="{{filterOptions}}"
@@ -24,7 +38,7 @@
       <text class="empty-emoji">📋</text>
     </view>
     <text class="empty-text">暂无健康记录</text>
-    <text class="empty-hint">在猫咪详情页点击快速记录按钮为{{catName || '猫咪'}}添加第一条记录</text>
+    <text class="empty-hint">在猫咪详情页点击快速记录按钮为猫咪添加第一条记录</text>
     <view class="empty-cta" hover-class="btn-hover" bindtap="goBack">去添加记录 ›</view>
   </view>
 
@@ -37,6 +51,12 @@
         </view>
       </view>
       <view class="record-center">
+        <!-- 筛选全部猫咪时显示猫咪名 -->
+        <view wx:if="{{currentCat === 'all'}}" class="record-cat-name">
+          <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill"></image>
+          <text wx:else class="cat-avatar-placeholder">🐱</text>
+          <text>{{item._catName}}</text>
+        </view>
         <text class="record-type">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : '体检'}}</text>
         <text class="record-date">{{item.date}}</text>
         <text class="record-note" wx:if="{{item.note}}">{{item.note}}</text>
@@ -48,7 +68,7 @@
     </view>
   </view>
 
-  <!-- 编辑弹窗（遮罩不可点关，防原生picker关闭误触） -->
+  <!-- 编辑弹窗 -->
   <view wx:if="{{showEditModal}}" class="modal-mask">
     <view class="modal-dialog">
       <text class="modal-title">编辑记录</text>

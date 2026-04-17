@@ -61,6 +61,12 @@ Page({
     const date = e.detail.value;
     if (!type || !date) return;
 
+    // 校验：日期不能早于宠物生日
+    if (this.data.cat.birthday && date < this.data.cat.birthday) {
+      wx.showToast({ title: '记录日期不能早于宠物生日', icon: 'none' });
+      return;
+    }
+
     const newRecord = {
       _id: 'rec_' + Date.now(),
       catId: this.data.catId,
