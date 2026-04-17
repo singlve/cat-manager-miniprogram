@@ -1,0 +1,151 @@
+/* pages/reminders/reminders.wxss */
+.page {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding: 24rpx;
+  padding-bottom: 180rpx;
+  box-sizing: border-box;
+}
+
+/* ─── 空状态 ─── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 200rpx;
+}
+.empty-icon { font-size: 120rpx; margin-bottom: 24rpx; }
+.empty-title { font-size: 32rpx; color: #333; font-weight: 600; margin-bottom: 12rpx; }
+.empty-desc { font-size: 26rpx; color: #999; text-align: center; line-height: 1.6; }
+.empty-btn {
+  margin-top: 40rpx;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  padding: 24rpx 60rpx;
+  border: none;
+  box-shadow: 0 8rpx 24rpx rgba(74,144,217,0.35);
+}
+
+/* ─── 内容区 ─── */
+.content { padding-bottom: 20rpx; }
+
+/* ─── 区块标题 ─── */
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 8rpx 16rpx;
+  margin-bottom: 12rpx;
+}
+.section-icon { font-size: 32rpx; margin-right: 10rpx; }
+.section-title { font-size: 28rpx; font-weight: 700; color: #333; }
+.section-badge {
+  margin-left: 12rpx;
+  padding: 2rpx 14rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+}
+.section-header.danger .section-title { color: #cf1322; }
+.section-header.danger .section-badge { background: #fff1f0; color: #cf1322; }
+.section-header.warning .section-title { color: #d48806; }
+.section-header.warning .section-badge { background: #fff7e6; color: #d48806; }
+.section-header.normal .section-title { color: #666; }
+
+/* ─── 卡片 ─── */
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+}
+
+.card-danger { border-left: 8rpx solid #ff4d4f; }
+.card-warning { border-left: 8rpx solid #faad14; }
+.card-normal  { border-left: 8rpx solid #4A90D9; }
+
+/* 卡片头部 */
+.card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+.type-icon { font-size: 44rpx; margin-right: 14rpx; flex-shrink: 0; }
+.card-info { flex: 1; }
+.cat-name { font-size: 30rpx; font-weight: 700; color: #1a1a1a; display: block; margin-bottom: 4rpx; }
+.type-label { font-size: 24rpx; color: #888; }
+
+/* 标签 */
+.tag {
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.tag-danger { background: #ff4d4f; color: #fff; }
+.tag-warning { background: #faad14; color: #fff; }
+
+/* 未来日期 */
+.next-date { font-size: 24rpx; color: #999; flex-shrink: 0; }
+
+/* 信息行 */
+.info-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8rpx;
+  font-size: 26rpx;
+}
+.info-label { color: #999; min-width: 60rpx; margin-right: 8rpx; }
+.info-val { color: #333; margin-right: 24rpx; }
+.info-val.highlight { color: #d48806; font-weight: 600; }
+
+/* 操作按钮 */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16rpx;
+  gap: 12rpx;
+}
+.action-btn {
+  font-size: 24rpx;
+  padding: 10rpx 24rpx;
+  border-radius: 24rpx;
+  border: none;
+}
+.action-btn.edit {
+  background: #e8f4ff;
+  color: #4A90D9;
+}
+.action-btn.delete {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+/* ─── 底部添加按钮 ─── */
+.fab-wrap {
+  position: fixed;
+  bottom: 40rpx;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 40rpx;
+  box-sizing: border-box;
+  z-index: 100;
+}
+.fab-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 48rpx;
+  padding: 28rpx 0;
+  border: none;
+  box-shadow: 0 8rpx 30rpx rgba(74,144,217,0.4);
+}
+.fab-btn::after { border: none; }

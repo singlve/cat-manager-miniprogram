@@ -1,0 +1,6 @@
+{
+  "desc": "猫咪健康管家小程序 sitemap",
+  "rules": [
+    { "action": "allow", "page": "*" }
+  ]
+}

@@ -1,0 +1,99 @@
+<!-- pages/mine/mine.wxml -->
+<view class="page">
+
+  <!-- 头像卡片 -->
+  <view class="profile-card">
+    <view class="profile-bg">
+      <view class="avatar-wrap">
+        <text class="avatar-emoji">{{avatarEmoji}}</text>
+      </view>
+      <view class="profile-info">
+        <text class="nickname">{{nickname}}</text>
+        <text class="phone" wx:if="{{phone}}">{{phone}}</text>
+        <text class="phone-hint" wx:else>未绑定手机</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据统计区 -->
+  <view class="stats-section">
+    <view class="stats-card">
+      <view class="stat-item" bindtap="goCats">
+        <view class="stat-icon-wrap cat-icon">
+          <text class="stat-icon">🐱</text>
+        </view>
+        <text class="stat-num">{{catCount || 0}}</text>
+        <text class="stat-label">我的猫咪</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goReminders">
+        <view class="stat-icon-wrap reminder-icon">
+          <text class="stat-icon">🔔</text>
+        </view>
+        <text class="stat-num">{{reminderCount || 0}}</text>
+        <text class="stat-label">提醒数</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goRecords">
+        <view class="stat-icon-wrap record-icon">
+          <text class="stat-icon">📋</text>
+        </view>
+        <text class="stat-num">{{recordCount || 0}}</text>
+        <text class="stat-label">健康记录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-card">
+    <view class="menu-group-label">功能</view>
+    <view class="menu-item" bindtap="goCats">
+      <view class="menu-icon-wrap icon-blue">
+        <text class="menu-icon-text">🐾</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">我的猫咪</text>
+        <text class="menu-desc">查看和管理猫咪档案</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goReminders">
+      <view class="menu-icon-wrap icon-green">
+        <text class="menu-icon-text">🔔</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">提醒管理</text>
+        <text class="menu-desc">查看和编辑所有提醒</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goRecords">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">📋</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">健康记录</text>
+        <text class="menu-desc">查看全部健康记录</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-divider"></view>
+    <view class="menu-group-label">关于</view>
+    <view class="menu-item" bindtap="goAbout">
+      <view class="menu-icon-wrap icon-purple">
+        <text class="menu-icon-text">ℹ️</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">关于小程序</text>
+        <text class="menu-desc">版本信息和使用说明</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <button class="logout-btn" bindtap="logout">退出登录</button>
+  <view class="footer-hint">猫咪健康管家 v1.0</view>
+
+</view>

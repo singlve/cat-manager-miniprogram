@@ -1,0 +1,94 @@
+<!-- pages/reminder-add/reminder-add.wxml -->
+<view class="container">
+  <view class="form-card">
+    <view class="form-group">
+      <text class="label">选择猫咪 <text class="required">*</text></text>
+      <picker
+        mode="selector"
+        range="{{cats}}"
+        range-key="name"
+        bindchange="catChange"
+        class="picker"
+      >
+        <view class="picker-value {{selectedCatId ? '' : 'placeholder'}}">
+          {{selectedCatName || '请选择猫咪'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <text class="label">提醒类型 <text class="required">*</text></text>
+      <view class="type-grid">
+        <view
+          wx:for="{{typeOptions}}"
+          wx:key="key"
+          class="type-btn {{type === item.key ? 'active' : ''}} type-{{item.key}}"
+          bindtap="typeChangeTap"
+          data-type="{{item.key}}"
+        >
+          <text class="type-icon">{{item.icon}}</text>
+          <text class="type-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">上次执行时间 <text class="required">*</text></text>
+      <picker mode="date" value="{{lastDate}}" bindchange="lastDateChange" class="picker">
+        <view class="picker-value {{lastDate ? '' : 'placeholder'}}">
+          {{lastDate || '请选择上次执行时间'}}
+        </view>
+      </picker>
+      <text class="field-hint" wx:if="{{!isEdit && selectedCatId}}">
+        💡 已自动从{{selectedCatName}}的健康记录中获取最近一次「{{typeLabel}}」的时间，可自行修改
+      </text>
+    </view>
+
+    <view class="form-group">
+      <text class="label">提醒间隔</text>
+      <view class="interval-section">
+        <text class="interval-text">每</text>
+        <input
+          class="interval-input"
+          type="number"
+          value="{{intervalDays}}"
+          bindinput="intervalInput"
+          min="1"
+          max="365"
+        />
+        <text class="interval-text">天</text>
+      </view>
+      <view class="interval-presets">
+        <text
+          wx:for="{{presetIntervals}}"
+          wx:key="*this"
+          class="preset-btn {{intervalDays === item ? 'active' : ''}}"
+          bindtap="setInterval"
+          data-days="{{item}}"
+        >{{item}}天</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">备注</text>
+      <textarea
+        class="textarea"
+        placeholder="补充说明（如：使用XXX牌驱虫药）"
+        value="{{note}}"
+        bindinput="noteInput"
+        maxlength="100"
+        auto-height
+      />
+    </view>
+
+    <!-- 下次提醒预览 -->
+    <view class="next-preview" wx:if="{{lastDate && intervalDays}}">
+      <text class="preview-icon">📅</text>
+      <text class="preview-text">下次提醒时间：{{nextPreviewDate}}</text>
+    </view>
+  </view>
+
+  <view class="btn-section">
+    <button class="save-btn" bindtap="save">{{isEdit ? '保存修改' : '创建提醒'}}</button>
+  </view>
+</view>
