@@ -166,7 +166,6 @@ async function deleteReminder(id) {
 async function getUserByOpenid(openid) {
   if (!isCloudReady()) return null;
   if (!openid) return null;
-  // 必须显式用 _openid 过滤，微信云权限模型不会自动过滤查询结果
   const data = await _cloudQuery(USER_COL, { _openid: openid });
   return data.length > 0 ? data[0] : null;
 }
