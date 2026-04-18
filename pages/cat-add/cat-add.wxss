@@ -1,0 +1,348 @@
+/* pages/cat-add/cat-add.wxss */
+.container {
+  min-height: 100vh;
+  background: #f5f6fa;
+  padding: 24rpx 24rpx 160rpx;
+}
+
+.form-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.06);
+  margin-bottom: 32rpx;
+}
+
+/* ─── 头像区域 ─── */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40rpx;
+  padding-bottom: 32rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.avatar-wrap {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  overflow: visible;
+  position: relative;
+}
+
+/* 已选头像 */
+.avatar-selected {
+  border: 5rpx solid #4A90D9;
+  box-shadow: 0 0 0 8rpx rgba(74,144,217,0.15);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/* 悬浮覆盖层（相机图标） */
+.avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 56rpx;
+  height: 56rpx;
+  background: #4A90D9;
+  border-radius: 50%;
+  border: 4rpx solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-icon { font-size: 28rpx; }
+
+/* 删除头像按钮 */
+.remove-btn {
+  position: absolute;
+  top: -12rpx;
+  left: -12rpx;
+  width: 48rpx;
+  height: 48rpx;
+  background: #ff4d4f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(255,77,79,0.4);
+}
+
+/* 默认占位状态 */
+.avatar-placeholder-state {
+  border: 4rpx dashed #d0d8e8;
+  background: #f5f7ff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-emoji { font-size: 64rpx; margin-bottom: 8rpx; }
+.placeholder-text { font-size: 22rpx; color: #aaa; }
+
+.avatar-hint {
+  font-size: 22rpx;
+  color: #aaa;
+  margin-top: 14rpx;
+  text-align: center;
+}
+
+/* ─── 表单 ─── */
+.form-group { margin-bottom: 32rpx; }
+
+.label {
+  display: block;
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.required { color: #ff4d4f; }
+
+.input {
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+  font-size: 30rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+}
+
+.input:focus { border-color: #4A90D9; background: #fff; }
+
+.gender-group { display: flex; gap: 24rpx; }
+
+.gender-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 20rpx;
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  border: 2rpx solid transparent;
+  font-size: 28rpx;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.gender-option.active {
+  background: #e8f4ff;
+  border-color: #4A90D9;
+  color: #4A90D9;
+}
+
+.picker {
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+}
+
+.picker-value { padding: 24rpx 28rpx; font-size: 30rpx; color: #333; }
+.picker-value.placeholder { color: #bbb; }
+
+.textarea {
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+  font-size: 30rpx;
+  color: #333;
+  width: 100%;
+  box-sizing: border-box;
+  border: 2rpx solid transparent;
+  min-height: 160rpx;
+  transition: border-color 0.2s;
+}
+
+/* ─── 表单错误状态 ─── */
+.input-error {
+  border-color: #ff4d4f !important;
+  background: #fff5f5 !important;
+  animation: shake 0.4s ease;
+}
+
+.picker-error { border-color: #ff4d4f !important; }
+
+.custom-breed-link {
+  margin-top: 12rpx;
+  text-align: right;
+}
+
+.custom-breed-link text {
+  font-size: 24rpx;
+  color: #4A90D9;
+}
+
+/* ─── 品种搜索选择弹窗 ─── */
+.breed-modal-mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 999;
+  display: flex;
+  align-items: flex-end;
+}
+
+.breed-modal {
+  width: 100%;
+  max-height: 70vh;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.breed-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx 36rpx 16rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.breed-modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.breed-modal-close {
+  font-size: 36rpx;
+  color: #999;
+  padding: 8rpx 12rpx;
+}
+
+.breed-search-wrap {
+  position: relative;
+  padding: 20rpx 36rpx;
+}
+
+.breed-search-input {
+  background: #f5f6fa;
+  border-radius: 16rpx;
+  padding: 20rpx 28rpx;
+  font-size: 28rpx;
+  color: #333;
+  border: 2rpx solid transparent;
+}
+
+.breed-search-input:focus {
+  border-color: #4A90D9;
+  background: #fff;
+}
+
+.breed-search-clear {
+  position: absolute;
+  right: 48rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 28rpx;
+  color: #bbb;
+  padding: 8rpx;
+}
+
+.breed-list {
+  height: 50vh;
+  padding: 0 36rpx 36rpx;
+}
+
+.breed-empty {
+  text-align: center;
+  padding: 80rpx 0;
+  color: #bbb;
+  font-size: 28rpx;
+}
+
+.breed-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24rpx 16rpx;
+  border-bottom: 2rpx solid #f5f5f5;
+  font-size: 30rpx;
+  color: #333;
+}
+
+.breed-item-active {
+  color: #4A90D9;
+  font-weight: 600;
+}
+
+.breed-item:active {
+  background: #f8f9fc;
+}
+
+.breed-check {
+  font-size: 32rpx;
+  color: #4A90D9;
+  font-weight: 700;
+}
+
+.error-msg {
+  font-size: 22rpx;
+  color: #ff4d4f;
+  margin-top: 8rpx;
+  display: block;
+  padding-left: 4rpx;
+}
+
+/* 输入框聚焦时清除错误 */
+.input-clear { border-color: transparent !important; background: #f8f9fc !important; }
+
+/* ─── 抖动动画 ─── */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8rpx); }
+  40%       { transform: translateX(8rpx); }
+  60%       { transform: translateX(-5rpx); }
+  80%       { transform: translateX(5rpx); }
+}
+
+/* ─── 保存按钮 ─── */
+.btn-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.06);
+  z-index: 100;
+}
+
+.save-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 34rpx;
+  font-weight: 700;
+  border-radius: 48rpx;
+  padding: 28rpx 0;
+  border: none;
+  box-shadow: 0 8rpx 30rpx rgba(74, 144, 217, 0.35);
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.save-btn::after { border: none; }
+
+.save-btn.saving {
+  opacity: 0.7;
+  transform: scale(0.98);
+}
+
+.save-btn:active:not([disabled]) { transform: scale(0.97); }

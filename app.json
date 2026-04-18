@@ -1,0 +1,56 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/register/register",
+    "pages/cat-list/cat-list",
+    "pages/cat-add/cat-add",
+    "pages/cat-detail/cat-detail",
+    "pages/cat-edit/cat-edit",
+    "pages/health-records/health-records",
+    "pages/reminders/reminders",
+    "pages/reminder-add/reminder-add",
+    "pages/mine/mine",
+    "pages/about/about"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#4A90D9",
+    "navigationBarTitleText": "猫咪健康管家",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#4A90D9",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/cat-list/cat-list",
+        "text": "猫咪",
+        "iconPath": "assets/icons/cat.png",
+        "selectedIconPath": "assets/icons/cat-active.png"
+      },
+      {
+        "pagePath": "pages/reminders/reminders",
+        "text": "提醒",
+        "iconPath": "assets/icons/remind.png",
+        "selectedIconPath": "assets/icons/remind-active.png"
+      },
+      {
+        "pagePath": "pages/mine/mine",
+        "text": "我的",
+        "iconPath": "assets/icons/mine.png",
+        "selectedIconPath": "assets/icons/mine-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "permission": {
+    "scope.userLocation": {
+      "desc": "用于添加猫咪位置信息"
+    }
+  },
+  "requiredBackgroundModes": ["audio"],
+  "usingComponents": {}
+}

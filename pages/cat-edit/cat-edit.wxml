@@ -1,0 +1,137 @@
+<!-- pages/cat-edit/cat-edit.wxml -->
+<view class="container">
+  <view class="form-card">
+
+    <!-- 头像区域 -->
+    <view class="avatar-section">
+      <view wx:if="{{tempAvatarPath}}" class="avatar-wrap avatar-selected" bindtap="chooseAvatar">
+        <image src="{{tempAvatarPath}}" mode="aspectFill" class="avatar-img" />
+        <view class="avatar-overlay">
+          <text class="overlay-icon">📷</text>
+        </view>
+        <view class="remove-btn" catchtap="removeAvatar">✕</view>
+      </view>
+      <view wx:else class="avatar-wrap avatar-placeholder-state" bindtap="chooseAvatar">
+        <text class="placeholder-emoji">🐱</text>
+        <text class="placeholder-text">点击上传头像</text>
+      </view>
+      <text class="avatar-hint">{{tempAvatarPath ? '点击可更换头像' : '建议尺寸 200×200，支持 JPG/PNG'}}</text>
+    </view>
+
+    <!-- 基本信息 -->
+    <view class="form-group">
+      <text class="label">猫咪名字 <text class="required">*</text></text>
+      <input
+        class="input {{nameError ? 'input-error' : ''}}"
+        placeholder="请输入猫咪名字"
+        value="{{name}}"
+        bindinput="nameInput"
+        bindblur="validateName"
+        maxlength="20"
+      />
+      <text wx:if="{{nameError}}" class="error-msg">{{nameError}}</text>
+    </view>
+
+    <view class="form-group">
+      <text class="label">性别</text>
+      <radio-group bindchange="genderChange" class="gender-group">
+        <label class="gender-option {{gender === 'male' ? 'active' : ''}}">
+          <radio value="male" checked="{{gender === 'male'}}" />
+          <text>弟弟 🐱</text>
+        </label>
+        <label class="gender-option {{gender === 'female' ? 'active' : ''}}">
+          <radio value="female" checked="{{gender === 'female'}}" />
+          <text>妹妹 🐱</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <view class="form-group">
+      <text class="label">品种</text>
+      <view class="picker" bindtap="showBreedPicker">
+        <view class="picker-value {{breed ? '' : 'placeholder'}}">
+          {{breed || '请选择品种'}}
+        </view>
+      </view>
+    </view>
+
+    <!-- 品种搜索选择弹窗 -->
+    <view class="breed-modal-mask" wx:if="{{breedPickerVisible}}" bindtap="hideBreedPicker">
+      <view class="breed-modal" catchtap>
+        <view class="breed-modal-header">
+          <text class="breed-modal-title">选择品种</text>
+          <text class="breed-modal-close" bindtap="hideBreedPicker">✕</text>
+        </view>
+        <view class="breed-search-wrap">
+          <input
+            class="breed-search-input"
+            placeholder="搜索品种..."
+            value="{{breedKeyword}}"
+            bindinput="onBreedSearch"
+            focus="{{breedPickerVisible}}"
+            confirm-type="search"
+          />
+          <text wx:if="{{breedKeyword}}" class="breed-search-clear" bindtap="clearBreedSearch">✕</text>
+        </view>
+        <scroll-view scroll-y class="breed-list">
+          <view wx:if="{{filteredBreeds.length === 0}}" class="breed-empty">
+            <text>没有匹配的品种</text>
+          </view>
+          <view
+            wx:for="{{filteredBreeds}}"
+            wx:key="*this"
+            class="breed-item {{breed === item ? 'breed-item-active' : ''}}"
+            bindtap="selectBreed"
+            data-breed="{{item}}"
+          >
+            <text>{{item}}</text>
+            <text wx:if="{{breed === item}}" class="breed-check">✓</text>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">生日</text>
+      <picker mode="date" value="{{birthday}}" bindchange="bindBirthdayChange" class="picker">
+        <view class="picker-value {{birthday ? '' : 'placeholder'}} {{birthdayError ? 'picker-error' : ''}}">
+          {{birthday || '请选择生日'}}
+        </view>
+      </picker>
+      <text wx:if="{{birthdayError}}" class="error-msg">{{birthdayError}}</text>
+    </view>
+
+    <view class="form-group">
+      <text class="label">领养日期</text>
+      <picker mode="date" value="{{adoptedDate}}" bindchange="bindAdoptedDateChange" class="picker">
+        <view class="picker-value {{adoptedDate ? '' : 'placeholder'}}">
+          {{adoptedDate || '请选择领养日期'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
+      <text class="label">备注</text>
+      <textarea
+        class="textarea"
+        placeholder="记录一些关于这只猫咪的小秘密~"
+        value="{{note}}"
+        bindinput="noteInput"
+        maxlength="200"
+        auto-height
+      />
+    </view>
+
+  </view>
+
+  <view class="btn-section">
+    <button
+      class="save-btn {{saving ? 'saving' : ''}}"
+      bindtap="saveCat"
+      disabled="{{saving}}"
+    >
+      <text wx:if="{{!saving}}">保存修改</text>
+      <text wx:else>保存中...</text>
+    </button>
+  </view>
+</view>

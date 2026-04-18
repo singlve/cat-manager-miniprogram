@@ -1,0 +1,191 @@
+<!-- pages/mine/mine.wxml -->
+<view class="page">
+
+  <!-- 头像卡片 -->
+  <view class="profile-card" bindtap="openEditProfile">
+    <view class="profile-bg">
+      <view class="avatar-wrap">
+        <image wx:if="{{avatarType === 'image'}}" class="avatar-img" src="{{avatar}}" mode="aspectFill" />
+        <text wx:else class="avatar-emoji">{{avatarEmoji}}</text>
+      </view>
+      <view class="profile-info">
+        <text class="nickname">{{nickname}}</text>
+        <text class="phone" wx:if="{{phone}}">{{phone}}</text>
+        <text class="phone-hint" wx:else>未绑定手机</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 数据统计区 -->
+  <view class="stats-section">
+    <view class="stats-card">
+      <view class="stat-item" bindtap="goCats">
+        <view class="stat-icon-wrap cat-icon">
+          <text class="stat-icon">🐱</text>
+        </view>
+        <text class="stat-num">{{catCount || 0}}</text>
+        <text class="stat-label">我的猫咪</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goReminders">
+        <view class="stat-icon-wrap reminder-icon">
+          <text class="stat-icon">🔔</text>
+        </view>
+        <text class="stat-num">{{reminderCount || 0}}</text>
+        <text class="stat-label">提醒数</text>
+      </view>
+      <view class="stat-divider"></view>
+      <view class="stat-item" bindtap="goRecords">
+        <view class="stat-icon-wrap record-icon">
+          <text class="stat-icon">📋</text>
+        </view>
+        <text class="stat-num">{{recordCount || 0}}</text>
+        <text class="stat-label">健康记录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-card">
+    <view class="menu-group-label">功能</view>
+    <view class="menu-item" bindtap="goCats">
+      <view class="menu-icon-wrap icon-blue">
+        <text class="menu-icon-text">🐾</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">我的猫咪</text>
+        <text class="menu-desc">查看和管理猫咪档案</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goReminders">
+      <view class="menu-icon-wrap icon-green">
+        <text class="menu-icon-text">🔔</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">提醒管理</text>
+        <text class="menu-desc">查看和编辑所有提醒</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goRecords">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">📋</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">健康记录</text>
+        <text class="menu-desc">查看全部健康记录</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-divider"></view>
+    <view class="menu-group-label">账号</view>
+    <view class="menu-item" bindtap="openBindPhone">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">📱</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">绑定手机号</text>
+        <text class="menu-desc" wx:if="{{!phone}}">未绑定，绑定后可手机号登录</text>
+        <text class="menu-desc" wx:else>{{phone}} · 已绑定</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-divider"></view>
+    <view class="menu-group-label">关于</view>
+    <view class="menu-item" bindtap="goAbout">
+      <view class="menu-icon-wrap icon-purple">
+        <text class="menu-icon-text">ℹ️</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">关于小程序</text>
+        <text class="menu-desc">版本信息和使用说明</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <button class="logout-btn" bindtap="logout">退出登录</button>
+
+  <!-- 编辑个人资料底部弹窗 -->
+  <view wx:if="{{showEditModal}}" class="sheet-mask" bindtap="cancelEdit">
+    <view class="sheet-content" catchtap="stopBubble">
+      <view class="sheet-handle"></view>
+      <text class="sheet-title">编辑资料</text>
+
+      <!-- 头像选择 -->
+      <view class="avatar-picker">
+        <!-- 上传自定义头像 -->
+        <view class="avatar-upload-btn" bindtap="chooseAvatar">
+          <image wx:if="{{editAvatarUrl}}" class="avatar-upload-preview" src="{{editAvatarUrl}}" mode="aspectFill" />
+          <view wx:if="{{editAvatarUrl}}" class="avatar-upload-cover">重新上传</view>
+          <text wx:if="{{!editAvatarUrl}}" class="avatar-upload-plus">+</text>
+          <text wx:if="{{!editAvatarUrl}}" class="avatar-upload-label">上传头像</text>
+        </view>
+        <!-- Emoji选择 -->
+        <view wx:for="{{emojiList}}" wx:key="index"
+          class="emoji-opt {{editEmoji === item && !editAvatarUrl ? 'selected' : ''}}"
+          data-emoji="{{item}}"
+          bindtap="selectEmoji">
+          <text>{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 昵称输入 -->
+      <view class="edit-field">
+        <text class="edit-label">昵称</text>
+        <input class="edit-input" value="{{editNickname}}" bindinput="onNicknameInput"
+          placeholder="给自己起个名字" maxlength="20" confirm-type="done" />
+      </view>
+
+      <view class="sheet-btns">
+        <view class="sheet-btn cancel" bindtap="cancelEdit">取消</view>
+        <view class="sheet-btn confirm" bindtap="confirmEdit">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="footer-hint">猫咪健康管家 v1.0</view>
+
+  <!-- ─── 绑定手机号底部弹窗 ─── -->
+  <view wx:if="{{showBindPhone}}" class="bindphone-mask" bindtap="closeBindPhone">
+    <view class="bindphone-sheet" catchtap="stopBubble">
+      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+      <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
+      <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可使用手机号登录</text>
+
+      <!-- 微信一键获取手机号 -->
+      <button open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber"
+        style="width:100%;background:#07C160;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;margin-bottom:0;border:none;">
+        📱 一键获取微信绑定手机号
+      </button>
+
+      <view style="display:flex;align-items:center;margin:24rpx 0;">
+        <view style="flex:1;height:2rpx;background:#eee;"></view>
+        <text style="font-size:24rpx;color:#ccc;padding:0 20rpx;">或</text>
+        <view style="flex:1;height:2rpx;background:#eee;"></view>
+      </view>
+
+      <!-- 手动输入 -->
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
+        <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
+        <input password type="text" placeholder="设置密码（至少6位）" bindinput="bindPasswordInput"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:28rpx;">
+        <input password type="text" placeholder="确认密码" bindinput="bindConfirmInput"
+          style="font-size:30rpx;color:#333;width:100%;" />
+      </view>
+
+      <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
+    </view>
+  </view>
+</view>

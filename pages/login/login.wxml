@@ -1,0 +1,87 @@
+<!-- pages/login/login.wxml -->
+<scroll-view scroll-y="true" style="width:100%;min-height:100%;background-color:#4A90D9;box-sizing:border-box;">
+  <view style="padding:120rpx 60rpx 60rpx;min-height:100vh;">
+
+    <!-- Logo -->
+    <view style="display:flex;flex-direction:column;align-items:center;">
+      <view style="width:160rpx;height:160rpx;border-radius:40rpx;overflow:hidden;margin-bottom:32rpx;box-shadow:0 8rpx 30rpx rgba(0,0,0,0.15);background:#fff;">
+        <image src="/images/login-logo.png" mode="aspectFit" style="width:160rpx;height:160rpx;" />
+      </view>
+      <text style="font-size:48rpx;font-weight:800;color:#FFFFFF;margin-bottom:12rpx;">猫咪记</text>
+      <text style="font-size:28rpx;color:rgba(255,255,255,0.8);margin-bottom:100rpx;">记录猫咪成长，守护每一刻</text>
+    </view>
+
+    <!-- 微信一键登录 -->
+    <button class="wx-login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWxLogin">
+      <view style="display:flex;align-items:center;justify-content:center;">
+        <text style="font-size:38rpx;margin-right:12rpx;">💬</text>
+        <text>微信一键登录</text>
+      </view>
+    </button>
+
+    <!-- 其他方式 -->
+    <view style="display:flex;align-items:center;justify-content:center;margin-top:48rpx;" bindtap="toggleOtherLogin">
+      <text style="font-size:26rpx;color:rgba(255,255,255,0.7);">其他方式登录</text>
+      <text style="font-size:22rpx;color:rgba(255,255,255,0.5);margin-left:8rpx;transition:transform .2s;transform:rotate({{showOtherLogin ? 180 : 0}}deg);">▼</text>
+    </view>
+
+    <!-- 手机号密码登录（折叠区） -->
+    <view wx:if="{{showOtherLogin}}" style="margin-top:32rpx;background-color:rgba(255,255,255,0.1);border-radius:24rpx;padding:40rpx;animation:fadeIn .25s ease;">
+      <view style="display:flex;align-items:center;border:2rpx solid rgba(255,255,255,0.3);border-radius:16rpx;padding:24rpx 28rpx;margin-bottom:20rpx;">
+        <text style="font-size:36rpx;margin-right:20rpx;">📱</text>
+        <input style="flex:1;font-size:32rpx;color:#FFFFFF;" type="number" placeholder="请输入手机号" bindinput="phoneInput" maxlength="11" placeholder-style="color:rgba(255,255,255,0.5);" />
+      </view>
+      <view style="display:flex;align-items:center;border:2rpx solid rgba(255,255,255,0.3);border-radius:16rpx;padding:24rpx 28rpx;margin-bottom:28rpx;">
+        <text style="font-size:36rpx;margin-right:20rpx;">🔒</text>
+        <input style="flex:1;font-size:32rpx;color:#FFFFFF;" type="password" placeholder="请输入密码" bindinput="passwordInput" placeholder-style="color:rgba(255,255,255,0.5);" />
+      </view>
+      <view style="width:100%;background-color:rgba(255,255,255,0.2);color:#FFFFFF;font-size:32rpx;font-weight:600;border-radius:16rpx;padding:26rpx 0;text-align:center;" bindtap="login">手机号登录</view>
+      <view style="display:flex;justify-content:center;margin-top:24rpx;font-size:26rpx;color:rgba(255,255,255,0.6);">
+        <text>还没有账号？</text>
+        <view bindtap="goRegister"><text style="color:#FFFFFF;font-weight:600;"> 立即注册</text></view>
+      </view>
+    </view>
+
+  </view>
+</scroll-view>
+
+<!-- 手机号绑定弹窗（底部弹出） -->
+<view wx:if="{{showBindPhone}}" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:9998;">
+  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" catchtap="stopBubble">
+    <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+    <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
+    <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可用手机号登录小程序</text>
+
+    <!-- 微信快速获取手机号 -->
+    <button class="bind-wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
+      <text style="font-size:30rpx;">📱 一键获取微信绑定手机号</text>
+    </button>
+
+    <view style="display:flex;align-items:center;margin:24rpx 0;">
+      <view style="flex:1;height:2rpx;background:#eee;"></view>
+      <text style="font-size:24rpx;color:#ccc;padding:0 20rpx;">或</text>
+      <view style="flex:1;height:2rpx;background:#eee;"></view>
+    </view>
+
+    <!-- 手动输入 -->
+    <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:20rpx;">
+      <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
+        style="font-size:30rpx;color:#333;width:100%;" />
+    </view>
+
+    <!-- 首次绑定时显示密码输入 -->
+    <view wx:if="{{showPasswordInput}}" style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
+      <input password type="text" placeholder="设置密码（至少6位）" bindinput="bindPasswordInput"
+        style="font-size:30rpx;color:#333;width:100%;" />
+    </view>
+    <view wx:if="{{showPasswordInput}}" style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
+      <input password type="text" placeholder="确认密码" bindinput="bindConfirmInput"
+        style="font-size:30rpx;color:#333;width:100%;" />
+    </view>
+
+    <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
+    <view style="text-align:center;margin-top:20rpx;">
+      <text style="font-size:26rpx;color:#999;" bindtap="skipBindPhone">暂不绑定 ›</text>
+    </view>
+  </view>
+</view>

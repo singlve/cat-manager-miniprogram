@@ -1,0 +1,39 @@
+/* pages/login/login.wxss */
+
+/* 微信登录按钮 - 白底绿字 */
+.wx-login-btn {
+  width: 100% !important;
+  background: #FFFFFF !important;
+  color: #07C160 !important;
+  font-size: 34rpx !important;
+  font-weight: 700 !important;
+  border-radius: 16rpx !important;
+  padding: 28rpx 0 !important;
+  border: 2rpx solid #07C160 !important;
+  box-shadow: 0 4rpx 20rpx rgba(7, 193, 96, 0.12) !important;
+  line-height: 1.5 !important;
+}
+
+.wx-login-btn::after {
+  border: none !important;
+}
+
+/* 折叠区淡入 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-16rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 绑定手机弹窗 - 微信快速获取按钮 */
+.bind-wechat-btn {
+  width: 100% !important;
+  background: #07C160 !important;
+  color: #fff !important;
+  font-size: 30rpx !important;
+  font-weight: 600 !important;
+  border-radius: 50rpx !important;
+  padding: 26rpx 0 !important;
+  border: none !important;
+  line-height: 1.5 !important;
+}
+.bind-wechat-btn::after { border: none !important; }

@@ -1,0 +1,9 @@
+{
+  "name": "checkReminders",
+  "version": "1.0.0",
+  "description": "定时检查猫咪护理提醒",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

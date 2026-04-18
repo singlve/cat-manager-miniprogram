@@ -1,0 +1,79 @@
+<!-- pages/cat-list/cat-list.wxml -->
+<view class="container">
+
+  <!-- 加载状态 -->
+  <view wx:if="{{loading}}" class="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{cats.length === 0}}" class="empty">
+    <view class="empty-illustration">
+      <text class="empty-emoji">🐱</text>
+    </view>
+    <text class="empty-text">还没有添加猫咪</text>
+    <text class="empty-hint">添加你的第一只猫咪，开始记录它的健康成长</text>
+    <button class="empty-cta" bindtap="addCat">+ 添加猫咪</button>
+  </view>
+
+  <!-- 猫咪列表 -->
+  <view wx:else class="cat-list">
+    <view
+      wx:for="{{cats}}"
+      wx:key="_id"
+      class="cat-card type-{{item.avatar ? 'has-avatar' : 'no-avatar'}}"
+      bindtap="goCatDetail"
+      data-id="{{item._id}}"
+    >
+      <!-- 左侧色条 -->
+      <view class="card-accent"></view>
+
+      <!-- 头像 -->
+      <view class="cat-avatar-wrap">
+        <image
+          wx:if="{{item.avatar}}"
+          src="{{item._displayAvatar || item.avatar}}"
+          mode="aspectFill"
+          class="cat-avatar"
+        />
+        <view wx:else class="cat-avatar-placeholder">
+          <text class="avatar-emoji">🐱</text>
+        </view>
+        <!-- 性别角标 -->
+        <view class="gender-badge gender-{{item.gender}}">
+          {{item.gender === 'male' ? '♂' : '♀'}}
+        </view>
+      </view>
+
+      <!-- 文字信息 -->
+      <view class="cat-info">
+        <view class="cat-name-row">
+          <text class="cat-name">{{item.name}}</text>
+          <text class="cat-breed-tag">{{item.breed || '品种未知'}}</text>
+        </view>
+        <text class="cat-age" wx:if="{{item.birthday}}">🎂 {{item.birthday}}</text>
+        <!-- 健康状态徽章 -->
+        <view class="health-badge" wx:if="{{item._daysSinceRecord !== undefined}}">
+          <text class="badge-dot {{item._daysSinceRecord < 30 ? 'green' : item._daysSinceRecord < 90 ? 'yellow' : 'red'}}"></text>
+          <text class="badge-text">{{item._daysSinceRecord < 1 ? '今天有记录' : item._daysSinceRecord + '天无记录'}}</text>
+        </view>
+        <!-- 生日倒计时 -->
+        <view class="birthday-hint" wx:if="{{item._birthdayHint}}">
+          <text>{{item._birthdayHint}}</text>
+        </view>
+      </view>
+
+      <!-- 右侧快捷操作 -->
+      <view class="card-actions" catchtap="quickAddRecord" data-id="{{item._id}}" data-name="{{item.name}}">
+        <text class="quick-add-icon">📝</text>
+        <text class="quick-add-text">记录</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部添加按钮 -->
+  <view wx:if="{{cats.length > 0}}" class="add-section">
+    <button class="add-btn" bindtap="addCat">+ 添加猫咪</button>
+  </view>
+
+</view>

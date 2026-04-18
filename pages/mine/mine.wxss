@@ -1,0 +1,308 @@
+/* pages/mine/mine.wxss */
+page { background: #f0f2f7; }
+.page { padding-bottom: 60rpx; }
+
+/* ─── 头像卡片 ─── */
+.profile-card {
+  margin: 32rpx 32rpx 24rpx;
+  border-radius: 28rpx;
+  overflow: hidden;
+  box-shadow: 0 12rpx 48rpx rgba(74, 144, 217, 0.18);
+}
+
+.profile-bg {
+  background: #fff;
+  padding: 40rpx 36rpx;
+  display: flex;
+  align-items: center;
+}
+
+.avatar-wrap {
+  width: 130rpx;
+  height: 130rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 32rpx;
+  flex-shrink: 0;
+  box-shadow: 0 8rpx 24rpx rgba(74, 144, 217, 0.3);
+  border: 5rpx solid rgba(255,255,255,0.9);
+}
+
+.avatar-emoji { font-size: 64rpx; }
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: block;
+}
+
+.profile-info { flex: 1; }
+
+.nickname {
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.phone {
+  font-size: 26rpx;
+  color: #999;
+  display: block;
+}
+
+.phone-hint {
+  font-size: 24rpx;
+  color: #ccc;
+  display: block;
+  margin-top: 4rpx;
+}
+
+/* ─── 数据统计区 ─── */
+.stats-section { padding: 0 32rpx; margin-bottom: 24rpx; }
+
+.stats-card {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx 20rpx;
+  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06);
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+.stat-item:active { opacity: 0.75; }
+
+.stat-icon-wrap {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4rpx;
+}
+.cat-icon { background: linear-gradient(135deg, #e8f0ff, #d4e4ff); }
+.reminder-icon { background: linear-gradient(135deg, #fff4e5, #ffe8cc); }
+.record-icon { background: linear-gradient(135deg, #e8faf0, #d4f5e4); }
+
+.stat-icon { font-size: 40rpx; }
+
+.stat-num {
+  font-size: 48rpx;
+  font-weight: 900;
+  color: #1a1a1a;
+  display: block;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 24rpx;
+  color: #999;
+  display: block;
+}
+
+.stat-divider {
+  width: 2rpx;
+  height: 80rpx;
+  background: #f0f0f0;
+}
+
+/* ─── 菜单列表 ─── */
+.menu-card {
+  margin: 0 32rpx 32rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  overflow: hidden;
+  box-shadow: 0 6rpx 24rpx rgba(0,0,0,0.06);
+}
+
+.menu-group-label {
+  font-size: 24rpx;
+  color: #999;
+  font-weight: 600;
+  padding: 24rpx 36rpx 12rpx;
+  letter-spacing: 2rpx;
+  text-transform: uppercase;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 28rpx 36rpx;
+  border-bottom: 2rpx solid #f8f9fc;
+}
+.menu-item:last-of-type { border-bottom: none; }
+.menu-item:active { background: #f8f9fc; }
+
+.menu-icon-wrap {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+.icon-blue { background: linear-gradient(135deg, #e8f0ff, #d4e4ff); }
+.icon-green { background: linear-gradient(135deg, #e8faf0, #d4f5e4); }
+.icon-orange { background: linear-gradient(135deg, #fff4e5, #ffe8cc); }
+.icon-purple { background: linear-gradient(135deg, #f5e8ff, #ead4ff); }
+
+.menu-icon-text { font-size: 36rpx; }
+
+.menu-text-wrap { flex: 1; }
+
+.menu-text {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.menu-desc {
+  font-size: 24rpx;
+  color: #bbb;
+  display: block;
+}
+
+.menu-arrow {
+  font-size: 36rpx;
+  color: #ddd;
+  flex-shrink: 0;
+}
+
+.menu-divider { height: 2rpx; background: #f5f5f5; margin: 0; }
+
+/* ─── 退出按钮 ─── */
+.logout-btn {
+  margin: 0 32rpx 16rpx;
+  background: #fff;
+  color: #ff4d4f;
+  font-size: 32rpx;
+  font-weight: 600;
+  border-radius: 50rpx;
+  padding: 28rpx 0;
+  border: 2rpx solid #ffcdd0;
+}
+.logout-btn::after { border: none; }
+.logout-btn:active { background: #fff1f0; }
+
+.footer-hint {
+  text-align: center;
+  font-size: 24rpx;
+  color: #ccc;
+}
+
+/* ─── 编辑资料底部弹窗 ─── */
+.sheet-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 998;
+}
+.sheet-content {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 16rpx 48rpx 60rpx;
+  z-index: 999;
+}
+.sheet-handle {
+  width: 80rpx; height: 8rpx;
+  background: #ddd; border-radius: 4rpx;
+  margin: 0 auto 24rpx;
+}
+.sheet-title {
+  font-size: 34rpx; font-weight: 700; color: #1a1a1a;
+  display: block; text-align: center; margin-bottom: 36rpx;
+}
+
+/* emoji 选择网格 */
+.avatar-picker {
+  display: flex; flex-wrap: wrap; gap: 16rpx;
+  margin-bottom: 32rpx; justify-content: center;
+}
+.emoji-opt {
+  width: 80rpx; height: 80rpx;
+  border-radius: 50%;
+  background: #f5f6fa;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40rpx;
+  border: 4rpx solid transparent;
+  transition: all 0.2s;
+}
+.emoji-opt.selected {
+  background: #e8f0ff;
+  border-color: #4A90D9;
+  transform: scale(1.15);
+}
+
+/* 自定义头像上传按钮 */
+.avatar-upload-btn {
+  width: 80rpx; height: 80rpx;
+  border-radius: 50%;
+  background: #f0f0f0;
+  border: 4rpx dashed #ccc;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.avatar-upload-btn:active { opacity: 0.7; }
+.avatar-upload-preview {
+  width: 100%; height: 100%; position: absolute;
+}
+.avatar-upload-cover {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.5);
+  color: #fff; font-size: 18rpx; text-align: center;
+  padding: 4rpx 0; line-height: 1;
+}
+.avatar-upload-plus { font-size: 36rpx; color: #999; line-height: 1; }
+.avatar-upload-label { font-size: 18rpx; color: #999; margin-top: 2rpx; }
+
+.edit-field {
+  display: flex; align-items: center; gap: 20rpx; margin-bottom: 36rpx;
+  background: #f5f6fa; border-radius: 16rpx; padding: 16rpx 24rpx;
+}
+.edit-label { font-size: 28rpx; color: #666; width: 72rpx; flex-shrink: 0; }
+.edit-input {
+  flex: 1; font-size: 28rpx; color: #333;
+  background: transparent;
+}
+
+.sheet-btns { display: flex; gap: 24rpx; }
+.sheet-btn {
+  flex: 1; font-size: 30rpx; font-weight: 600;
+  padding: 24rpx 0; border-radius: 50rpx; text-align: center;
+}
+.sheet-btn.cancel { color: #666; background: #f0f0f0; }
+.sheet-btn.confirm { color: #fff; background: #4A90D9; }
+.sheet-btn:active { opacity: 0.75; }
+
+/* ─── 绑定手机号弹窗 ─── */
+.bindphone-mask {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 998;
+}
+.bindphone-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 16rpx 48rpx 80rpx;
+  z-index: 999;
+  /* stopBubble 防止点击内容穿透到遮罩 */
+}

@@ -1,0 +1,2 @@
+/* pages/cat-edit/cat-edit.wxss - 复用 cat-add 样式 */
+@import '../cat-add/cat-add.wxss';

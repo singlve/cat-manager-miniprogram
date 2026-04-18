@@ -1,0 +1,109 @@
+<!-- pages/health-records/health-records.wxml -->
+<view class="container">
+  <view class="page-header">
+    <text class="page-title">📋 健康记录</text>
+  </view>
+
+  <!-- 猫咪筛选标签 -->
+  <scroll-view class="cat-tabs-scroll" scroll-x>
+    <view class="cat-tabs">
+      <view
+        wx:for="{{catOptions}}"
+        wx:key="key"
+        class="cat-tab {{currentCat === item.key ? 'active' : ''}}"
+        bindtap="setCatFilter"
+        data-cat="{{item.key}}"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 类型筛选标签 -->
+  <view class="filter-tabs">
+    <view
+      wx:for="{{filterOptions}}"
+      wx:key="key"
+      class="tab {{currentFilter === item.key ? 'active' : ''}}"
+      bindtap="setFilter"
+      data-filter="{{item.key}}"
+    >
+      {{item.label}}
+    </view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{filteredRecords.length === 0}}" class="empty">
+    <view class="empty-illustration">
+      <text class="empty-emoji">📋</text>
+    </view>
+    <text class="empty-text">暂无健康记录</text>
+    <text class="empty-hint">在猫咪详情页点击快速记录按钮为猫咪添加第一条记录</text>
+    <view class="empty-cta" hover-class="btn-hover" bindtap="goBack">去添加记录 ›</view>
+  </view>
+
+  <!-- 记录列表 -->
+  <view wx:else class="record-list">
+    <view wx:for="{{filteredRecords}}" wx:key="_id" class="record-card">
+      <view class="record-left">
+        <view class="record-icon {{item.type}}">
+          {{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : '🩺'}}
+        </view>
+      </view>
+      <view class="record-center">
+        <!-- 筛选全部猫咪时显示猫咪名 -->
+        <view wx:if="{{currentCat === 'all'}}" class="record-cat-name">
+          <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill"></image>
+          <text wx:else class="cat-avatar-placeholder">🐱</text>
+          <text>{{item._catName}}</text>
+        </view>
+        <text class="record-type">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : '体检'}}</text>
+        <text class="record-date">{{item.date}}</text>
+        <text class="record-note" wx:if="{{item.note}}">{{item.note}}</text>
+      </view>
+      <view class="record-right">
+        <view class="edit-record" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+        <view class="delete-record" data-id="{{item._id}}" bindtap="deleteRecord">删除</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 编辑弹窗 -->
+  <view wx:if="{{showEditModal}}" class="modal-mask">
+    <view class="modal-dialog">
+      <text class="modal-title">编辑记录</text>
+
+      <!-- 类型选择 -->
+      <view class="edit-field">
+        <text class="edit-label">类型</text>
+        <picker mode="selector" range="['🛁 洗澡','💊 驱虫','💉 免疫','🩺 体检']"
+          value="{{editType === 'bath' ? 0 : editType === 'deworm' ? 1 : editType === 'vaccine' ? 2 : 3}}"
+          bindchange="onEditTypeChange">
+          <view class="edit-value">
+            {{editType === 'bath' ? '🛁 洗澡' : editType === 'deworm' ? '💊 驱虫' : editType === 'vaccine' ? '💉 免疫' : '🩺 体检'}} ▾
+          </view>
+        </picker>
+      </view>
+
+      <!-- 日期选择 -->
+      <view class="edit-field">
+        <text class="edit-label">日期</text>
+        <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
+          <view class="edit-value">{{editDate}} ▾</view>
+        </picker>
+      </view>
+
+      <!-- 备注 -->
+      <view class="edit-field">
+        <text class="edit-label">备注</text>
+        <input class="edit-input" value="{{editNote}}" bindinput="onEditNoteInput" placeholder="选填" placeholder-style="color:#ccc;" />
+      </view>
+
+      <view class="modal-btns">
+        <view class="modal-btn cancel" hover-class="btn-hover" bindtap="cancelEdit">取消</view>
+        <view class="modal-btn confirm" hover-class="btn-hover" bindtap="saveEdit">保存</view>
+      </view>
+    </view>
+  </view>
+
+</view>
