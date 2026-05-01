@@ -16,6 +16,7 @@ function getAvatarType(currentUser) {
 
 Page({
   data: {
+    isLoggedIn: false,
     nickname: '加载中...',
     avatar: '',
     avatarEmoji: '😺',
@@ -37,7 +38,11 @@ Page({
     bindConfirm: ''
   },
 
-  onShow() { this.loadUserInfo(); },
+  onShow() {
+    const app = getApp();
+    this.setData({ isLoggedIn: app.isLoggedIn() });
+    if (app.isLoggedIn()) this.loadUserInfo();
+  },
 
   async loadUserInfo() {
     let currentUser = null;
@@ -77,6 +82,8 @@ Page({
   goReminders() { wx.switchTab({ url: '/pages/reminders/reminders' }); },
   goRecords()   { wx.navigateTo({ url: '/pages/health-records/health-records' }); },
   goAbout()     { wx.navigateTo({ url: '/pages/about/about' }); },
+
+  goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
 
   // ─── 编辑个人资料 ───
   openEditProfile() {
@@ -168,41 +175,9 @@ Page({
     this.setData({ showBindPhone: true, bindPhone: '', bindPassword: '', bindConfirm: '' });
   },
 
-  onGetPhoneNumber(e) {
-    if (!e.detail || !e.detail.code) { wx.showToast({ title: '请允许获取手机号', icon: 'none' }); return; }
-    this._doBindPhoneByWechat(e.detail.code);
-  },
-
   bindPhoneInput(e) { this.setData({ bindPhone: e.detail.value.trim() }); },
   bindPasswordInput(e) { this.setData({ bindPassword: e.detail.value }); },
   bindConfirmInput(e) { this.setData({ bindConfirm: e.detail.value }); },
-
-  async _doBindPhoneByWechat(code) {
-    wx.showLoading({ title: '绑定中...' });
-    if (clouddb.FORCE_LOCAL) {
-      setTimeout(() => { wx.hideLoading(); this._finishBindPhone({ phone: '138****8888' }); }, 800);
-      return;
-    }
-    try {
-      const res = await wx.cloud.callFunction({ name: 'getPhoneNumber', data: { code } });
-      let phone = '';
-      if (res.result && res.result.phone_info && res.result.phone_info.phoneNumber) {
-        phone = res.result.phone_info.phoneNumber;
-      } else if (res.result && res.result.phone) {
-        phone = res.result.phone;
-      }
-      if (phone) {
-        this._finishBindPhone({ phone });
-      } else {
-        wx.hideLoading();
-        wx.showToast({ title: '获取手机号失败，请重试', icon: 'none' });
-      }
-    } catch (e) {
-      wx.hideLoading();
-      console.error('[mine] _doBindPhoneByWechat error:', e);
-      wx.showToast({ title: '绑定失败，请检查网络后重试', icon: 'none' });
-    }
-  },
 
   async onManualBindPhone() {
     const { bindPhone, bindPassword, bindConfirm } = this.data;
@@ -258,7 +233,17 @@ Page({
         if (!res.confirm) return;
         wx.clearStorageSync();
         getApp().globalData.openid = null;
-        wx.redirectTo({ url: '/pages/login/login' });
+        // 退出后留在当前页，刷新显示未登录状态
+        this.setData({
+          isLoggedIn: false,
+          nickname: '',
+          avatar: '',
+          phone: '',
+          catCount: 0,
+          reminderCount: 0,
+          recordCount: 0
+        });
+        wx.showToast({ title: '已退出', icon: 'success' });
       }
     });
   }

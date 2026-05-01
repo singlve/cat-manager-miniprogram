@@ -1,0 +1,240 @@
+<!-- pages/weight-records/weight-records.wxml -->
+<view class="container">
+
+  <!-- 页面头部 -->
+  <view class="page-header">
+    <text class="page-title">⚖️ 体重记录</text>
+    <text class="add-btn" catchtap="openQuickAdd" wx:if="{{currentCat !== 'all' && filteredRecords.length > 0 && !isCurrentCatPassed}}">+ 录入体重</text>
+  </view>
+
+  <!-- 猫咪筛选标签（横向滚动） -->
+  <scroll-view class="cat-tabs-scroll" scroll-x>
+    <view class="cat-tabs">
+      <view
+        wx:for="{{catOptions}}"
+        wx:key="key"
+        class="cat-tab {{currentCat === item.key ? 'active' : ''}}"
+        bindtap="setCatFilter"
+        data-cat="{{item.key}}"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 时间段筛选标签 -->
+  <scroll-view class="period-tabs-scroll" scroll-x>
+    <view class="period-tabs">
+      <view
+        wx:for="{{periodOptions}}"
+        wx:key="key"
+        class="period-tab {{currentPeriod === item.key ? 'active' : ''}}"
+        bindtap="setPeriodFilter"
+        data-period="{{item.key}}"
+      >
+        <text>{{item.label}}</text>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 自定义时间范围（仅当选择「自定义」时显示） -->
+  <view wx:if="{{currentPeriod === 'custom'}}" class="custom-date-range">
+    <picker mode="date" value="{{customStartDate}}" end="{{customEndDate || ''}}" bindchange="onCustomStartChange">
+      <view class="date-range-picker">
+        <text class="date-range-label">起</text>
+        <text class="date-range-value">{{customStartDate || '选择起始'}}</text>
+      </view>
+    </picker>
+    <text class="date-range-sep">—</text>
+    <picker mode="date" value="{{customEndDate}}" start="{{customStartDate || ''}}" bindchange="onCustomEndChange">
+      <view class="date-range-picker">
+        <text class="date-range-label">止</text>
+        <text class="date-range-value">{{customEndDate || '选择结束'}}</text>
+      </view>
+    </picker>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:if="{{filteredRecords.length === 0}}" class="empty">
+    <view class="empty-illustration">
+      <text class="empty-emoji">⚖️</text>
+    </view>
+    <text class="empty-text">暂无体重记录</text>
+    <text class="empty-hint" wx:if="{{currentCat === 'all'}}">选择上方猫咪后，点击「录入体重」添加记录</text>
+    <text class="empty-hint" wx:else>还没有这只猫的体重记录</text>
+    <view wx:if="{{currentCat !== 'all' && !isCurrentCatPassed}}" class="empty-cta" hover-class="btn-hover" catchtap="openQuickAdd">去录入 ›</view>
+  </view>
+
+  <!-- 记录列表 -->
+  <view wx:else class="record-list">
+    <!-- 顶部汇总信息（当筛选单只猫时显示） -->
+    <view wx:if="{{currentCat !== 'all' && filteredRecords.length > 0}}" class="summary-card">
+      <view class="summary-items-row">
+        <view class="summary-item">
+          <text class="summary-label">最新体重</text>
+          <text class="summary-value">{{summaryLatest}} kg</text>
+        </view>
+        <view class="summary-divider"></view>
+        <view class="summary-item">
+          <text class="summary-label">记录次数</text>
+          <text class="summary-value">{{summaryCount}} 次</text>
+        </view>
+        <view class="summary-divider" wx:if="{{summaryCount >= 2}}"></view>
+        <view class="summary-item" wx:if="{{summaryCount >= 2}}">
+          <text class="summary-label">累计变化</text>
+          <text class="summary-value {{summaryChangeClass}}">{{summaryChangeText}}</text>
+        </view>
+      </view>
+      <view class="summary-add-row" catchtap="openQuickAdd" wx:if="{{!isCurrentCatPassed}}">+ 录入新体重</view>
+    </view>
+
+    <!-- 体重趋势折线图（仅单只猫 + ≥2条记录时显示） -->
+    <canvas type="2d" id="weightChart" class="chart-canvas" wx:if="{{currentCat !== 'all' && filteredRecords.length >= 2 && !showAddModal && !showEditModal}}"></canvas>
+
+    <!-- 体重卡片列表 -->
+    <view wx:for="{{filteredRecords}}" wx:key="_id" class="record-card">
+      <!-- 全部猫咪视图下显示猫咪名+头像 -->
+      <view wx:if="{{currentCat === 'all'}}" class="record-cat-row">
+        <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill"></image>
+        <text wx:else class="cat-avatar-placeholder">🐱</text>
+        <text class="cat-name-label">{{item._catName}}</text>
+      </view>
+
+      <view class="record-main">
+        <view class="record-weight-block">
+          <text class="record-weight">{{item.weight}}</text>
+          <text class="record-unit">kg</text>
+        </view>
+        <view class="record-meta">
+          <text class="record-date">{{item.date}}</text>
+          <text class="record-ago">{{item._ago}}</text>
+          <text class="record-note" wx:if="{{item.note}}">{{item.note}}</text>
+        </view>
+      </view>
+
+      <view class="record-actions">
+        <view class="action-btn edit" data-id="{{item._id}}" bindtap="openEdit">编辑</view>
+        <view class="action-btn delete" data-id="{{item._id}}" bindtap="deleteRecord">删除</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ─── 新增体重弹窗 ─── -->
+  <view wx:if="{{showAddModal}}" class="modal-mask">
+    <view class="modal-dialog" catchtap="">
+      <text class="modal-title">📝 录入体重</text>
+
+      <!-- 日期 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">日期</text>
+        <picker mode="date" value="{{addDate}}" bindchange="onAddDateChange">
+          <view class="date-picker-row">
+            <text class="date-picker-value">{{addDate}}</text>
+            <text class="date-picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 时间 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">时间</text>
+        <picker mode="time" value="{{addTime}}" bindchange="onAddTimeChange">
+          <view class="date-picker-row">
+            <text class="date-picker-value">{{addTime}}</text>
+            <text class="date-picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 体重 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">体重 (kg)</text>
+        <input
+          class="edit-input weight-input"
+          type="digit"
+          value="{{addWeight}}"
+          bindinput="onAddWeightInput"
+          placeholder="如：4.25"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+
+      <!-- 备注 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">备注</text>
+        <input
+          class="edit-input"
+          value="{{addNote}}"
+          bindinput="onAddNoteInput"
+          placeholder="选填，如：空腹/餐后"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+
+      <view class="modal-btns" catchtap="">
+        <view class="modal-btn cancel" hover-class="btn-hover" bindtap="cancelModal">取消</view>
+        <view class="modal-btn confirm" hover-class="btn-hover" bindtap="saveAdd">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ─── 编辑体重弹窗 ─── -->
+  <view wx:if="{{showEditModal && !showAddModal}}" class="modal-mask">
+    <view class="modal-dialog" catchtap="">
+      <text class="modal-title">✏️ 编辑体重</text>
+
+      <!-- 日期 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">日期</text>
+        <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
+          <view class="date-picker-row">
+            <text class="date-picker-value">{{editDate}}</text>
+            <text class="date-picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 时间 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">时间</text>
+        <picker mode="time" value="{{editTime}}" bindchange="onEditTimeChange">
+          <view class="date-picker-row">
+            <text class="date-picker-value">{{editTime}}</text>
+            <text class="date-picker-arrow">▾</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 体重 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">体重 (kg)</text>
+        <input
+          class="edit-input weight-input"
+          type="digit"
+          value="{{editWeight}}"
+          bindinput="onEditWeightInput"
+          placeholder="如：4.25"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+
+      <!-- 备注 -->
+      <view class="edit-field" catchtap="">
+        <text class="edit-label">备注</text>
+        <input
+          class="edit-input"
+          value="{{editNote}}"
+          bindinput="onEditNoteInput"
+          placeholder="选填"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+
+      <view class="modal-btns" catchtap="">
+        <view class="modal-btn cancel" hover-class="btn-hover" bindtap="cancelModal">取消</view>
+        <view class="modal-btn confirm" hover-class="btn-hover" bindtap="saveEdit">保存</view>
+      </view>
+    </view>
+  </view>
+
+</view>

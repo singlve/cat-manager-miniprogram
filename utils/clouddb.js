@@ -9,6 +9,7 @@ const FORCE_LOCAL = false;  // TODO: 云开发部署完成后改为 false
 const CAT_COL    = 'cats';
 const RECORD_COL = 'health_records';
 const REMIND_COL = 'reminders';
+const WEIGHT_COL = 'weight_records';
 const USER_COL   = 'users';
 
 // ════════════════════════════════════════════════════
@@ -46,12 +47,16 @@ async function _cloudQuery(collection, query = {}, options = {}) {
 }
 
 async function _cloudAdd(collection, data) {
-  const res = await wx.cloud.database().collection(collection).add({ data });
+  // 云数据库禁止客户端写入 _openid（系统保留字段），写入前过滤掉
+  const { _openid, ...cloudData } = data;
+  const res = await wx.cloud.database().collection(collection).add({ data: cloudData });
   return res._id;
 }
 
 async function _cloudUpdate(collection, id, updates) {
-  await wx.cloud.database().collection(collection).doc(id).update({ data: updates });
+  // 云数据库禁止客户端写入 _openid（系统保留字段），更新前过滤掉
+  const { _openid, ...safeUpdates } = updates;
+  await wx.cloud.database().collection(collection).doc(id).update({ data: safeUpdates });
 }
 
 async function _cloudDelete(collection, id) {
@@ -132,6 +137,43 @@ async function deleteRecord(id) {
 }
 
 // ════════════════════════════════════════════════════
+// 体重记录（WEIGHT RECORDS）
+// ════════════════════════════════════════════════════
+
+async function getWeightRecords(filter = {}) {
+  if (!isCloudReady()) {
+    const records = _storage().getWeightRecords ? _storage().getWeightRecords() : [];
+    if (filter.catId) return records.filter(r => r.catId === filter.catId);
+    return records;
+  }
+  return await _cloudQuery(WEIGHT_COL, filter, { orderBy: 'date', orderDesc: 'desc' });
+}
+
+async function addWeightRecord(record) {
+  if (!isCloudReady()) {
+    if (_storage().addWeightRecord) _storage().addWeightRecord(record);
+    return record._id;
+  }
+  return await _cloudAdd(WEIGHT_COL, { ...record, _createTime: Date.now() });
+}
+
+async function updateWeightRecord(id, updates) {
+  if (!isCloudReady()) {
+    if (_storage().updateWeightRecord) _storage().updateWeightRecord(id, updates);
+    return;
+  }
+  await _cloudUpdate(WEIGHT_COL, id, updates);
+}
+
+async function deleteWeightRecord(id) {
+  if (!isCloudReady()) {
+    if (_storage().deleteWeightRecord) _storage().deleteWeightRecord(id);
+    return;
+  }
+  await _cloudDelete(WEIGHT_COL, id);
+}
+
+// ════════════════════════════════════════════════════
 // 提醒（REMINDERS）
 // ════════════════════════════════════════════════════
 
@@ -166,8 +208,14 @@ async function deleteReminder(id) {
 async function getUserByOpenid(openid) {
   if (!isCloudReady()) return null;
   if (!openid) return null;
-  const data = await _cloudQuery(USER_COL, { _openid: openid });
-  return data.length > 0 ? data[0] : null;
+  try {
+    // _openid 是系统保留字段，只读可查（不能写入）
+    const data = await _cloudQuery(USER_COL, { _openid: openid });
+    return data.length > 0 ? data[0] : null;
+  } catch (e) {
+    console.error('[clouddb] getUserByOpenid error:', e);
+    return null;
+  }
 }
 
 async function getUserByPhone(phone) {
@@ -179,7 +227,9 @@ async function getUserByPhone(phone) {
 async function addUser(user) {
   if (!isCloudReady()) return null;
   // 注意：_openid 由平台自动注入到文档（基于创建者的身份），不能手动写入
-  return await _cloudAdd(USER_COL, { ...user, _createTime: Date.now() });
+  // 直接在 _cloudAdd 调用前过滤掉，确保即使 _cloudAdd 通用过滤失效时也能保护
+  const { _openid, ...userData } = user;
+  return await _cloudAdd(USER_COL, { ...userData, _createTime: Date.now() });
 }
 
 async function updateUser(id, updates) {
@@ -259,6 +309,8 @@ module.exports = {
   getCats, getAllCats: getCats, getCatById, addCat, updateCat, deleteCat,
   // records
   getRecords, addRecord, updateRecord, deleteRecord,
+  // weight
+  getWeightRecords, addWeightRecord, updateWeightRecord, deleteWeightRecord,
   // reminders
   getReminders, addReminder, updateReminder, deleteReminder,
   // users

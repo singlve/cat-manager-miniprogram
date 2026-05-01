@@ -1,6 +1,44 @@
 <!-- pages/mine/mine.wxml -->
 <view class="page">
 
+  <!-- 未登录状态 -->
+  <view wx:if="{{!isLoggedIn}}" class="not-logged-in">
+    <view class="profile-card" bindtap="goLogin">
+      <view class="profile-bg">
+        <view class="avatar-wrap">
+          <text class="avatar-emoji" style="font-size:72rpx;">😺</text>
+        </view>
+        <view class="profile-info">
+          <text class="nickname">点击登录</text>
+          <text class="phone-hint">登录后使用全部功能</text>
+        </view>
+      </view>
+    </view>
+    <view class="login-features">
+      <view class="login-feature-item">
+        <text class="login-feature-icon">🐱</text>
+        <text class="login-feature-text">管理猫咪档案</text>
+      </view>
+      <view class="login-feature-item">
+        <text class="login-feature-icon">📋</text>
+        <text class="login-feature-text">记录健康数据</text>
+      </view>
+      <view class="login-feature-item">
+        <text class="login-feature-icon">🔔</text>
+        <text class="login-feature-text">设置智能提醒</text>
+      </view>
+      <view class="login-feature-item">
+        <text class="login-feature-icon">☁️</text>
+        <text class="login-feature-text">数据云端同步</text>
+      </view>
+    </view>
+    <button class="login-main-btn" bindtap="goLogin">登录 / 注册</button>
+    <view class="footer-hint">猫咪健康管家 v1.0</view>
+  </view>
+
+  <!-- 已登录状态 -->
+  <view wx:else>
+
   <!-- 头像卡片 -->
   <view class="profile-card" bindtap="openEditProfile">
     <view class="profile-bg">
@@ -157,18 +195,6 @@
       <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
       <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可使用手机号登录</text>
 
-      <!-- 微信一键获取手机号 -->
-      <button open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber"
-        style="width:100%;background:#07C160;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;margin-bottom:0;border:none;">
-        📱 一键获取微信绑定手机号
-      </button>
-
-      <view style="display:flex;align-items:center;margin:24rpx 0;">
-        <view style="flex:1;height:2rpx;background:#eee;"></view>
-        <text style="font-size:24rpx;color:#ccc;padding:0 20rpx;">或</text>
-        <view style="flex:1;height:2rpx;background:#eee;"></view>
-      </view>
-
       <!-- 手动输入 -->
       <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
         <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
@@ -188,4 +214,5 @@
       <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
     </view>
   </view>
+  </view><!-- end 已登录 -->
 </view>

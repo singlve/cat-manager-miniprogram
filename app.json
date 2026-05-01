@@ -1,12 +1,13 @@
 {
   "pages": [
+    "pages/cat-list/cat-list",
     "pages/login/login",
     "pages/register/register",
-    "pages/cat-list/cat-list",
     "pages/cat-add/cat-add",
     "pages/cat-detail/cat-detail",
     "pages/cat-edit/cat-edit",
     "pages/health-records/health-records",
+    "pages/weight-records/weight-records",
     "pages/reminders/reminders",
     "pages/reminder-add/reminder-add",
     "pages/mine/mine",

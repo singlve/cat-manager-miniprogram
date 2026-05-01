@@ -52,26 +52,17 @@
     <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
     <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可用手机号登录小程序</text>
 
-    <!-- 微信快速获取手机号 -->
-    <button class="bind-wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-      <text style="font-size:30rpx;">📱 一键获取微信绑定手机号</text>
-    </button>
-
-    <view style="display:flex;align-items:center;margin:24rpx 0;">
-      <view style="flex:1;height:2rpx;background:#eee;"></view>
-      <text style="font-size:24rpx;color:#ccc;padding:0 20rpx;">或</text>
-      <view style="flex:1;height:2rpx;background:#eee;"></view>
-    </view>
-
-    <!-- 手动输入 -->
-    <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:20rpx;">
+    <!-- 手动输入手机号 -->
+    <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:12rpx;">
       <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
         style="font-size:30rpx;color:#333;width:100%;" />
     </view>
+    <text wx:if="{{bindPhoneError}}" style="font-size:22rpx;color:#ff4d4f;display:block;margin-bottom:8rpx;padding-left:8rpx;">{{bindPhoneError}}</text>
 
     <!-- 首次绑定时显示密码输入 -->
     <view wx:if="{{showPasswordInput}}" style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
-      <input password type="text" placeholder="设置密码（至少6位）" bindinput="bindPasswordInput"
+      <text style="font-size:22rpx;color:#999;margin-bottom:8rpx;display:block;padding-left:8rpx;">设置密码（6位以上）</text>
+      <input password type="text" placeholder="设置密码（6位以上）" bindinput="bindPasswordInput"
         style="font-size:30rpx;color:#333;width:100%;" />
     </view>
     <view wx:if="{{showPasswordInput}}" style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
@@ -82,6 +73,37 @@
     <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
     <view style="text-align:center;margin-top:20rpx;">
       <text style="font-size:26rpx;color:#999;" bindtap="skipBindPhone">暂不绑定 ›</text>
+    </view>
+  </view>
+</view>
+
+<!-- 完善资料弹窗（新用户绑定手机后弹出） -->
+<view wx:if="{{showProfileSetup}}" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:9998;">
+  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" catchtap="stopBubble">
+    <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+    <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">完善资料</text>
+    <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">设置你的头像和昵称</text>
+
+    <!-- 头像选择 -->
+    <view style="display:flex;flex-direction:column;align-items:center;margin-bottom:32rpx;">
+      <view class="profile-avatar-wrap">
+        <view class="avatar-ring"></view>
+        <button class="avatar-choose-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+          <image src="{{profileAvatar || '/images/default-avatar.svg'}}" mode="aspectFill" class="avatar-preview" />
+        </button>
+      </view>
+      <text style="font-size:26rpx;color:#4A90D9;margin-top:16rpx;">点击选择头像</text>
+    </view>
+
+    <!-- 昵称输入 -->
+    <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
+      <input type="nickname" placeholder="请输入昵称" bindinput="profileNicknameInput" value="{{profileNickname}}"
+        style="font-size:30rpx;color:#333;width:100%;" />
+    </view>
+
+    <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="saveProfile">完成</view>
+    <view style="text-align:center;margin-top:20rpx;">
+      <text style="font-size:26rpx;color:#999;" bindtap="skipProfileSetup">稍后再说 ›</text>
     </view>
   </view>
 </view>

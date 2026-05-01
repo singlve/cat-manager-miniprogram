@@ -28,11 +28,13 @@ Page({
     intervalDaysRaw: '30',
     presetIntervals: PRESET_INTERVALS,
     note: '',
-    nextPreviewDate: ''
+    nextPreviewDate: '',
+    noCatsAvailable: false
   },
 
   async onLoad(options) {
     await this.loadCats();
+    if (this.data.noCatsAvailable) return;
     if (options.id) {
       this.setData({ isEdit: true, reminderId: options.id });
       await this.loadReminder(options.id);
@@ -47,8 +49,10 @@ Page({
   },
 
   async loadCats() {
-    const cats = await clouddb.getCats();
-    this.setData({ cats });
+    let cats = await clouddb.getCats();
+    // 过滤已去喵星的猫，不给它们添加提醒
+    cats = cats.filter(c => c.status !== 'passed_away');
+    this.setData({ cats, noCatsAvailable: cats.length === 0 });
   },
 
   async loadReminder(id) {

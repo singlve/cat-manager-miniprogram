@@ -1,7 +1,12 @@
 {
   "description": "猫咪健康管家小程序",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "/minitest"
+      }
+    ],
     "include": []
   },
   "setting": {
@@ -55,5 +60,7 @@
     "tabIndent": "insertSpaces",
     "tabSize": 2
   },
-  "simulatorPluginLibVersion": {}
+  "simulatorPluginLibVersion": {},
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
+  "testRoot": "minitest/"
 }

@@ -11,6 +11,19 @@ App({
     this.initCloud();
   },
 
+  // 判断用户是否已登录（本地 storage 中有 currentUser 且有 openid）
+  isLoggedIn() {
+    try {
+      const user = wx.getStorageSync('currentUser');
+      return !!(user && user._id);
+    } catch (e) { return false; }
+  },
+
+  // 跳转登录页（未登录时统一调用）
+  goLogin() {
+    wx.navigateTo({ url: '/pages/login/login' });
+  },
+
   async initCloud() {
     if (typeof wx.cloud === 'undefined') {
       console.warn('[app] 云开发未安装，当前为本地数据模式');

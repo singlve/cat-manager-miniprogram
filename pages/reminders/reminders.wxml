@@ -1,16 +1,43 @@
 <!-- pages/reminders/reminders.wxml -->
 <view class="page">
 
-  <!-- 空状态 -->
-  <view wx:if="{{overdueList.length === 0 && upcomingList.length === 0 && futureList.length === 0}}" class="empty-state">
+  <!-- 未登录提示（独立显示） -->
+  <view wx:if="{{!isLoggedIn}}" class="guest-banner">
+    <view class="guest-illustration">
+      <text class="guest-emoji">🔔</text>
+    </view>
+    <text class="guest-title">登录后管理提醒</text>
+    <text class="guest-desc">登录后可以为猫咪设置定期提醒，不错过每一次护理</text>
+    <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
+  </view>
+
+  <!-- 空状态（仅已登录且无提醒） -->
+  <view wx:if="{{isLoggedIn && overdueList.length === 0 && upcomingList.length === 0 && futureList.length === 0}}" class="empty-state">
     <text class="empty-icon">🔔</text>
     <text class="empty-title">暂无提醒设置</text>
     <text class="empty-desc">为猫咪添加定期提醒，不错过每一次护理</text>
     <button class="empty-btn" bindtap="addReminder">+ 添加提醒</button>
   </view>
 
-  <!-- 整体列表（非空时） -->
-  <view wx:else class="content">
+  <!-- 有提醒数据时 -->
+  <view wx:if="{{overdueList.length > 0 || upcomingList.length > 0 || futureList.length > 0}}" class="content">
+
+    <!-- 猫咪筛选标签栏 -->
+    <scroll-view wx:if="{{catTabs.length > 1}}" class="cat-filter-tabs" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="cat-filter-tab {{catFilter === 'all' ? 'active' : ''}}" bindtap="onCatFilterChange" data-catid="all">全部</view>
+      <view
+        wx:for="{{catTabs}}"
+        wx:key="_id"
+        class="cat-filter-tab {{catFilter === item._id ? 'active' : ''}}"
+        bindtap="onCatFilterChange"
+        data-catid="{{item._id}}"
+      >{{item.name}}</view>
+    </scroll-view>
+
+    <!-- Demo 水印提示 -->
+    <view wx:if="{{!isLoggedIn}}" class="demo-watermark">
+      <text>👀 以下为示例展示，登录后可管理自己的提醒</text>
+    </view>
 
     <!-- 逾期区块 -->
     <view wx:if="{{overdueList.length > 0}}">
@@ -28,6 +55,10 @@
           </view>
           <view class="tag tag-danger">逾期 {{0 - item.daysUntil}} 天</view>
         </view>
+        <view class="next-date-highlight">
+          <text class="next-date-highlight-label">下次提醒</text>
+          <text class="next-date-highlight-val">{{item.nextDate}}</text>
+        </view>
         <view class="info-row">
           <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>
           <text class="info-label">间隔</text><text class="info-val">每{{item.intervalDays}}天</text>
@@ -35,7 +66,7 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view class="actions">
+        <view wx:if="{{isLoggedIn}}" class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
@@ -69,7 +100,7 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view class="actions">
+        <view wx:if="{{isLoggedIn}}" class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
@@ -102,7 +133,7 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view class="actions">
+        <view wx:if="{{isLoggedIn}}" class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
@@ -111,9 +142,13 @@
 
   </view>
 
-  <!-- 添加按钮 -->
-  <view class="fab-wrap">
+  <!-- 添加按钮：已登录 -->
+  <view wx:if="{{isLoggedIn}}" class="fab-wrap">
     <button class="fab-btn" bindtap="addReminder">+ 添加提醒</button>
+  </view>
+  <!-- 未登录底部引导 -->
+  <view wx:elif="{{!isLoggedIn && (overdueList.length > 0 || upcomingList.length > 0 || futureList.length > 0)}}" class="fab-wrap">
+    <button class="fab-btn" bindtap="goLogin">登录开始使用 →</button>
   </view>
 
 </view>

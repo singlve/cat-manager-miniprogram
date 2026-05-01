@@ -145,6 +145,20 @@
   color: #4A90D9;
 }
 
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fc;
+  border-radius: 16rpx;
+  padding: 24rpx 28rpx;
+}
+
+.switch-label {
+  font-size: 30rpx;
+  color: #333;
+}
+
 .picker {
   background: #f8f9fc;
   border-radius: 16rpx;

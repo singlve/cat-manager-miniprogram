@@ -69,6 +69,21 @@
   border-radius: 20rpx;
 }
 
+.tag-neutered {
+  background: #f0f9eb;
+  color: #52c41a;
+}
+
+.tag-passed {
+  background: #fff0f6;
+  color: #eb2f96;
+}
+
+.tag-withme {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
 .note { font-size: 24rpx; color: #999; margin-top: 6rpx; display: block; }
 
 .header-actions {
@@ -244,7 +259,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 1000;
 }
 
 .modal-dialog {
@@ -304,4 +319,141 @@
 
 .btn-hover {
   opacity: 0.7;
+}
+
+/* ─── 体重记录区 ─── */
+.weight-summary-card {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.weight-current {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+}
+.weight-number {
+  font-size: 64rpx;
+  font-weight: 900;
+  color: #2e7d32;
+  line-height: 1;
+}
+.weight-unit {
+  font-size: 28rpx;
+  color: #388e3c;
+  font-weight: 600;
+}
+
+.weight-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.weight-label { font-size: 22rpx; color: #388e3c; font-weight: 600; }
+.weight-date  { font-size: 24rpx; color: #558b2f; }
+
+.weight-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rpx;
+}
+.weight-total-num  { font-size: 40rpx; font-weight: 800; color: #33691e; }
+.weight-total-label { font-size: 20rpx; color: #558b2f; }
+
+.quick-add-weight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  background: #fff;
+  border: 2rpx dashed #a5d6a7;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  color: #43a047;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.quick-add-icon  { font-size: 36rpx; }
+.quick-add-text {}
+
+/* ─── 体重录入弹窗 ─── */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.weight-modal {
+  width: 620rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 40rpx 36rpx 32rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0,0,0,0.2);
+}
+
+.modal-title-text {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #333;
+  display: block;
+  margin-bottom: 36rpx;
+  text-align: center;
+}
+
+.wm-field { margin-bottom: 28rpx; }
+.wm-label {
+  font-size: 26rpx;
+  color: #666;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 12rpx;
+}
+.wm-picker {
+  background: #f5f6fa;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #333;
+}
+.wm-input {
+  background: #f5f6fa;
+  border-radius: 12rpx;
+  padding: 20rpx 24rpx;
+  font-size: 30rpx;
+  color: #333;
+  font-weight: 700;
+}
+
+.wm-btns {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 32rpx;
+}
+.wm-btn {
+  flex: 1;
+  text-align: center;
+  padding: 24rpx;
+  border-radius: 48rpx;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.wm-btn.cancel {
+  background: #f5f6fa;
+  color: #666;
+}
+.wm-btn.confirm {
+  background: linear-gradient(135deg, #43a047, #66bb6a);
+  color: #fff;
+  box-shadow: 0 8rpx 24rpx rgba(67,160,71,0.35);
 }

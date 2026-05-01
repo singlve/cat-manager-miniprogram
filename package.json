@@ -1,0 +1,25 @@
+{
+  "name": "cat-manager-miniprogram",
+  "version": "1.0.0",
+  "description": "微信小程序，用于管理猫咪的健康记录、提醒和基本信息。",
+  "main": "app.js",
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/singlve/cat-manager-miniprogram.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/singlve/cat-manager-miniprogram/issues"
+  },
+  "homepage": "https://github.com/singlve/cat-manager-miniprogram#readme",
+  "devDependencies": {
+    "miniprogram-automator": "^0.12.1",
+    "vitest": "^4.1.5"
+  }
+}

@@ -2,7 +2,9 @@
 .container {
   min-height: 100vh;
   background: #f5f6fa;
-  padding: 24rpx 24rpx 160rpx;
+  padding: 24rpx 24rpx 24rpx;
+  box-sizing: border-box;
+  padding-bottom: 180rpx;
 }
 
 .form-card {
@@ -145,6 +147,7 @@
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 999;
   padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
   background: #fff;
   box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.06);
@@ -163,3 +166,26 @@
 }
 
 .save-btn::after { border: none; }
+
+/* 无可用猫咪空状态 */
+.empty-cats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 48rpx;
+  text-align: center;
+}
+
+.empty-cats-icon { font-size: 100rpx; margin-bottom: 24rpx; }
+
+.empty-cats-text {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 600;
+  margin-bottom: 12rpx;
+}
+
+.empty-cats-desc {
+  font-size: 26rpx;
+  color: #999;
+}

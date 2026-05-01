@@ -2,6 +2,41 @@
 page { background: #f0f2f7; }
 .page { padding-bottom: 60rpx; }
 
+/* ─── 未登录状态 ─── */
+.not-logged-in { min-height: 100vh; }
+
+.login-features {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20rpx;
+  margin: 60rpx 48rpx 48rpx;
+}
+.login-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 20rpx 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  width: calc(50% - 10rpx);
+  box-sizing: border-box;
+}
+.login-feature-icon { font-size: 36rpx; }
+.login-feature-text { font-size: 26rpx; color: #555; }
+
+.login-main-btn {
+  display: block;
+  margin: 20rpx 60rpx 0;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff; font-size: 32rpx; font-weight: 600;
+  border-radius: 50rpx; padding: 28rpx 0;
+  box-shadow: 0 12rpx 36rpx rgba(74,144,217,0.4);
+  border: none;
+}
+.login-main-btn::after { border: none; }
+
 /* ─── 头像卡片 ─── */
 .profile-card {
   margin: 32rpx 32rpx 24rpx;

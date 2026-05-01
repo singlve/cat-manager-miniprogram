@@ -2,9 +2,10 @@
 // 本地持久化存储（云开发开通后自动降级为备用）
 // 猫咪 + 健康记录 + 提醒 三组数据
 
-const CAT_KEY    = 'cats';
+const CAT_KEY     = 'cats';
 const RECORD_KEY = 'health_records';
 const REMIND_KEY = 'reminders';
+const WEIGHT_KEY = 'weight_records';
 
 // ════════════════════════════════════════════════════
 // 通用读写
@@ -74,6 +75,30 @@ function getRecordsByCatId(catId) {
 }
 
 // ════════════════════════════════════════════════════
+// 体重记录
+// ════════════════════════════════════════════════════
+
+function getWeightRecords()             { return _get(WEIGHT_KEY) || []; }
+function saveWeightRecords(records)     { _set(WEIGHT_KEY, records); }
+
+function addWeightRecord(record) {
+  const records = getWeightRecords();
+  records.push(record);
+  saveWeightRecords(records);
+}
+
+function deleteWeightRecord(id) {
+  saveWeightRecords(getWeightRecords().filter(r => r._id !== id));
+}
+
+function updateWeightRecord(id, updates) {
+  const records = getWeightRecords();
+  const idx = records.findIndex(r => r._id === id);
+  if (idx !== -1) { records[idx] = { ...records[idx], ...updates }; saveWeightRecords(records); }
+  return records[idx];
+}
+
+// ════════════════════════════════════════════════════
 // 提醒
 // ════════════════════════════════════════════════════
 
@@ -121,6 +146,7 @@ function copyAvatarSync(tempPath, catId) {
 module.exports = {
   getCats, saveCats, addCat, updateCat, removeCat,
   getRecords, saveRecords, addRecord, deleteRecord, updateRecord, getRecordsByCatId,
+  getWeightRecords, saveWeightRecords, addWeightRecord, deleteWeightRecord, updateWeightRecord,
   getReminders, saveReminders, addReminder, deleteReminder, updateReminder, getRemindersByCatId,
   copyAvatarSync
 };

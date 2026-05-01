@@ -1,13 +1,42 @@
 <!-- pages/cat-list/cat-list.wxml -->
 <view class="container">
 
-  <!-- 加载状态 -->
-  <view wx:if="{{loading}}" class="loading">
+  <!-- 顶部滚动公告 Banner -->
+  <view wx:if="{{banners.length > 0}}" class="banner-wrap">
+    <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#4A90D9">
+      <swiper-item wx:for="{{banners}}" wx:key="title">
+        <view class="banner-card" style="background: {{item.bg}}">
+          <view class="banner-emoji">{{item.emoji}}</view>
+          <view class="banner-body">
+            <view class="banner-header">
+              <text class="banner-title" style="color: {{item.color}}">{{item.title}}</text>
+              <text wx:if="{{item.tag}}" class="banner-tag" style="background: {{item.color}}; color: #fff">{{item.tag}}</text>
+            </view>
+            <text class="banner-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </swiper-item>
+    </swiper>
+  </view>
+
+  <!-- 未登录提示（独立显示，不影响列表） -->
+  <view wx:if="{{!isLoggedIn}}" class="guest-banner">
+    <view class="guest-illustration">
+      <text class="guest-emoji">🐱</text>
+    </view>
+    <text class="guest-title">欢迎使用猫咪健康管家</text>
+    <text class="guest-desc">登录后可以添加猫咪、记录健康数据、设置提醒</text>
+    <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
+    <text class="guest-browse-hint">你可以先浏览体验，需要时再登录</text>
+  </view>
+
+  <!-- 加载状态（仅已登录） -->
+  <view wx:if="{{isLoggedIn && loading}}" class="loading">
     <text>加载中...</text>
   </view>
 
-  <!-- 空状态 -->
-  <view wx:elif="{{cats.length === 0}}" class="empty">
+  <!-- 空状态（仅已登录且无猫） -->
+  <view wx:elif="{{isLoggedIn && cats.length === 0}}" class="empty">
     <view class="empty-illustration">
       <text class="empty-emoji">🐱</text>
     </view>
@@ -16,8 +45,12 @@
     <button class="empty-cta" bindtap="addCat">+ 添加猫咪</button>
   </view>
 
-  <!-- 猫咪列表 -->
-  <view wx:else class="cat-list">
+  <!-- 猫咪列表（有数据就展示） -->
+  <view wx:if="{{cats.length > 0}}" class="cat-list">
+    <!-- Demo 水印提示（仅未登录且有 demo 数据时显示） -->
+    <view wx:if="{{!isLoggedIn}}" class="demo-watermark">
+      <text>👀 以下为示例展示，登录后可管理自己的猫咪</text>
+    </view>
     <view
       wx:for="{{cats}}"
       wx:key="_id"
@@ -51,29 +84,38 @@
           <text class="cat-name">{{item.name}}</text>
           <text class="cat-breed-tag">{{item.breed || '品种未知'}}</text>
         </view>
-        <text class="cat-age" wx:if="{{item.birthday}}">🎂 {{item.birthday}}</text>
+        <!-- 生日 + 近7天倒计时（紧跟在后面） -->
+        <view class="cat-birthday-row" wx:if="{{item.birthday}}">
+          <text class="cat-birthday">{{item._birthdayText || '🎂 ' + item.birthday}}</text>
+          <text wx:if="{{item._birthdayHint}}" class="birthday-hint-inline">{{item._birthdayHint}}</text>
+        </view>
+        <!-- 年龄 + 相伴/离开（兼容 demo 无 _ageText 的情况） -->
+        <view class="cat-age-row" wx:if="{{item.birthday}}">
+          <text class="cat-age-detail" wx:if="{{item._ageText}}">{{item._ageText}}</text>
+          <text wx:if="{{item._companionText}}" class="cat-companion">{{item._companionText}}</text>
+        </view>
         <!-- 健康状态徽章 -->
         <view class="health-badge" wx:if="{{item._daysSinceRecord !== undefined}}">
           <text class="badge-dot {{item._daysSinceRecord < 30 ? 'green' : item._daysSinceRecord < 90 ? 'yellow' : 'red'}}"></text>
           <text class="badge-text">{{item._daysSinceRecord < 1 ? '今天有记录' : item._daysSinceRecord + '天无记录'}}</text>
         </view>
-        <!-- 生日倒计时 -->
-        <view class="birthday-hint" wx:if="{{item._birthdayHint}}">
-          <text>{{item._birthdayHint}}</text>
-        </view>
       </view>
 
-      <!-- 右侧快捷操作 -->
-      <view class="card-actions" catchtap="quickAddRecord" data-id="{{item._id}}" data-name="{{item.name}}">
+      <!-- 右侧快捷操作（仅已登录） -->
+      <view wx:if="{{isLoggedIn}}" class="card-actions" catchtap="quickAddRecord" data-id="{{item._id}}" data-name="{{item.name}}">
         <text class="quick-add-icon">📝</text>
         <text class="quick-add-text">记录</text>
       </view>
     </view>
   </view>
 
-  <!-- 底部添加按钮 -->
-  <view wx:if="{{cats.length > 0}}" class="add-section">
+  <!-- 底部按钮：已登录 -->
+  <view wx:if="{{isLoggedIn && cats.length > 0}}" class="add-section">
     <button class="add-btn" bindtap="addCat">+ 添加猫咪</button>
+  </view>
+  <!-- 底部按钮：未登录但有 demo 数据 -->
+  <view wx:elif="{{!isLoggedIn && cats.length > 0}}" class="add-section">
+    <button class="add-btn" bindtap="goLogin">登录开始使用 →</button>
   </view>
 
 </view>

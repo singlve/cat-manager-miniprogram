@@ -1,5 +1,13 @@
 <!-- pages/reminder-add/reminder-add.wxml -->
 <view class="container">
+  <!-- 无可用猫咪：全部已去喵星 -->
+  <view wx:if="{{noCatsAvailable}}" class="empty-cats">
+    <text class="empty-cats-icon">😿</text>
+    <text class="empty-cats-text">所有猫咪都已去喵星了</text>
+    <text class="empty-cats-desc">不再需要为它们添加健康提醒</text>
+  </view>
+
+  <block wx:else>
   <view class="form-card">
     <view class="form-group">
       <text class="label">选择猫咪 <text class="required">*</text></text>
@@ -90,4 +98,5 @@
   <view class="btn-section">
     <button class="save-btn" bindtap="save">{{isEdit ? '保存修改' : '创建提醒'}}</button>
   </view>
+  </block>
 </view>

@@ -1,3 +1,17 @@
+/* ─── Demo 水印提示 ─── */
+.demo-watermark {
+  background: linear-gradient(135deg, #fffbe6, #fff7cc);
+  border-radius: 16rpx;
+  padding: 18rpx 28rpx;
+  margin-bottom: 20rpx;
+  border: 2rpx solid #ffe58f;
+  text-align: center;
+}
+.demo-watermark text {
+  font-size: 24rpx;
+  color: #d48806;
+}
+
 /* pages/cat-list/cat-list.wxss */
 page { background: #f0f2f7; }
 .container {
@@ -5,6 +19,41 @@ page { background: #f0f2f7; }
   background: #f0f2f7;
   padding: 24rpx 24rpx 160rpx;
 }
+
+/* ─── 未登录引导 ─── */
+.guest-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 100rpx;
+}
+
+.guest-illustration {
+  width: 200rpx;
+  height: 200rpx;
+  margin-bottom: 32rpx;
+  background: linear-gradient(135deg, #e8f0ff, #d4e4ff);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 16rpx 48rpx rgba(74, 144, 217, 0.2);
+}
+
+.guest-emoji { font-size: 96rpx; }
+.guest-title { font-size: 36rpx; color: #1a1a1a; font-weight: 700; margin-bottom: 16rpx; }
+.guest-desc { font-size: 26rpx; color: #888; margin-bottom: 48rpx; text-align: center; max-width: 480rpx; line-height: 1.6; }
+
+.guest-login-btn {
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff; font-size: 30rpx; font-weight: 600;
+  border-radius: 50rpx; padding: 26rpx 72rpx;
+  box-shadow: 0 12rpx 36rpx rgba(74, 144, 217, 0.4);
+  border: none;
+}
+.guest-login-btn::after { border: none; }
+
+.guest-browse-hint { font-size: 24rpx; color: #bbb; margin-top: 32rpx; }
 
 /* ─── 加载状态 ─── */
 .loading {
@@ -14,18 +63,6 @@ page { background: #f0f2f7; }
   color: #999;
 }
 
-/* ─── 生日倒计时 ─── */
-.birthday-hint {
-  margin-top: 8rpx;
-  display: inline-flex;
-  align-items: center;
-  font-size: 24rpx;
-  color: #ff8c00;
-  background: #fff8f0;
-  border-radius: 8rpx;
-  padding: 4rpx 14rpx;
-  border: 1rpx solid #ffd89e;
-}
 
 /* ─── 空状态 ─── */
 .empty {
@@ -59,6 +96,60 @@ page { background: #f0f2f7; }
   border: none;
 }
 .empty-cta::after { border: none; }
+
+/* ─── 顶部滚动 Banner ─── */
+.banner-wrap {
+  margin-bottom: 24rpx;
+  margin-top: 8rpx;
+}
+.banner-swiper {
+  height: 160rpx;
+  border-radius: 20rpx;
+  overflow: hidden;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+}
+.banner-card {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 24rpx 28rpx;
+  box-sizing: border-box;
+}
+.banner-emoji {
+  font-size: 64rpx;
+  margin-right: 24rpx;
+  flex-shrink: 0;
+}
+.banner-body {
+  flex: 1;
+  min-width: 0;
+}
+.banner-header {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 6rpx;
+}
+.banner-title {
+  font-size: 28rpx;
+  font-weight: 700;
+}
+.banner-tag {
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 16rpx;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.banner-desc {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 
 /* ─── 顶部统计条 ─── */
 .stats-bar {
@@ -187,7 +278,34 @@ page { background: #f0f2f7; }
   border-radius: 20rpx;
 }
 
-.cat-age { font-size: 24rpx; color: #888; margin-bottom: 6rpx; display: block; }
+/* ─── 生日行：日期 + 倒计时紧跟 ─── */
+.cat-birthday-row {
+  display: flex;
+  align-items: baseline;
+  gap: 14rpx;
+  flex-wrap: wrap;
+  margin-bottom: 4rpx;
+}
+
+.cat-birthday { font-size: 24rpx; color: #888; }
+
+.birthday-hint-inline {
+  font-size: 22rpx;
+  color: #ff8c00;
+  font-weight: 600;
+}
+
+/* ─── 年龄 + 相伴/离开 ─── */
+.cat-age-row {
+  margin-bottom: 8rpx;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cat-age-detail { font-size: 24rpx; color: #666; font-weight: 500; line-height: 1; }
+
+.cat-companion { font-size: 24rpx; color: #999; line-height: 1; margin-left: 12rpx; }
 
 /* 健康状态徽章 */
 .health-badge {

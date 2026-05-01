@@ -47,6 +47,37 @@
     </view>
 
     <view class="form-group">
+      <text class="label">是否已绝育</text>
+      <view class="switch-row">
+        <text class="switch-label">{{neutered ? '已绝育' : '未绝育'}}</text>
+        <switch checked="{{neutered}}" bindchange="onNeuteredChange" color="#4A90D9" />
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">宠物状态</text>
+      <radio-group bindchange="onStatusChange" class="gender-group">
+        <label class="gender-option {{status === 'with_me' ? 'active' : ''}}">
+          <radio value="with_me" checked="{{status === 'with_me'}}" />
+          <text>在身边 🏠</text>
+        </label>
+        <label class="gender-option {{status === 'passed_away' ? 'active' : ''}}">
+          <radio value="passed_away" checked="{{status === 'passed_away'}}" />
+          <text>去喵星了 🌈</text>
+        </label>
+      </radio-group>
+    </view>
+
+    <view class="form-group" wx:if="{{status === 'passed_away'}}">
+      <text class="label">去喵星日期 <text class="required">*</text></text>
+      <picker mode="date" value="{{passedDate}}" bindchange="onPassedDateChange" class="picker" end="{{nowDate}}" start="{{birthday || '2010-01-01'}}">
+        <view class="picker-value {{passedDate ? '' : 'placeholder'}}">
+          {{passedDate || '请选择日期'}}
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-group">
       <text class="label">品种</text>
       <view class="picker" bindtap="showBreedPicker">
         <view class="picker-value {{breed ? '' : 'placeholder'}}">

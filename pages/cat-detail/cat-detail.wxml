@@ -18,6 +18,10 @@
       <view class="info-tags">
         <view class="tag" wx:if="{{cat.birthday}}">🎂 {{cat.birthday}}</view>
         <view class="tag" wx:if="{{cat.adoptedDate}}">🏠 {{cat.adoptedDate}}</view>
+        <view class="tag tag-neutered" wx:if="{{cat.neutered === true}}">⚥ 已绝育</view>
+        <view class="tag" wx:if="{{cat.neutered !== true}}">⚥ 未绝育</view>
+        <view class="tag tag-passed" wx:if="{{cat.status === 'passed_away'}}">🌈 去喵星了{{cat.passedDate ? ' ' + cat.passedDate : ''}}</view>
+        <view class="tag tag-withme" wx:if="{{cat.status !== 'passed_away'}}">🏠 在身边</view>
       </view>
       <text class="note" wx:if="{{cat.note}}">{{cat.note}}</text>
     </view>
@@ -28,7 +32,7 @@
   </view>
 
   <!-- 快速记录区：每个按钮直接包 picker，点一下弹原生日期选择 -->
-  <view class="section">
+  <view class="section" wx:if="{{cat.status !== 'passed_away'}}">
     <text class="section-title">🏥 快速记录</text>
     <view class="quick-actions">
       <picker mode="date" value="{{nowDate}}" data-type="bath" bindchange="onQuickRecord">
@@ -93,11 +97,89 @@
     </view>
   </view>
 
+  <!-- ─── 体重记录区 ─── -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">⚖️ 体重记录</text>
+      <text class="view-more" bindtap="goWeightRecords">查看全部 ›</text>
+    </view>
+
+    <view wx:if="{{!latestWeight}}" class="empty-records">
+      <text class="empty-main">还没有体重记录</text>
+      <text class="empty-sub">记录猫咪体重，关注健康变化</text>
+    </view>
+
+    <view wx:else class="weight-summary-card">
+      <view class="weight-current">
+        <text class="weight-number">{{latestWeight}}</text>
+        <text class="weight-unit">kg</text>
+      </view>
+      <view class="weight-meta">
+        <text class="weight-label">最新体重</text>
+        <text class="weight-date" wx:if="{{weightRecords.length > 0}}">{{weightRecords[0].date}}</text>
+      </view>
+      <view class="weight-total">
+        <text class="weight-total-num">{{weightRecords.length}}</text>
+        <text class="weight-total-label">条记录</text>
+      </view>
+    </view>
+
+    <!-- 录入体重按钮 -->
+    <view class="quick-add-weight" catchtap="openWeightModal" wx:if="{{cat.status !== 'passed_away'}}">
+      <text class="quick-add-icon">⚖️</text>
+      <text class="quick-add-text">录入今日体重</text>
+    </view>
+  </view>
+
   <!-- 提醒设置区 -->
   <view class="section">
     <view class="section-header">
       <text class="section-title">🔔 提醒设置</text>
       <text class="view-more" bindtap="goReminders">管理提醒 ›</text>
+    </view>
+  </view>
+
+  <!-- ─── 体重录入弹窗 ─── -->
+  <view wx:if="{{showWeightModal}}" class="modal-mask">
+    <view class="weight-modal" catchtap="" style="position:relative">
+      <text class="modal-title-text">📝 录入体重</text>
+      <view class="wm-field">
+        <text class="wm-label">日期</text>
+        <picker mode="date" value="{{weightDate}}" bindchange="onWeightDateChange">
+          <view class="wm-picker">{{weightDate}} ▾</view>
+        </picker>
+      </view>
+      <view class="wm-field">
+        <text class="wm-label">时间</text>
+        <picker mode="time" value="{{weightTime}}" bindchange="onWeightTimeChange">
+          <view class="wm-picker">{{weightTime || '选择时间'}} ▾</view>
+        </picker>
+      </view>
+      <view class="wm-field">
+        <text class="wm-label">体重 (kg)</text>
+        <input
+          class="wm-input"
+          type="digit"
+          value="{{weightValue}}"
+          bindinput="onWeightInput"
+          placeholder="如：4.25"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+      <view class="wm-field">
+        <text class="wm-label">备注</text>
+        <input
+          class="wm-input"
+          value="{{weightNote}}"
+          bindinput="onWeightNoteInput"
+          placeholder="选填，如：空腹/餐后"
+          placeholder-style="color:#ccc;"
+        />
+      </view>
+      <view class="wm-btns">
+        <view class="wm-btn cancel" bindtap="closeWeightModal">取消</view>
+        <view class="wm-btn confirm" bindtap="saveWeightRecord">保存</view>
+      </view>
     </view>
   </view>
 
