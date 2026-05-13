@@ -97,6 +97,375 @@ page { background: #f0f2f7; }
   margin-top: 4rpx;
 }
 
+/* ─── 积分签到卡片 ─── */
+.points-card {
+  margin: 0 32rpx 24rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.06);
+}
+
+.points-header {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  margin-bottom: 28rpx;
+}
+
+.points-header-left { display: flex; flex-direction: column; }
+
+.points-balance-new {
+  display: flex; align-items: baseline; gap: 6rpx;
+}
+
+.points-num-big {
+  font-size: 52rpx; font-weight: 900; color: #1a1a1a;
+  line-height: 1;
+}
+
+.points-unit {
+  font-size: 24rpx; color: #999; font-weight: 600;
+}
+
+/* 积分 + 补签卡同行 */
+.points-balance-row {
+  display: flex; align-items: baseline; gap: 24rpx;
+}
+
+.makeup-badge-inline {
+  display: flex; align-items: center; gap: 4rpx;
+  background: #f5f7fc; border-radius: 20rpx;
+  padding: 6rpx 16rpx;
+}
+.makeup-badge-inline:active { background: #e8edf5; }
+.makeup-badge-icon { font-size: 24rpx; }
+.makeup-badge-num { font-size: 22rpx; color: #4A90D9; font-weight: 700; }
+.makeup-badge-arrow { font-size: 24rpx; color: #bbb; margin-left: 2rpx; }
+
+/* 连签 + 抽奖提示同行 */
+.streak-row {
+  display: flex; align-items: center; margin-top: 8rpx;
+}
+
+.streak-text {
+  font-size: 22rpx; color: #999;
+}
+
+.cumul-text {
+  font-size: 22rpx; color: #999;
+}
+
+.days-until-text {
+  font-size: 22rpx; color: #bbb;
+}
+.days-until-text.ready {
+  color: #4A90D9; font-weight: 600;
+}
+.lottery-trigger {
+  text-decoration: underline;
+}
+
+.checkin-btn {
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 26rpx; font-weight: 600;
+  padding: 16rpx 36rpx;
+  border-radius: 40rpx;
+}
+.checkin-btn.checked {
+  background: #e8edf5;
+  color: #999;
+}
+
+/* ─── 7日签到日历 ─── */
+.calendar-row {
+  display: flex; justify-content: space-between;
+  padding: 20rpx 0 24rpx;
+  border-top: 1rpx solid #f0f2f7;
+  border-bottom: 1rpx solid #f0f2f7;
+}
+
+.cal-day {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10rpx;
+  flex: 1;
+}
+
+.cal-weekday {
+  font-size: 22rpx; color: #bbb;
+}
+
+.cal-circle {
+  width: 56rpx; height: 56rpx;
+  border-radius: 50%;
+  background: #f5f6fa;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.cal-date {
+  font-size: 24rpx; color: #999;
+}
+
+.cal-check {
+  font-size: 28rpx; color: #fff;
+  font-weight: 700;
+}
+
+.cal-day.checked .cal-circle {
+  background: #4A90D9;
+}
+
+.cal-day.today .cal-circle {
+  box-shadow: 0 0 0 3rpx #4A90D9;
+}
+
+.cal-day.today.checked .cal-circle {
+  box-shadow: 0 0 0 3rpx rgba(74,144,217,0.3);
+}
+
+/* 补签状态 */
+.cal-day.can-makeup .cal-circle {
+  border: 2rpx dashed #FF9500;
+  background: #FFF8F0;
+}
+.cal-day.can-makeup:active .cal-circle {
+  background: #FFE8CC;
+  border-color: #E68600;
+}
+
+.cal-check.madeup { color: #FF9500; }
+
+.cal-makeup-tag {
+  font-size: 18rpx; color: #FF9500;
+  height: 24rpx; line-height: 24rpx;
+}
+.cal-madeup-tag {
+  font-size: 18rpx; color: #FF9500;
+  height: 24rpx; line-height: 24rpx;
+}
+.cal-spacer { height: 24rpx; }
+
+/* 满7天礼物盒 */
+.gift-emoji {
+  font-size: 40rpx; line-height: 1;
+}
+
+@keyframes bounceBox {
+  0%, 100% { transform: translateY(0) scale(1); }
+  20% { transform: translateY(-8rpx) scale(1.08); }
+  40% { transform: translateY(2rpx) scale(0.96); }
+  60% { transform: translateY(-5rpx) scale(1.04); }
+  80% { transform: translateY(1rpx) scale(0.98); }
+}
+
+.bounce-anim {
+  animation: bounceBox 1.2s ease-in-out infinite;
+}
+
+.cal-circle.gift-circle {
+  background: linear-gradient(135deg, #ffeaa7, #fdcb6e) !important;
+  box-shadow: 0 0 16rpx rgba(253,203,110,0.5);
+}
+
+/* ─── 展开/收起月历按钮 ─── */
+.calendar-toggle {
+  display: flex; align-items: center; justify-content: center;
+  padding: 16rpx 0 8rpx;
+  font-size: 24rpx; color: #4A90D9;
+}
+.calendar-toggle:active { opacity: 0.7; }
+
+/* ─── 完整月历 ─── */
+.month-calendar {
+  border-top: 1rpx solid #f0f2f7;
+  padding-top: 16rpx;
+}
+
+.month-weekday-row {
+  display: flex; justify-content: space-around;
+  margin-bottom: 12rpx;
+}
+.month-weekday {
+  width: 56rpx; text-align: center;
+  font-size: 22rpx; color: #bbb; font-weight: 600;
+}
+
+.month-week {
+  display: flex; justify-content: space-around;
+  margin-bottom: 8rpx;
+}
+
+.month-day {
+  width: 56rpx; height: 56rpx;
+  border-radius: 50%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #f5f6fa;
+  position: relative;
+}
+.month-day.empty { background: transparent; }
+.month-day.checked { background: #4A90D9; }
+.month-day.today {
+  background: #f5f6fa;
+  box-shadow: 0 0 0 3rpx #4A90D9;
+}
+.month-day.today.checked {
+  background: #4A90D9;
+  box-shadow: 0 0 0 3rpx rgba(74,144,217,0.3);
+}
+.month-day.can-makeup {
+  background: #FFF8F0;
+  border: 2rpx dashed #FF9500;
+  box-sizing: border-box;
+}
+.month-day.can-makeup:active { background: #FFE8CC; }
+.month-day.future { opacity: 0.35; }
+
+.month-day-num {
+  font-size: 22rpx; color: #999;
+  line-height: 1;
+}
+.month-day.checked .month-day-num { color: #fff; font-weight: 600; }
+.month-day.today .month-day-num { color: #4A90D9; font-weight: 700; }
+.month-day.today.checked .month-day-num { color: #fff; font-weight: 700; }
+
+.month-day-check {
+  position: absolute; top: -4rpx; right: -4rpx;
+  width: 28rpx; height: 28rpx;
+  border-radius: 50%;
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16rpx; color: #4A90D9; font-weight: 700;
+}
+.month-day-check.madeup { color: #FF9500; }
+
+.month-day-gift {
+  position: absolute; top: -6rpx; right: -6rpx;
+  font-size: 24rpx;
+}
+
+/* ─── 抽奖转盘 ─── */
+.wheel-container {
+  position: relative; width: 520rpx; height: 520rpx;
+  margin: 0 auto 24rpx;
+}
+
+.wheel-pointer {
+  position: absolute; top: -32rpx; left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 18rpx solid transparent;
+  border-right: 18rpx solid transparent;
+  border-top: 32rpx solid #e74c3c;
+  z-index: 10;
+  filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.2));
+}
+
+.wheel {
+  position: relative;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  background: conic-gradient(
+    #FF6B6B 0deg 60deg,
+    #4ECDC4 60deg 120deg,
+    #FFE66D 120deg 180deg,
+    #A8E6CF 180deg 240deg,
+    #FF8B94 240deg 300deg,
+    #B8A9C9 300deg 360deg
+  );
+  box-shadow: 0 4rpx 24rpx rgba(0,0,0,0.12), inset 0 0 0 12rpx #fff;
+  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+}
+
+.wheel-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120rpx; height: 120rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 28rpx; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(74,144,217,0.4);
+  z-index: 5;
+}
+.wheel-center.disabled {
+  background: #ccc;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* 转盘文字标签（在 wheel 内部，跟随旋转） */
+.wheel-labels {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+.wheel-label {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform-origin: 0 0;
+  font-size: 20rpx;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1rpx 3rpx rgba(0,0,0,0.4);
+  white-space: nowrap;
+  writing-mode: vertical-lr;
+  text-orientation: upright;
+  letter-spacing: 2rpx;
+}
+
+.lottery-result {
+  text-align: center; padding: 20rpx 0 8rpx;
+  font-size: 30rpx; font-weight: 700;
+}
+
+.lottery-result-label {
+  display: block;
+}
+
+/* ─── 底部 ─── */
+.points-footer {
+  display: flex; align-items: center; justify-content: center;
+  margin-top: 20rpx; gap: 24rpx;
+}
+
+.streak-text {
+  font-size: 24rpx; color: #999;
+}
+
+.points-entry {
+  display: flex; align-items: center; gap: 4rpx;
+  padding: 16rpx 24rpx;
+}
+
+.points-entry-text { font-size: 26rpx; color: #4A90D9; }
+.points-entry-arrow { font-size: 32rpx; color: #4A90D9; }
+
+.points-divider {
+  width: 1rpx; height: 28rpx;
+  background: #d0d0d0;
+}
+
+/* ─── 分享任务弹窗 ─── */
+.share-task-sheet {
+  padding-bottom: 48rpx;
+}
+
+.share-task-btn {
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff;
+  font-size: 28rpx; font-weight: 600;
+  padding: 20rpx 0;
+  border-radius: 48rpx;
+  text-align: center;
+  width: 100%;
+  border: none;
+  line-height: 1.4;
+}
+.share-task-btn::after { border: none; }
+
 /* ─── 数据统计区 ─── */
 .stats-section { padding: 0 32rpx; margin-bottom: 24rpx; }
 
@@ -220,6 +589,23 @@ page { background: #f0f2f7; }
 }
 
 .menu-divider { height: 2rpx; background: #f5f5f5; margin: 0; }
+
+/* 🛠 开发者重置签到 */
+.dev-reset-bar {
+  margin: 0 32rpx 16rpx;
+}
+.dev-reset-btn {
+  width: 100%;
+  background: #fff;
+  color: #999;
+  font-size: 24rpx;
+  border-radius: 12rpx;
+  padding: 20rpx 0;
+  border: 1rpx dashed #ddd;
+  text-align: center;
+}
+.dev-reset-btn::after { border: none; }
+.dev-reset-btn:active { background: #f5f5f5; }
 
 /* ─── 退出按钮 ─── */
 .logout-btn {

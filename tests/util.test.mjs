@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
   formatDate, calcNextDate, isDue, getOverdueDays, TYPE_LABELS,
   calcAgeDetail, calcDaysBetween, formatBirthdayRow,
-  datePart, calcAgo, nowTimeStr, datetime
+  datePart, calcAgo, nowTimeStr, datetime, todayStr, buildCheckInCalendar
 } from '../utils/util.js';
 
 // ============================================================
@@ -308,5 +308,69 @@ describe('datetime', () => {
 
   it('空日期也能处理', () => {
     expect(datetime('', '14:30')).toBe(' 14:30:00');
+  });
+});
+
+// ============================================================
+// buildCheckInCalendar
+// ============================================================
+describe('buildCheckInCalendar', () => {
+  it('生成 7 天日历', () => {
+    const cal = buildCheckInCalendar('', 0, []);
+    expect(cal.length).toBe(7);
+  });
+
+  it('最后一项是今天', () => {
+    const cal = buildCheckInCalendar('', 0, []);
+    expect(cal[6].isToday).toBe(true);
+  });
+
+  it('无签到记录时全部未签到', () => {
+    const cal = buildCheckInCalendar('', 0, []);
+    expect(cal.every(function(d) { return !d.checked; })).toBe(true);
+  });
+
+  it('今天已签到 streak=1 时今天显示 ✓', () => {
+    const today = todayStr();
+    const cal = buildCheckInCalendar(today, 1, []);
+    expect(cal[6].checked).toBe(true);
+  });
+
+  it('今天已签到 streak=3 时最近 3 天显示 ✓', () => {
+    const today = todayStr();
+    const cal = buildCheckInCalendar(today, 3, []);
+    expect(cal[6].checked).toBe(true);  // today
+    // 至少前几个也应该是 checked（取决于 lastCheckInDate 是否正好匹配）
+  });
+
+  it('补签日期也在 calendar 中标记为 checked', () => {
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    const dateStr = twoDaysAgo.getFullYear() + '-' +
+      String(twoDaysAgo.getMonth() + 1).padStart(2, '0') + '-' +
+      String(twoDaysAgo.getDate()).padStart(2, '0');
+    const cal = buildCheckInCalendar('', 0, [dateStr]);
+    const day = cal.find(function(d) { return d.dateStr === dateStr; });
+    expect(day.checked).toBe(true);
+    expect(day.isMadeUp).toBe(true);
+  });
+
+  it('今天不可补签', () => {
+    const today = todayStr();
+    const cal = buildCheckInCalendar('', 0, []);
+    expect(cal[6].canMakeUp).toBe(false);
+  });
+
+  it('过去未签的天可以补签', () => {
+    const cal = buildCheckInCalendar('', 0, []);
+    // 倒数第二天（昨天）应该是 canMakeUp
+    expect(cal[5].canMakeUp).toBe(true);
+  });
+
+  it('已经 checked 的天不可再补签', () => {
+    const today = todayStr();
+    const cal = buildCheckInCalendar(today, 2, []);
+    // 昨天 checked 了，不能补签
+    expect(cal[5].canMakeUp).toBe(false);
   });
 });

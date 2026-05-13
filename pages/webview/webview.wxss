@@ -1,0 +1,2 @@
+/* pages/webview/webview.wxss */
+.tip { text-align: center; color: #999; margin-top: 200rpx; }

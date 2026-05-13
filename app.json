@@ -11,7 +11,12 @@
     "pages/reminders/reminders",
     "pages/reminder-add/reminder-add",
     "pages/mine/mine",
-    "pages/about/about"
+    "pages/about/about",
+    "pages/inventory/inventory",
+    "pages/points-mall/points-mall",
+    "pages/admin-items/admin-items",
+    "pages/webview/webview",
+    "pages/shipping-address/shipping-address"
   ],
   "window": {
     "backgroundTextStyle": "light",
@@ -52,6 +57,8 @@
       "desc": "用于添加猫咪位置信息"
     }
   },
-  "requiredBackgroundModes": ["audio"],
+  "requiredBackgroundModes": [
+    "audio"
+  ],
   "usingComponents": {}
 }

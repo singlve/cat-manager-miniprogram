@@ -1,0 +1,9 @@
+{
+  "name": "getAdminRecords",
+  "version": "1.0.0",
+  "description": "管理员查询集合全部记录（绕过客户端 openid 限制）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

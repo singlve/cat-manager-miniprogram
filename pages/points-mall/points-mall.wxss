@@ -1,0 +1,318 @@
+/* pages/points-mall/points-mall.wxss */
+
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+/* ── 积分横幅 ── */
+.points-banner {
+  background: linear-gradient(135deg, #4A90D9, #357ABD);
+  padding: 32rpx 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.points-balance {
+  display: flex;
+  flex-direction: column;
+}
+
+.balance-label {
+  font-size: 24rpx;
+  color: rgba(255,255,255,0.8);
+}
+
+.balance-num {
+  font-size: 52rpx;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 4rpx;
+}
+
+.banner-action {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 26rpx;
+  color: rgba(255,255,255,0.9);
+  padding: 12rpx 24rpx;
+  background: rgba(255,255,255,0.15);
+  border-radius: 32rpx;
+}
+
+/* ── 筛选栏 ── */
+.filter-bar {
+  display: flex;
+  gap: 16rpx;
+  padding: 20rpx 28rpx;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.filter-tag {
+  font-size: 26rpx;
+  color: #666;
+  padding: 10rpx 28rpx;
+  border-radius: 32rpx;
+  background: #f5f5f5;
+  transition: all 0.2s;
+}
+
+.filter-tag.active {
+  background: #4A90D9;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* ── 商品列表 ── */
+.item-list {
+  padding: 16rpx 24rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+}
+
+.item-card {
+  width: calc(50% - 10rpx);
+  background: #fff;
+  border-radius: 16rpx;
+  overflow: hidden;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.04);
+}
+
+.item-img-wrap {
+  position: relative;
+  height: 200rpx;
+  background: #f0f4f8;
+  overflow: hidden;
+}
+
+.item-img {
+  width: 100%;
+  height: 100%;
+}
+
+.item-badge {
+  position: absolute;
+  top: 12rpx;
+  right: 12rpx;
+  font-size: 20rpx;
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  color: #fff;
+}
+
+.item-badge.virtual {
+  background: #2196F3;
+}
+
+.item-badge.physical {
+  background: #FF9800;
+}
+
+.item-body {
+  padding: 16rpx 20rpx 20rpx;
+}
+
+.item-name {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.item-desc {
+  font-size: 22rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 14rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.item-points {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.points-icon {
+  font-size: 24rpx;
+}
+
+.points-num {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #FF6B00;
+}
+
+.item-stock {
+  font-size: 22rpx;
+  color: #999;
+}
+
+/* ── 兑换弹窗 ── */
+.mask {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 100;
+}
+
+.redeem-sheet {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 20rpx 36rpx 60rpx;
+}
+
+.sheet-bar {
+  width: 80rpx;
+  height: 8rpx;
+  background: #ddd;
+  border-radius: 4rpx;
+  margin: 0 auto 24rpx;
+}
+
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: block;
+  text-align: center;
+  margin-bottom: 24rpx;
+}
+
+.redeem-info {
+  text-align: center;
+}
+
+.redeem-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1a1a1a;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.redeem-desc {
+  font-size: 24rpx;
+  color: #999;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+.redeem-cost {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+}
+
+.cost-num {
+  color: #FF6B00;
+  font-weight: 700;
+  font-size: 36rpx;
+}
+
+.redeem-tip {
+  font-size: 24rpx;
+  color: #999;
+  padding: 16rpx;
+  background: #f7f8fa;
+  border-radius: 12rpx;
+}
+
+.redeem-tip.insufficient {
+  color: #e74c3c;
+  background: #fef0f0;
+}
+
+.sheet-btns {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+
+.s-btn {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 42rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.s-btn.cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.s-btn.confirm {
+  background: #4A90D9;
+  color: #fff;
+}
+
+.s-btn.confirm.disabled {
+  background: #a0c4e8;
+  color: #fff;
+}
+
+/* ── 空状态 ── */
+.empty-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 120rpx;
+  font-size: 28rpx;
+}
+
+/* ── 数量选择器 ── */
+.qty-section {
+  margin: 20rpx 0;
+  padding: 24rpx;
+  background: #f8f9fa;
+  border-radius: 16rpx;
+}
+.qty-label {
+  display: block; font-size: 26rpx; color: #666;
+  text-align: center; margin-bottom: 18rpx;
+}
+.qty-stepper {
+  display: flex; align-items: center; justify-content: center; gap: 32rpx;
+}
+.step-btn {
+  width: 64rpx; height: 64rpx; border-radius: 50%;
+  background: #fff; display: flex; align-items: center; justify-content: center;
+  font-size: 36rpx; color: #333; font-weight: 700;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,.06);
+}
+.step-btn.disabled { color: #ccc; background: #f5f5f5; box-shadow: none; }
+.step-val {
+  font-size: 44rpx; font-weight: 700; color: #333;
+  min-width: 60rpx; text-align: center;
+}
+.qty-shortcuts {
+  display: flex; justify-content: center; margin-top: 16rpx; gap: 12rpx;
+}
+.qs {
+  padding: 8rpx 22rpx; border-radius: 20rpx;
+  font-size: 24rpx; color: #888; background: #fff;
+  box-shadow: 0 1rpx 4rpx rgba(0,0,0,.04);
+}
+.qs.active { background: #4A90D9; color: #fff; }

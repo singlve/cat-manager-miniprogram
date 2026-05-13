@@ -54,6 +54,113 @@
     </view>
   </view>
 
+  <!-- 积分签到卡片 -->
+  <view class="points-card">
+    <view class="points-header">
+      <view class="points-header-left">
+        <view class="points-balance-row">
+          <view class="points-balance-new">
+            <text class="points-num-big">{{points || 0}}</text>
+            <text class="points-unit">积分</text>
+          </view>
+          <view class="makeup-badge-inline" bindtap="openShareTask">
+            <text class="makeup-badge-icon">🎫</text>
+            <text class="makeup-badge-num">{{makeUpCards || 0}}</text>
+            <text class="makeup-badge-arrow">›</text>
+          </view>
+        </view>
+        <view class="streak-row">
+          <text class="streak-text" wx:if="{{checkInStreak > 0}}">🔥 连续{{checkInStreak}}天</text>
+          <text class="streak-text" wx:else>开始签到累积积分吧</text>
+          <text class="cumul-text"> · 📅 累计{{totalCheckIns || 0}}天</text>
+          <text class="days-until-text ready lottery-trigger" wx:if="{{canLottery}}" bindtap="openLotteryIfAvailable"> · 🎰 可抽奖 x{{availableDraws}}次</text>
+          <text class="days-until-text" wx:elif="{{streakReached7}}"> · 还差{{daysUntilLottery}}天可再抽奖</text>
+          <text class="days-until-text" wx:else> · 还差{{daysUntilLottery}}天可抽奖🎰</text>
+        </view>
+      </view>
+      <view class="checkin-btn {{checkedInToday ? 'checked' : ''}}" bindtap="doCheckIn">
+        <text wx:if="{{!checkedInToday}}">签到</text>
+        <text wx:else>✓ 已签到</text>
+      </view>
+    </view>
+
+    <!-- 本周签到日历 -->
+    <view class="calendar-row">
+      <view class="cal-day {{item.checked ? 'checked' : ''}} {{item.isToday ? 'today' : ''}} {{item.canMakeUp ? 'can-makeup' : ''}}"
+        wx:for="{{calendarWeek}}" wx:key="dateStr"
+        bindtap="onTapCalDay"
+        data-date="{{item.dateStr}}"
+        data-label="{{item.date}}"
+        data-canmakeup="{{item.canMakeUp}}"
+        data-isjackpot="{{item.isToday && canLottery}}"
+        data-hasdrawn="{{item.isToday && hasDrawnBefore && !canLottery}}"
+        data-drawmilestone="{{item.drawMilestone}}"
+        data-canmakeup="{{item.canMakeUp}}">
+        <text class="cal-weekday">{{item.dayName}}</text>
+        <view class="cal-circle {{item.isToday && canLottery ? 'gift-circle' : (item.isToday && hasDrawnBefore && !canLottery ? 'gift-circle-grey' : '')}}">
+          <block wx:if="{{item.isToday && canLottery}}">
+            <text class="gift-emoji bounce-anim">🎁</text>
+          </block>
+          <block wx:elif="{{item.isToday && hasDrawnBefore && !canLottery}}">
+            <text class="gift-emoji grey">🎁</text>
+          </block>
+          <block wx:elif="{{item.checked}}">
+            <text class="cal-check {{item.isMadeUp ? 'madeup' : ''}}">✓</text>
+          </block>
+          <block wx:else>
+            <text class="cal-date">{{item.date}}</text>
+          </block>
+        </view>
+        <text wx:if="{{item.canMakeUp}}" class="cal-makeup-tag">补</text>
+        <text wx:elif="{{item.isMadeUp}}" class="cal-madeup-tag">补</text>
+        <text wx:else class="cal-spacer"></text>
+      </view>
+    </view>
+
+    <!-- 展开/收起月历 -->
+    <view class="calendar-toggle" bindtap="toggleCalendar">
+      <text>{{showFullCalendar ? '收起完整日历 ▲' : '展开完整日历 ▼'}}</text>
+    </view>
+
+    <!-- 完整月历 -->
+    <view wx:if="{{showFullCalendar}}" class="month-calendar">
+      <view class="month-weekday-row">
+        <text class="month-weekday" wx:for="{{['一','二','三','四','五','六','日']}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="month-week" wx:for="{{calendarMonth}}" wx:for-item="week" wx:key="index">
+        <block wx:for="{{week}}" wx:for-item="d" wx:key="dateStr">
+          <view wx:if="{{!d.empty}}"
+            class="month-day {{d.checked ? 'checked' : ''}} {{d.isToday ? 'today' : ''}} {{d.canMakeUp ? 'can-makeup' : ''}} {{d.isFuture ? 'future' : ''}}"
+            bindtap="onTapCalDay"
+            data-date="{{d.dateStr}}"
+            data-label="{{d.date}}"
+            data-isjackpot="{{d.isDrawDay && !d.drawUsed}}"
+            data-hasdrawn="{{d.isDrawDay && d.drawUsed}}"
+            data-drawmilestone="{{d.drawMilestone}}"
+            data-canmakeup="{{d.canMakeUp}}">
+            <text class="month-day-num">{{d.date}}</text>
+            <view wx:if="{{d.isDrawDay && !d.drawUsed}}" class="month-day-gift">🎁</view>
+            <view wx:elif="{{d.isDrawDay && d.drawUsed}}" class="month-day-gift grey">🎁</view>
+            <view wx:elif="{{d.checked}}" class="month-day-check {{d.isMadeUp ? 'madeup' : ''}}">✓</view>
+          </view>
+          <view wx:else class="month-day empty"></view>
+        </block>
+      </view>
+    </view>
+
+    <view class="points-footer">
+      <view class="points-entry" bindtap="goPointsMall">
+        <text class="points-entry-text">🎁 积分商城</text>
+        <text class="points-entry-arrow">›</text>
+      </view>
+      <view class="points-divider"></view>
+      <view class="points-entry" bindtap="goInventory">
+        <text class="points-entry-text">🎒 我的背包</text>
+        <text class="points-entry-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 数据统计区 -->
   <view class="stats-section">
     <view class="stats-card">
@@ -116,6 +223,26 @@
       </view>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goShippingAddress">
+      <view class="menu-icon-wrap icon-purple">
+        <text class="menu-icon-text">📍</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">收货地址</text>
+        <text class="menu-desc">管理收货地址，用于邮寄实物奖品</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goAdmin" wx:if="{{isAdmin}}">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">🔧</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">商品管理</text>
+        <text class="menu-desc">管理积分商城商品和头像框</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
 
     <view class="menu-divider"></view>
     <view class="menu-group-label">账号</view>
@@ -143,6 +270,13 @@
       </view>
       <text class="menu-arrow">›</text>
     </view>
+  </view>
+
+  <!-- 🛠 开发者重置签到 -->
+  <view wx:if="{{isAdmin}}" class="dev-reset-bar">
+    <button class="dev-reset-btn" bindtap="devResetCheckIn">🛠 重置签到 + 20补签卡</button>
+    <button class="dev-reset-btn" bindtap="devAddPoints" style="background:#e8f4ff;color:#2a80e8;border-color:#a8d3ff;">💰 增加500积分</button>
+    <button class="dev-reset-btn" bindtap="devClearBackpack" style="background:#fff0f0;color:#e74c3c;border-color:#f5c6cb;">🗑 清除背包和兑换记录</button>
   </view>
 
   <!-- 退出登录 -->
@@ -211,8 +345,78 @@
           style="font-size:30rpx;color:#333;width:100%;" />
       </view>
 
-      <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="onManualBindPhone">确认绑定</view>
+      <view class="sheet-btns">
+        <view class="sheet-btn cancel" bindtap="closeBindPhone">取消</view>
+        <view class="sheet-btn confirm" bindtap="onManualBindPhone">确认绑定</view>
+      </view>
     </view>
   </view>
+  <!-- ─── 补签确认弹窗 ─── -->
+  <view wx:if="{{showMakeUpModal}}" class="bindphone-mask" bindtap="cancelMakeUp">
+    <view class="bindphone-sheet" catchtap="stopBubble">
+      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+      <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">补签确认</text>
+      <text style="font-size:28rpx;color:#666;display:block;text-align:center;margin-bottom:20rpx;">使用 <text style="color:#e74c3c;font-weight:700;">{{nextMakeUpCost}}</text> 张补签卡补签 {{makeUpTargetLabel}} 日？</text>
+      <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:32rpx;">
+        <text style="font-size:26rpx;color:#999;">剩余补签卡：</text>
+        <text style="font-size:30rpx;color:#4A90D9;font-weight:700;">🎫 {{makeUpCards}} 张</text>
+      </view>
+      <view class="sheet-btns">
+        <view class="sheet-btn cancel" bindtap="cancelMakeUp">取消</view>
+        <view class="sheet-btn confirm" bindtap="confirmMakeUp">确认补签</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ─── 抽奖转盘弹窗 ─── -->
+  <view wx:if="{{showLottery}}" class="bindphone-mask" bindtap="closeLottery">
+    <view class="bindphone-sheet" catchtap="stopBubble">
+      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
+      <text style="font-size:34rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:8rpx;">🎰 幸运大转盘</text>
+      <text style="font-size:22rpx;color:#999;display:block;text-align:center;margin-bottom:28rpx;">每连续7天可抽一次，越签越多！</text>
+
+      <view class="wheel-container">
+        <view class="wheel-pointer"></view>
+        <view class="wheel" style="transform: rotate({{wheelAngle}}deg);">
+          <!-- 转盘文字标签（在 wheel 内部，跟随旋转） -->
+          <view class="wheel-labels">
+            <view class="wheel-label" wx:for="{{wheelLabels}}" wx:key="rotate"
+              style="transform: rotate({{item.rotate}}deg) translateY(-170rpx);">
+              {{item.name}}
+            </view>
+          </view>
+        </view>
+        <view class="wheel-center {{spinning || hasSpun ? 'disabled' : ''}}" bindtap="spinWheel">
+          <text wx:if="{{!spinning && !hasSpun}}">抽奖</text>
+          <text wx:elif="{{spinning}}">...</text>
+          <text wx:else>已抽奖</text>
+        </view>
+      </view>
+
+      <view class="lottery-result" wx:if="{{lotteryResult}}" style="color:{{lotteryResultColor}};">
+        <text class="lottery-result-label">🎉 {{lotteryResult}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- ─── 分享任务弹窗 ─── -->
+  <view wx:if="{{showShareTask}}" class="bindphone-mask" bindtap="closeShareTask">
+    <view class="bindphone-sheet share-task-sheet" catchtap="stopBubble">
+      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 32rpx;"></view>
+      <view style="display:flex;align-items:center;justify-content:center;gap:16rpx;margin-bottom:16rpx;">
+        <text style="font-size:44rpx;">🎫</text>
+        <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;">补签卡</text>
+      </view>
+      <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:36rpx;">
+        <text style="font-size:52rpx;font-weight:700;color:#4A90D9;">{{makeUpCards}}</text>
+        <text style="font-size:28rpx;color:#666;">张可用</text>
+      </view>
+      <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;line-height:1.6;">每分享小程序到微信群或朋友圈
+每日可获得 1 张补签卡</text>
+      <button class="share-task-btn" open-type="share">去分享</button>
+      <view class="sheet-btn cancel" bindtap="closeShareTask" style="margin-top:16rpx;">关闭</view>
+    </view>
+  </view>
+
   </view><!-- end 已登录 -->
 </view>

@@ -1,7 +1,7 @@
 <!-- pages/reminders/reminders.wxml -->
 <view class="page">
 
-  <!-- 未登录提示（独立显示） -->
+  <!-- 未登录提示 -->
   <view wx:if="{{!isLoggedIn}}" class="guest-banner">
     <view class="guest-illustration">
       <text class="guest-emoji">🔔</text>
@@ -11,16 +11,8 @@
     <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
   </view>
 
-  <!-- 空状态（仅已登录且无提醒） -->
-  <view wx:if="{{isLoggedIn && overdueList.length === 0 && upcomingList.length === 0 && futureList.length === 0}}" class="empty-state">
-    <text class="empty-icon">🔔</text>
-    <text class="empty-title">暂无提醒设置</text>
-    <text class="empty-desc">为猫咪添加定期提醒，不错过每一次护理</text>
-    <button class="empty-btn" bindtap="addReminder">+ 添加提醒</button>
-  </view>
-
-  <!-- 有提醒数据时 -->
-  <view wx:if="{{overdueList.length > 0 || upcomingList.length > 0 || futureList.length > 0}}" class="content">
+  <!-- 已登录：筛选区域 + 卡片列表 -->
+  <view wx:if="{{isLoggedIn}}">
 
     <!-- 猫咪筛选标签栏 -->
     <scroll-view wx:if="{{catTabs.length > 1}}" class="cat-filter-tabs" scroll-x enhanced show-scrollbar="{{false}}">
@@ -34,12 +26,20 @@
       >{{item.name}}</view>
     </scroll-view>
 
-    <!-- Demo 水印提示 -->
-    <view wx:if="{{!isLoggedIn}}" class="demo-watermark">
-      <text>👀 以下为示例展示，登录后可管理自己的提醒</text>
+    <!-- 状态筛选标签栏 -->
+    <view class="status-segment">
+      <view class="seg-item {{statusFilter === 'active' ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="active">进行中</view>
+      <view class="seg-item {{statusFilter === 'completed' ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="completed">已完成</view>
     </view>
 
-    <!-- 逾期区块 -->
+    <!-- 空状态 -->
+    <view wx:if="{{!hasData}}" class="empty-state">
+      <text class="empty-icon">🔔</text>
+      <text class="empty-title">暂无提醒</text>
+      <text class="empty-desc">{{statusFilter === 'active' ? '所有提醒都在进行中，干得漂亮！' : '还没有完成任何提醒'}}</text>
+    </view>
+
+    <!-- 已逾期区块 -->
     <view wx:if="{{overdueList.length > 0}}">
       <view class="section-header danger">
         <text class="section-icon">⚠️</text>
@@ -66,7 +66,8 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view wx:if="{{isLoggedIn}}" class="actions">
+        <view class="actions">
+          <text class="action-btn complete" bindtap="markComplete" data-id="{{item._id}}">✓ 完成</text>
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
@@ -100,14 +101,15 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view wx:if="{{isLoggedIn}}" class="actions">
+        <view class="actions">
+          <text class="action-btn complete" bindtap="markComplete" data-id="{{item._id}}">✓ 完成</text>
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
       </view>
     </view>
 
-    <!-- 未来提醒区块（7天后） -->
+    <!-- 未来提醒区块 -->
     <view wx:if="{{futureList.length > 0}}">
       <view class="section-header normal">
         <text class="section-icon">📅</text>
@@ -133,13 +135,123 @@
         <view wx:if="{{item.note}}" class="info-row">
           <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
         </view>
-        <view wx:if="{{isLoggedIn}}" class="actions">
+        <view class="actions">
+          <text class="action-btn complete" bindtap="markComplete" data-id="{{item._id}}">✓ 完成</text>
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
           <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
         </view>
       </view>
     </view>
 
+    <!-- 已完成区块 -->
+    <view wx:if="{{completedList.length > 0}}">
+      <view class="section-header completed">
+        <text class="section-icon">✅</text>
+        <text class="section-title">已完成</text>
+        <view class="section-badge completed">{{completedList.length}}</view>
+      </view>
+      <view wx:for="{{completedList}}" wx:key="_id" class="card card-completed">
+        <view class="card-header">
+          <text class="type-icon">{{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : item.type === 'checkup' ? '🩺' : '📌'}}</text>
+          <view class="card-info">
+            <text class="cat-name">{{item.catName}}</text>
+            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+          </view>
+          <view class="tag tag-completed">已完成</view>
+        </view>
+        <view class="info-row">
+          <text class="info-label">完成日期</text><text class="info-val">{{item.completedAt}}</text>
+          <text class="info-label">下次</text><text class="info-val">{{item.nextDate}}</text>
+        </view>
+        <view wx:if="{{item.note}}" class="info-row">
+          <text class="info-label">备注</text><text class="info-val">{{item.note}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Demo 数据（未登录但有猫筛选时） -->
+  <view wx:elif="{{!isLoggedIn && hasData}}" class="content">
+    <view class="demo-watermark">
+      <text>👀 以下为示例展示，登录后可管理自己的提醒</text>
+    </view>
+
+    <view wx:if="{{overdueList.length > 0}}">
+      <view class="section-header danger">
+        <text class="section-icon">⚠️</text>
+        <text class="section-title">已逾期</text>
+        <view class="section-badge danger">{{overdueList.length}}</view>
+      </view>
+      <view wx:for="{{overdueList}}" wx:key="_id" class="card card-danger">
+        <view class="card-header">
+          <text class="type-icon">{{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : item.type === 'checkup' ? '🩺' : '📌'}}</text>
+          <view class="card-info">
+            <text class="cat-name">{{item.catName}}</text>
+            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+          </view>
+          <view class="tag tag-danger">逾期 {{0 - item.daysUntil}} 天</view>
+        </view>
+        <view class="next-date-highlight">
+          <text class="next-date-highlight-label">下次提醒</text>
+          <text class="next-date-highlight-val">{{item.nextDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>
+          <text class="info-label">间隔</text><text class="info-val">每{{item.intervalDays}}天</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{upcomingList.length > 0}}">
+      <view class="section-header urgent">
+        <text class="section-icon">🚨</text>
+        <text class="section-title">即将到期</text>
+        <view class="section-badge urgent">{{upcomingList.length}}</view>
+      </view>
+      <view wx:for="{{upcomingList}}" wx:key="_id" class="card card-urgent">
+        <view class="card-header">
+          <text class="type-icon">{{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : item.type === 'checkup' ? '🩺' : '📌'}}</text>
+          <view class="card-info">
+            <text class="cat-name">{{item.catName}}</text>
+            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+          </view>
+          <view class="tag tag-urgent">{{item.daysUntil}}天后</view>
+        </view>
+        <view class="next-date-highlight">
+          <text class="next-date-highlight-label">下次提醒</text>
+          <text class="next-date-highlight-val">{{item.nextDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>
+          <text class="info-label">间隔</text><text class="info-val">每{{item.intervalDays}}天</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{futureList.length > 0}}">
+      <view class="section-header normal">
+        <text class="section-icon">📅</text>
+        <text class="section-title">未来提醒</text>
+      </view>
+      <view wx:for="{{futureList}}" wx:key="_id" class="card card-normal">
+        <view class="card-header">
+          <text class="type-icon">{{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : item.type === 'checkup' ? '🩺' : '📌'}}</text>
+          <view class="card-info">
+            <text class="cat-name">{{item.catName}}</text>
+            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+          </view>
+        </view>
+        <view class="next-date-highlight normal">
+          <text class="next-date-highlight-label">距今约</text>
+          <text class="next-date-highlight-val">{{item.daysUntil}} 天</text>
+          <text class="next-date-highlight-label">，下次 {{item.nextDate}}</text>
+        </view>
+        <view class="info-row">
+          <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>
+          <text class="info-label">间隔</text><text class="info-val">每{{item.intervalDays}}天</text>
+        </view>
+      </view>
+    </view>
   </view>
 
   <!-- 添加按钮：已登录 -->
@@ -147,7 +259,7 @@
     <button class="fab-btn" bindtap="addReminder">+ 添加提醒</button>
   </view>
   <!-- 未登录底部引导 -->
-  <view wx:elif="{{!isLoggedIn && (overdueList.length > 0 || upcomingList.length > 0 || futureList.length > 0)}}" class="fab-wrap">
+  <view wx:elif="{{!isLoggedIn && hasData}}" class="fab-wrap">
     <button class="fab-btn" bindtap="goLogin">登录开始使用 →</button>
   </view>
 

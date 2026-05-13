@@ -259,3 +259,58 @@
   box-shadow: 0 8rpx 30rpx rgba(74,144,217,0.4);
 }
 .fab-btn::after { border: none; }
+
+/* ── 状态筛选标签 ── */
+/* ── 状态筛选（分段控制器） ── */
+.status-segment {
+  display: flex;
+  margin: 16rpx 32rpx 0;
+  background: #f0f0f5;
+  border-radius: 36rpx;
+  padding: 4rpx;
+}
+.seg-item {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  border-radius: 32rpx;
+  font-size: 26rpx;
+  color: #666;
+  background: transparent;
+  transition: all 0.25s;
+}
+.seg-active {
+  background: #fff;
+  color: #4A90D9;
+  font-weight: 600;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.08);
+}
+
+/* ── 已完成区块 ── */
+.section-header.completed {
+  /* 无特殊背景，与未来提醒风格一致 */
+}
+.section-badge.completed {
+  color: #2e7d32;
+}
+
+/* ── 已完成卡片 ── */
+.card-completed {
+  background: #f1f8e9;
+  border-left: 8rpx solid #a8e6cf;
+}
+
+/* ── 已完成标签 ── */
+.tag-completed {
+  color: #2e7d32;
+  font-size: 22rpx;
+  padding: 4rpx 12rpx;
+}
+
+/* ── 完成按钮 ── */
+.action-btn.complete {
+  color: #2e7d32;
+}
+.action-btn.complete:active {
+  background: #e8f5e9;
+}

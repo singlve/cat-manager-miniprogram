@@ -1,0 +1,221 @@
+<!--pages/admin-items/admin-items.wxml-->
+<view class="page">
+
+  <!-- 非管理员提示 -->
+  <view wx:if="{{!isAdmin}}" class="empty-tip">
+    <text>无权访问此页面</text>
+  </view>
+
+  <block wx:else>
+    <!-- Tab 切换（三 Tab） -->
+    <view class="tab-bar">
+      <view class="tab-item {{activeTab==='items' ? 'active' : ''}}" bindtap="switchTab" data-tab="items">商品管理</view>
+      <view class="tab-item {{activeTab==='records' ? 'active' : ''}}" bindtap="switchTab" data-tab="records">兑换记录</view>
+      <view class="tab-item {{activeTab==='shipments' ? 'active' : ''}}" bindtap="switchTab" data-tab="shipments">发货管理</view>
+    </view>
+
+    <!-- 加载中 -->
+    <view wx:if="{{loading}}" class="empty-tip">加载中...</view>
+
+    <!-- ═══ 商品管理 Tab ═══ -->
+    <block wx:elif="{{activeTab === 'items'}}">
+      <view class="add-btn" bindtap="openAddItem">+ 添加商品</view>
+      <view wx:if="{{items.length === 0}}" class="empty-tip">暂无商品</view>
+      <view class="item-row" wx:for="{{items}}" wx:key="_id">
+        <image wx:if="{{item.image}}" class="item-thumb" src="{{item.image}}" mode="aspectFill"/>
+        <view wx:else class="item-thumb item-thumb-placeholder">🎁</view>
+        <view class="item-info">
+          <text class="item-name">{{item.name}}</text>
+          <text class="item-meta">{{item.type === 'virtual' ? '虚拟' : '实物'}} | {{item.points}}积分 | 库存:{{item.stock}}</text>
+        </view>
+        <view class="item-actions">
+          <switch checked="{{item.enabled !== false}}" color="#4A90D9" bindchange="toggleItemEnabled" data-item="{{item}}"/>
+          <text class="act-btn" bindtap="openEditItem" data-item="{{item}}">编辑</text>
+          <text class="act-btn danger" bindtap="deleteItem" data-id="{{item._id}}">删除</text>
+        </view>
+      </view>
+    </block>
+
+    <!-- ═══ 兑换记录 Tab（合并展示） ═══ -->
+    <block wx:elif="{{activeTab === 'records'}}">
+      <!-- 搜索栏 -->
+      <view class="search-bar">
+        <picker class="search-type-picker" value="{{searchTypeIdx}}" range="{{searchTypes}}" bindchange="onSearchTypeChange">
+          <view class="search-type-btn">
+            <text class="search-type-label">{{searchTypes[searchTypeIdx]}}</text>
+            <text class="search-type-arrow">▾</text>
+          </view>
+        </picker>
+        <view class="search-input-wrap">
+          <text class="search-input-icon">🔍</text>
+          <input class="search-input" type="text" placeholder="请输入{{searchTypes[searchTypeIdx]}}搜索..." value="{{searchKeyword}}" bindinput="onSearchInput" confirm-type="search" placeholder-class="search-placeholder" />
+          <text wx:if="{{searchKeyword}}" class="search-clear" catchtap="onSearchClear">✕</text>
+        </view>
+      </view>
+      <view wx:if="{{records.length === 0}}" class="empty-tip">
+        <text>{{searchKeyword ? '没有匹配的记录' : '暂无兑换记录'}}</text>
+      </view>
+      <view wx:else>
+        <text class="search-result-hint" wx:if="{{searchKeyword}}">找到 {{records.length}} 条匹配记录</text>
+        <view class="record-card" wx:for="{{records}}" wx:key="key">
+          <view class="record-header">
+            <view class="record-left">
+              <text class="record-item-name">{{item.itemName}}</text>
+              <text class="record-count-badge">×{{item.count}}</text>
+            </view>
+            <text class="record-type-tag">{{item.itemType === 'virtual' ? '虚拟' : '实物'}}</text>
+          </view>
+          <view class="record-body">
+            <text class="record-meta">用户：{{item.userNickname || '未知用户'}}</text>
+            <text class="record-meta">兑换数量：{{item.count}} 件</text>
+            <text class="record-meta">消耗积分：{{item.totalPoints}} 分</text>
+            <text class="record-meta">首次兑换：{{item.firstAtFormatted || ''}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- ═══ 发货管理 Tab ═══ -->
+    <block wx:elif="{{activeTab==='shipments'}}">
+      <view wx:if="{{shipments.length === 0}}" class="empty-tip">暂无待处理发货单</view>
+      <view wx:else>
+        <!-- 待发货 -->
+        <block wx:if="{{shipments.length > 0}}">
+          <view class="section-title" wx:if="{{hasPending}}">待发货</view>
+          <view class="shipment-card" wx:for="{{shipments}}" wx:key="_id"
+                wx:if="{{item.status === 'pending'}}">
+            <view class="ship-header">
+              <text class="ship-item-name">{{item.itemName}}</text>
+              <text class="ship-qty">×{{item.qty}}</text>
+            </view>
+            <view class="ship-body">
+              <text class="ship-meta">用户：{{item.userNickname || '未知'}}</text>
+              <text class="ship-meta" wx:if="{{item.shippingAddress}}">收货人：{{item.shippingAddress.name}} {{item.shippingAddress.phone}}</text>
+              <text class="ship-meta" wx:if="{{item.shippingAddress}}">地址：{{item.shippingAddress.province}}{{item.shippingAddress.city}}{{item.shippingAddress.district}} {{item.shippingAddress.detail}}</text>
+              <text class="ship-meta">创建时间：{{item.createdAtFormatted}}</text>
+            </view>
+            <view class="ship-actions">
+              <text class="act-btn primary" catchtap="openShipModal" data-shipment="{{item}}">📦 发货</text>
+            </view>
+          </view>
+        </block>
+
+        <!-- 已发货 -->
+        <view class="section-title" wx:if="{{hasShipped}}">已发货</view>
+        <view class="shipment-card shipped" wx:for="{{shipments}}" wx:key="_id"
+              wx:if="{{item.status === 'shipped'}}">
+          <view class="ship-header">
+            <text class="ship-item-name">{{item.itemName}}</text>
+            <text class="ship-qty">×{{item.qty}}</text>
+          </view>
+          <view class="ship-body">
+            <text class="ship-meta">收货人：{{item.shippingAddress.name}} {{item.shippingAddress.phone}}</text>
+            <view class="ship-tracking-row">
+              <text class="ship-carrier-label">{{item.carrier || '快递'}}</text>
+              <text class="ship-tracking-no" catchtap="copyTracking" data-tracking="{{item.trackingNo}}">{{item.trackingNo || ''}} （点击复制）</text>
+            </view>
+            <text class="ship-meta">发货时间：{{item.shippedAtFormatted}}</text>
+          </view>
+          <view class="ship-actions">
+            <text class="act-btn" catchtap="openShipModal" data-shipment="{{item}}">✏️ 修改快递</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- 编辑商品弹窗 -->
+    <view wx:if="{{showEditor}}" class="mask" catchtap="closeEditor">
+      <view class="sheet" catchtap="stopBubble">
+        <view class="sheet-bar"></view>
+        <text class="sheet-title">{{editingId ? '编辑商品' : '添加商品'}}</text>
+
+        <view class="form-group">
+          <text class="form-label">名称</text>
+          <input class="form-input" placeholder="请输入名称" value="{{form.name}}" data-key="name" bindinput="onFormInput" maxlength="20"/>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">类型</text>
+          <picker value="{{form.type === 'virtual' ? 0 : 1}}" range="{{['虚拟商品','实物商品']}}" bindchange="onPickerChange" data-key="type">
+            <view class="form-picker">{{form.type === 'virtual' ? '虚拟商品' : '实物商品'}} ▼</view>
+          </picker>
+        </view>
+        <view wx:if="{{form.type === 'virtual'}}" class="form-row">
+          <view class="form-group flex-1">
+            <text class="form-label">虚拟类型</text>
+            <picker value="{{form.virtualType === 'card' ? 0 : 1}}" range="{{['补签卡','积分']}}" bindchange="onPickerChange" data-key="virtualType">
+              <view class="form-picker">{{form.virtualType === 'card' ? '补签卡' : '积分'}} ▼</view>
+            </picker>
+          </view>
+          <view class="form-group flex-1">
+            <text class="form-label">数量</text>
+            <input class="form-input" type="number" value="{{form.virtualValue}}" data-key="virtualValue" bindinput="onFormInput"/>
+          </view>
+        </view>
+        <view class="form-row">
+          <view class="form-group flex-1">
+            <text class="form-label">所需积分</text>
+            <input class="form-input" type="number" value="{{form.points}}" data-key="points" bindinput="onFormInput"/>
+          </view>
+          <view class="form-group flex-1">
+            <text class="form-label">库存</text>
+            <input class="form-input" type="number" value="{{form.stock}}" data-key="stock" bindinput="onFormInput"/>
+          </view>
+        </view>
+        <view class="form-group">
+          <text class="form-label">描述</text>
+          <input class="form-input" placeholder="商品描述（可选）" value="{{form.desc}}" data-key="desc" bindinput="onFormInput"/>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">图片</text>
+          <view class="img-upload" bindtap="chooseImage">
+            <image wx:if="{{form.image}}" class="upload-preview" src="{{form.image}}" mode="aspectFill"/>
+            <text wx:else class="upload-placeholder">+ 点击上传图片</text>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">启用</text>
+          <switch checked="{{form.enabled}}" color="#4A90D9" bindchange="onFormSwitch"/>
+        </view>
+
+        <view class="sheet-btns">
+          <view class="s-btn cancel" bindtap="closeEditor">取消</view>
+          <view class="s-btn confirm {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中...' : '保存'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 发货弹窗 -->
+    <view wx:if="{{showShipEditor}}" class="mask" catchtap="closeShipEditor">
+      <view class="sheet" catchtap="stopBubble">
+        <view class="sheet-bar"></view>
+        <text class="sheet-title">{{shipRecord.status === 'shipped' ? '修改快递信息' : '填写快递信息'}}</text>
+
+        <view wx:if="{{shipRecord.shippingAddress}}" class="ship-addr-preview">
+          <text class="form-label">收货信息</text>
+          <text class="ship-addr-text">收货人：{{shipRecord.shippingAddress.name}} {{shipRecord.shippingAddress.phone}}</text>
+          <text class="ship-addr-text">地址：{{shipRecord.shippingAddress.province}}{{shipRecord.shippingAddress.city}}{{shipRecord.shippingAddress.district}}{{shipRecord.shippingAddress.detail}}</text>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">快递公司</text>
+          <picker value="{{shipCarrierIdx}}" range="{{carrierList}}" bindchange="onShipCarrierChange">
+            <view class="form-picker">{{shipCarrier || '请选择'}} ▼</view>
+          </picker>
+        </view>
+        <view class="form-group">
+          <text class="form-label">快递单号</text>
+          <input class="form-input" type="text" placeholder="请输入快递单号" value="{{shipTrackingNo}}" bindinput="onShipTrackingInput" maxlength="50"/>
+        </view>
+
+        <view class="sheet-btns">
+          <view class="s-btn cancel" catchtap="closeShipEditor">取消</view>
+          <view class="s-btn confirm {{shipping ? 'disabled' : ''}}" catchtap="confirmShip">{{shipping ? '保存中...' : '保存'}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+</view>

@@ -1,0 +1,128 @@
+<!--pages/inventory/inventory.wxml-->
+<view class="page">
+
+  <!-- 顶部标题 -->
+  <view class="page-header">
+    <text class="page-title">我的背包</text>
+    <text class="page-sub">已兑换的商品</text>
+  </view>
+
+  <!-- 筛选 Tab -->
+  <view class="filter-bar">
+    <view class="tab {{filterTab==='all' ? 'active' : ''}}" bindtap="switchTab" data-tab="all">全部</view>
+    <view class="tab {{filterTab==='physical' ? 'active' : ''}}" bindtap="switchTab" data-tab="physical">实物商品</view>
+    <view class="tab {{filterTab==='virtual' ? 'active' : ''}}" bindtap="switchTab" data-tab="virtual">虚拟商品</view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-box">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{filteredItems.length === 0}}" class="empty-tip">
+    <text class="empty-icon">🎒</text>
+    <text class="empty-text">{{emptyText}}</text>
+    <text class="empty-hint">去商城看看吧</text>
+    <view class="empty-btn" bindtap="goMall">去逛逛</view>
+  </view>
+
+  <!-- 商品列表 -->
+  <view wx:else class="item-list">
+    <view class="item-card" wx:for="{{filteredItems}}" wx:key="key">
+
+      <!-- 主行：图片 + 信息 + 数量角标 -->
+      <view class="card-main">
+        <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill"/>
+        <view wx:else class="item-img placeholder">{{item.itemType === 'virtual' ? '🎫' : '📦'}}</view>
+
+        <view class="item-body">
+          <view class="item-name-row">
+            <text class="item-name">{{item.name}}</text>
+            <text class="qty-badge">×{{item.totalQty}}</text>
+          </view>
+          <text class="item-points">{{item.points}} 积分/件</text>
+
+          <!-- 状态标签行（紧凑） -->
+          <view class="status-row" wx:if="{{item.inBackpackQty > 0 || item.pendingQty > 0 || item.shippedQty > 0 || item.receivedQty > 0}}">
+            <text wx:if="{{item.inBackpackQty > 0}}" class="st st-wait">待确认 {{item.inBackpackQty}}</text>
+            <text wx:if="{{item.pendingQty > 0}}" class="st st-pend">待发货 {{item.pendingQty}}</text>
+            <text wx:if="{{item.shippedQty > 0}}" class="st st-ship">已发货 {{item.shippedQty}}</text>
+            <text wx:if="{{item.receivedQty > 0}}" class="st st-recv">已签收 {{item.receivedQty}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 已发货快递信息（同批次一起兑换的只展示一条快递信息） -->
+      <view wx:if="{{item.uniqueTrackings.length > 0}}" class="ship-block">
+        <view wx:for="{{item.uniqueTrackings}}" wx:for-item="t" wx:for-index="ti" wx:key="ti" class="ship-row">
+          <view class="ship-left">
+            <text class="ship-icon">🚚</text>
+            <view class="ship-info">
+              <text class="ship-carrier">{{t.carrier || '快递'}}<text wx:if="{{t.count > 1}}" class="ship-count">（{{t.count}}件一起发货）</text></text>
+              <text class="ship-no">{{t.trackingNo || '暂无单号'}}</text>
+            </view>
+          </view>
+          <text class="ship-copy" catchtap="copyTracking" data-tracking="{{t.trackingNo}}" data-carrier="{{t.carrier}}">复制</text>
+        </view>
+      </view>
+
+      <!-- 待确认操作区 -->
+      <view wx:if="{{item.inBackpackItems.length > 0}}" class="action-row">
+        <text class="action-hint">{{item.inBackpackQty}}件待确认，确认后创建发货单</text>
+        <view class="action-btns">
+          <view class="abtn abtn-main" catchtap="openConfirmModal" data-item="{{item}}">确认兑换</view>
+          <view class="abtn abtn-sub" catchtap="cancelAll" data-item="{{item}}">取消</view>
+        </view>
+      </view>
+
+    </view>
+  </view>
+
+  <!-- ── 确认兑换弹窗 ── -->
+  <view wx:if="{{showConfirm}}" class="mask" bindtap="closeConfirmModal">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">确认兑换</text>
+      <text class="sheet-sub">{{confirmTarget.name}}（最多 {{confirmMax}} 件）</text>
+
+      <!-- 数量选择 -->
+      <view class="qty-row">
+        <view class="qty-btn {{confirmQty <= 1 ? 'disabled' : ''}}" catchtap="qtyMinus">−</view>
+        <text class="qty-val">{{confirmQty}}</text>
+        <view class="qty-btn {{confirmQty >= confirmMax ? 'disabled' : ''}}" catchtap="qtyPlus">+</view>
+      </view>
+
+      <!-- 快捷选择 -->
+      <view class="shortcuts">
+        <view class="sc {{confirmQty === 1 ? 'active' : ''}}" catchtap="setQty" data-qty="1">1件</view>
+        <view wx:if="{{confirmMax >= 2}}" class="sc {{confirmQty === 2 ? 'active' : ''}}" catchtap="setQty" data-qty="2">2件</view>
+        <view wx:if="{{confirmMax >= 3}}" class="sc {{confirmQty === 3 ? 'active' : ''}}" catchtap="setQty" data-qty="3">3件</view>
+        <view class="sc sc-all {{confirmQty === confirmMax ? 'active' : ''}}" catchtap="setQty" data-qty="{{confirmMax}}">全部</view>
+      </view>
+
+      <!-- 收货地址（仅实物） -->
+      <view wx:if="{{confirmTarget.itemType === 'physical'}}" class="addr-section">
+        <text class="form-label">收货地址</text>
+        <view wx:if="{{addresses.length === 0}}" class="addr-empty" catchtap="goShippingAddress">请先添加收货地址 ></view>
+        <view wx:else class="addr-list">
+          <view
+            wx:for="{{addresses}}" wx:for-item="a" wx:key="_id"
+            class="addr-opt {{selectedAddressId === a._id ? 'active' : ''}}"
+            catchtap="selectAddress" data-id="{{a._id}}"
+          >
+            <view class="addr-name">{{a.name}} {{a.phone}}</view>
+            <view class="addr-detail">{{a.province}} {{a.city}} {{a.district}} {{a.detail}}</view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 按钮 -->
+      <view class="sheet-btns">
+        <view class="s-btn s-cancel" catchtap="closeConfirmModal">取消</view>
+        <view class="s-btn s-confirm {{saving ? 'disabled' : ''}}" catchtap="doConfirm">{{saving ? '提交中...' : '确认兑换'}}</view>
+      </view>
+    </view>
+  </view>
+
+</view>

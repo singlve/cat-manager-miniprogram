@@ -11,6 +11,11 @@ const RECORD_COL = 'health_records';
 const REMIND_COL = 'reminders';
 const WEIGHT_COL = 'weight_records';
 const USER_COL   = 'users';
+const INVENTORY_COL = 'user_inventory';
+const AVATAR_FRAME_COL = 'avatar_frames';
+const REDEEM_ITEM_COL = 'redeem_items';
+const REDEEM_RECORD_COL = 'redeem_records';
+const SHIPPING_ADDRESS_COL = 'shipping_addresses';
 
 // ════════════════════════════════════════════════════
 // 基础：判断云开发是否可用
@@ -303,6 +308,406 @@ async function getStats() {
   return { catCount: cats.length, reminderCount: reminders.length, overdueCount };
 }
 
+// ════════════════════════════════════════════════════
+// 收货地址
+// ════════════════════════════════════════════════════
+async function getShippingAddresses() {
+  if (isCloudReady()) {
+    try {
+      const openid = await getOpenId();
+      const db = wx.cloud.database();
+      const { data } = await db.collection(SHIPPING_ADDRESS_COL)
+        .where({ _openid: openid })
+        .orderBy('isDefault', 'desc').orderBy('_createTime', 'desc')
+        .get();
+      return data;
+    } catch (e) { console.error('[clouddb] getShippingAddresses fail', e); }
+  }
+  return _storage().getShippingAddresses();
+}
+
+async function addShippingAddress(address) {
+  if (isCloudReady()) {
+    try {
+      return await _cloudAdd(SHIPPING_ADDRESS_COL, address);
+    } catch (e) { console.error('[clouddb] addShippingAddress fail', e); }
+  }
+  return _storage().addShippingAddress(address);
+}
+
+async function updateShippingAddress(id, updates) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(SHIPPING_ADDRESS_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateShippingAddress fail', e); }
+  }
+  return _storage().updateShippingAddress(id, updates);
+}
+
+async function deleteShippingAddress(id) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(SHIPPING_ADDRESS_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteShippingAddress fail', e); }
+  }
+  return _storage().deleteShippingAddress(id);
+}
+
+async function setDefaultAddress(id) {
+  const openid = isCloudReady() ? await getOpenId() : null;
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const all = (await db.collection(SHIPPING_ADDRESS_COL).where({ _openid: openid }).get()).data;
+      await Promise.all(all.map(a => db.collection(SHIPPING_ADDRESS_COL).doc(a._id)
+        .update({ data: { isDefault: a._id === id } })));
+      return true;
+    } catch (e) { console.error('[clouddb] setDefaultAddress fail', e); }
+  }
+  return _storage().setDefaultAddress(id);
+}
+
+// ════════════════════════════════════════════════════
+// 积分商城 - 商品
+// ════════════════════════════════════════════════════
+async function getRedeemItems() {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const { data } = await db.collection(REDEEM_ITEM_COL).get();
+      if (!data || data.length === 0) {
+        await _seedRedeemItems(db);
+        const { data: seeded } = await db.collection(REDEEM_ITEM_COL).get();
+        return seeded;
+      }
+      return data;
+    } catch (e) { console.error('[clouddb] getRedeemItems fail', e); }
+  }
+  return _storage().getRedeemItems();
+}
+
+async function _seedRedeemItems(db) {
+  const seed = _storage().DEFAULT_REDEEM_ITEMS || _storage().getRedeemItems();
+  for (var i = 0; i < seed.length; i++) {
+    await db.collection(REDEEM_ITEM_COL).add({ data: seed[i] }).catch(function() {});
+  }
+}
+
+async function addRedeemItem(item) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const res = await db.collection(REDEEM_ITEM_COL).add({ data: item });
+      item._id = res._id;
+      return item;
+    } catch (e) { console.error('[clouddb] addRedeemItem fail', e); }
+  }
+  return _storage().addRedeemItem(item);
+}
+
+async function updateRedeemItem(id, updates) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(REDEEM_ITEM_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateRedeemItem fail', e); }
+  }
+  return _storage().updateRedeemItem(id, updates);
+}
+
+async function deleteRedeemItem(id) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(REDEEM_ITEM_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteRedeemItem fail', e); }
+  }
+  return _storage().deleteRedeemItem(id);
+}
+
+// ════════════════════════════════════════════════════
+// 兑换记录
+// ════════════════════════════════════════════════════
+async function addRedeemRecord(record) {
+  if (isCloudReady()) {
+    try {
+      record._id = await _cloudAdd(REDEEM_RECORD_COL, record);
+      return record;
+    } catch (e) { console.error('[clouddb] addRedeemRecord fail', e); }
+  }
+  return _storage().addRedeemRecord(record);
+}
+
+async function getRedeemRecords(filter) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const openid = await getOpenId();
+      const coll = db.collection(REDEEM_RECORD_COL).where({ _openid: openid, ...filter });
+      const { data } = await coll.orderBy('redeemedAt', 'desc').get();
+      return data;
+    } catch (e) { console.error('[clouddb] getRedeemRecords fail', e); }
+  }
+  var records = _storage().getRedeemRecords();
+  if (filter) {
+    return records.filter(function(r) {
+      return Object.keys(filter).every(function(k) { return r[k] === filter[k]; });
+    });
+  }
+  return records;
+}
+
+// 管理员专用：查询全部用户兑换记录（通过云函数绕过客户端 _openid 限制）
+async function getRedeemRecordsAdmin() {
+  if (isCloudReady()) {
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'getAdminRecords',
+        data: { collection: REDEEM_RECORD_COL, orderBy: 'redeemedAt', orderDesc: 'desc', limit: 500 }
+      });
+      if (res.result && res.result.code === 0) {
+        return res.result.data || [];
+      }
+      console.error('[clouddb] getRedeemRecordsAdmin error:', res.result);
+      return [];
+    } catch (e) { console.error('[clouddb] getRedeemRecordsAdmin fail', e); return []; }
+  }
+  // 本地模式直接返回全部记录
+  return _storage().getRedeemRecords();
+}
+
+async function updateRedeemRecord(id, updates) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(REDEEM_RECORD_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateRedeemRecord fail', e); }
+  }
+  return _storage().updateRedeemRecord(id, updates);
+}
+
+async function deleteRedeemRecord(id) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(REDEEM_RECORD_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteRedeemRecord fail', e); }
+  }
+  return _storage().deleteRedeemRecord(id);
+}
+
+// ════════════════════════════════════════════════════
+// 用户背包
+// ════════════════════════════════════════════════════
+async function getUserInventory() {
+  if (isCloudReady()) {
+    try {
+      const openid = await getOpenId();
+      const db = wx.cloud.database();
+      const { data } = await db.collection(INVENTORY_COL)
+        .where({ _openid: openid })
+        .orderBy('ownedAt', 'desc')
+        .get();
+      return data;
+    } catch (e) { console.error('[clouddb] getUserInventory fail', e); }
+  }
+  return _storage().getUserInventory();
+}
+
+async function addToInventory(item) {
+  if (isCloudReady()) {
+    try {
+      item._id = await _cloudAdd(INVENTORY_COL, item);
+      return item;
+    } catch (e) { console.error('[clouddb] addToInventory fail', e); }
+  }
+  return _storage().addToInventory(item);
+}
+
+async function updateInventoryItem(id, updates) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(INVENTORY_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateInventoryItem fail', e); }
+  }
+  return _storage().updateInventoryItem(id, updates);
+}
+
+// ════════════════════════════════════════════════════
+// 头像框
+// ════════════════════════════════════════════════════
+async function getAvatarFrames() {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const { data } = await db.collection(AVATAR_FRAME_COL).get();
+      if (!data || data.length === 0) {
+        await _seedAvatarFrames(db);
+        const { data: seeded } = await db.collection(AVATAR_FRAME_COL).get();
+
+        return seeded;
+      }
+      return data;
+    } catch (e) { console.error('[clouddb] getAvatarFrames fail', e); }
+  }
+  return _storage().getAvatarFrames();
+}
+
+async function deleteInventoryItem(id) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(INVENTORY_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteInventoryItem fail', e); }
+  }
+  return _storage().deleteInventoryItem(id);
+}
+
+
+// ══════════════════════════════════════════════════
+// 发货单 (shipments)
+// ══════════════════════════════════════════════════
+var SHIPMENT_COL = 'shipments';
+
+async function getShipments(query) {
+  if (isCloudReady()) {
+    try {
+      var db2 = wx.cloud.database();
+      var openid2 = await getOpenId();
+      var res = await db2.collection(SHIPMENT_COL).where({ _openid: openid2 }).orderBy('createdAt', 'desc').limit(50).get();
+      return res.data;
+    } catch (e) { console.error('[clouddb] getShipments fail', e); }
+  }
+  return _storage().getShipments ? _storage().getShipments() : [];
+}
+
+async function getShipmentsAdmin() {
+  if (isCloudReady()) {
+    try {
+      var db2 = wx.cloud.database();
+      var res = await db2.collection(SHIPMENT_COL).orderBy('createdAt', 'desc').limit(100).get();
+      return res.data;
+    } catch (e) { console.error('[clouddb] getShipmentsAdmin fail', e); }
+  }
+  return _storage().getShipments ? _storage().getShipments() : [];
+}
+
+async function addShipment(shipment) {
+  if (isCloudReady()) {
+    try {
+      shipment.createdAt = new Date().toISOString();
+      var res = await _cloudAdd(SHIPMENT_COL, shipment);
+      return res;
+    } catch (e) { console.error('[clouddb] addShipment fail', e); }
+  }
+  return _storage().addShipment ? _storage().addShipment(shipment) : null;
+}
+
+async function updateShipment(id, updates) {
+  if (isCloudReady()) {
+    try {
+      var db2 = wx.cloud.database();
+      await db2.collection(SHIPMENT_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateShipment fail', e); }
+  }
+  return _storage().updateShipment ? _storage().updateShipment(id, updates) : null;
+}
+
+async function deleteShipment(id) {
+  if (isCloudReady()) {
+    try {
+      var db2 = wx.cloud.database();
+      await db2.collection(SHIPMENT_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteShipment fail', e); }
+  }
+  return _storage().deleteShipment ? _storage().deleteShipment(id) : false;
+}
+
+
+
+async function _seedAvatarFrames(db) {
+  const seed = _storage().DEFAULT_AVATAR_FRAMES;
+  for (var i = 0; i < seed.length; i++) {
+    await db.collection(AVATAR_FRAME_COL).add({ data: seed[i] }).catch(function() {});
+  }
+}
+
+async function clearUserInventory() {
+  if (isCloudReady()) {
+    try {
+      const openid = await getOpenId();
+      const db = wx.cloud.database();
+      const { data } = await db.collection(INVENTORY_COL).where({ _openid: openid }).get();
+      for (var i = 0; i < data.length; i++) {
+        await db.collection(INVENTORY_COL).doc(data[i]._id).remove();
+      }
+      return data.length;
+    } catch (e) { console.error('[clouddb] clearUserInventory fail', e); }
+  }
+  return _storage().clearUserInventory();
+}
+
+async function clearUserRedeemRecords() {
+  if (isCloudReady()) {
+    try {
+      const openid = await getOpenId();
+      const db = wx.cloud.database();
+      const { data } = await db.collection(REDEEM_RECORD_COL).where({ _openid: openid }).get();
+      for (var i = 0; i < data.length; i++) {
+        await db.collection(REDEEM_RECORD_COL).doc(data[i]._id).remove();
+      }
+      return data.length;
+    } catch (e) { console.error('[clouddb] clearUserRedeemRecords fail', e); }
+  }
+  return _storage().clearUserRedeemRecords();
+}
+async function addAvatarFrame(frame) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const res = await db.collection(AVATAR_FRAME_COL).add({ data: frame });
+      frame._id = res._id;
+      return frame;
+    } catch (e) { console.error('[clouddb] addAvatarFrame fail', e); }
+  }
+  return _storage().addAvatarFrame(frame);
+}
+
+async function updateAvatarFrame(id, updates) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(AVATAR_FRAME_COL).doc(id).update({ data: updates });
+      return { _id: id, ...updates };
+    } catch (e) { console.error('[clouddb] updateAvatarFrame fail', e); }
+  }
+  return _storage().updateAvatarFrame(id, updates);
+}
+
+async function deleteAvatarFrame(id) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(AVATAR_FRAME_COL).doc(id).remove();
+      return true;
+    } catch (e) { console.error('[clouddb] deleteAvatarFrame fail', e); }
+  }
+  return _storage().deleteAvatarFrame(id);
+}
+
 module.exports = {
   isCloudReady,
   // cats
@@ -320,5 +725,18 @@ module.exports = {
   // auth
   getOpenId,
   // stats
-  getStats
+  getStats,
+  // shipping
+  getShippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, setDefaultAddress,
+  // redeem items
+  getRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem,
+  // redeem records
+  getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord,
+  // inventory
+  getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
+  clearUserInventory, clearUserRedeemRecords,
+  // avatar frames
+  getAvatarFrames, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
+  // shipments
+  getShipments, getShipmentsAdmin, addShipment, updateShipment, deleteShipment
 };

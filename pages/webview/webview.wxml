@@ -1,0 +1,3 @@
+<!--pages/webview/webview.wxml-->
+<web-view wx:if="{{url}}" src="{{url}}"></web-view>
+<view wx:else class="tip">暂无页面</view>

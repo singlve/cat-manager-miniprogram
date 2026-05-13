@@ -1,6 +1,7 @@
 // pages/mine/mine.js
 // 「我的」页面
 const clouddb = require('../../utils/clouddb.js');
+const { todayStr, calcCheckInPoints, buildCheckInWeek, buildCheckInMonth, getLotteryDrawsForStreak, calcCumulativeRewards, isAdmin } = require('../../utils/util.js');
 
 function getAvatarEmoji(currentUser) {
   if (currentUser && currentUser.avatarEmoji) return currentUser.avatarEmoji;
@@ -17,6 +18,7 @@ function getAvatarType(currentUser) {
 Page({
   data: {
     isLoggedIn: false,
+    isAdmin: false,
     nickname: '加载中...',
     avatar: '',
     avatarEmoji: '😺',
@@ -31,6 +33,55 @@ Page({
     editEmoji: '😺',
     editAvatarUrl: '',      // 用户上传的头像云路径
     emojiList: ['😺', '😸', '😻', '🐱', '😽', '😹', '😼', '🐈', '🐈‍⬛', '🦁', '🐯', '🐻', '🐨', '🐼', '🐰', '🐶', '🐹', '🐷', '🦊', '🦄'],
+    // 签到积分
+    points: 0,
+    checkedInToday: false,
+    checkInStreak: 0,
+    // 补签
+    makeUpCards: 0,
+    makeUpDates: [],
+    showMakeUpModal: false,
+    makeUpTargetDate: '',
+    makeUpTargetLabel: '',
+    nextMakeUpCost: 1,
+    lastGroupShareDate: '',
+    lastTimelineShareDate: '',
+    showShareTask: false,
+    // 日历
+    calendarWeek: [],
+    calendarMonth: [],
+    showFullCalendar: false,
+    // 累积签到
+    totalCheckIns: 0,
+    claimedCumulativeMilestones: [],
+    showingCumulReward: null,
+    monthlyMakeUpCount: 0,
+    // 抽奖
+    canLottery: false,
+    streakReached7: false,
+    daysUntilLottery: 7,
+    availableDraws: 0,
+    drawnMilestones: [],
+    drawingMilestone: 0,
+    drawnToday: false,
+    hasDrawnBefore: false,
+    // 补签月限
+    monthlyMakeUpMonth: '',
+    hasSpun: false,
+    showLottery: false,
+    spinning: false,
+    wheelAngle: 0,
+    lotteryResult: '',
+    lotteryResultColor: '',
+    wheelLabels: [],
+    lotteryPrizes: [
+      { icon: '🪙', name: '5积分', color: '#FF6B6B', type: 'points', value: 5 },
+      { icon: '🎫', name: '1补签卡', color: '#4ECDC4', type: 'card', value: 1 },
+      { icon: '🪙', name: '10积分', color: '#FFE66D', type: 'points', value: 10 },
+      { icon: '😅', name: '谢谢参与', color: '#A8E6CF', type: 'none', value: 0 },
+      { icon: '🪙', name: '20积分', color: '#FF8B94', type: 'points', value: 20 },
+      { icon: '🎫', name: '2补签卡', color: '#B8A9C9', type: 'card', value: 2 }
+    ],
     // 绑定手机
     showBindPhone: false,
     bindPhone: '',
@@ -38,9 +89,16 @@ Page({
     bindConfirm: ''
   },
 
+  onLoad() {
+    wx.showShareMenu({
+      withShareTicket: true,
+      menus: ['shareAppMessage', 'shareTimeline']
+    });
+  },
+
   onShow() {
     const app = getApp();
-    this.setData({ isLoggedIn: app.isLoggedIn() });
+    this.setData({ isLoggedIn: app.isLoggedIn(), isAdmin: isAdmin() });
     if (app.isLoggedIn()) this.loadUserInfo();
   },
 
@@ -52,6 +110,100 @@ Page({
     const avatarEmoji = getAvatarEmoji(currentUser);
     const avatarType = getAvatarType(currentUser);
 
+    const points = (currentUser && currentUser.totalPoints) || 0;
+    const checkInStreak = (currentUser && currentUser.checkInStreak) || 0;
+    const lastCheckInDate = (currentUser && currentUser.lastCheckInDate) || '';
+    const makeUpCards = (currentUser && currentUser.makeUpCards) || 0;
+    const makeUpDates = (currentUser && currentUser.makeUpDates) || [];
+    const lastGroupShareDate = (currentUser && currentUser.lastGroupShareDate) || '';
+    const lastTimelineShareDate = (currentUser && currentUser.lastTimelineShareDate) || '';
+
+    const today = todayStr();
+    const currentMonth = today.slice(0, 7); // "2026-05"
+    const checkedInToday = lastCheckInDate === today;
+
+    // ════════════════════════════════════════════════════
+    // 累积签到：优先读取 totalCheckIns，缺失则从现有数据迁移
+    // ════════════════════════════════════════════════════
+    var totalCheckIns = currentUser.totalCheckIns;
+    if (!totalCheckIns && totalCheckIns !== 0) {
+      // 迁移：假设 streak + makeUpDates.length 就是历史总签到
+      var oldStreak = currentUser.checkInStreak || 0;
+      var oldMakeUps = (currentUser.makeUpDates || []).length;
+      totalCheckIns = oldStreak + oldMakeUps;
+    }
+
+    // ════════════════════════════════════════════════════
+    // 补签月限：跨月重置
+    // ════════════════════════════════════════════════════
+    var monthlyMakeUpCount = currentUser.monthlyMakeUpCount || 0;
+    var monthlyMakeUpMonth = currentUser.monthlyMakeUpMonth || '';
+    if (monthlyMakeUpMonth !== currentMonth) {
+      monthlyMakeUpCount = 0;
+      monthlyMakeUpMonth = currentMonth;
+    }
+
+    // ════════════════════════════════════════════════════
+    // 抽奖：drawnMilestones + 月度重置 lotteryUsedMonth
+    // ════════════════════════════════════════════════════
+    var drawnMilestones = currentUser.drawnMilestones || [];
+    // 向后兼容：从旧的 lotteryUsed 推算 drawnMilestones
+    var oldLotteryUsed = (currentUser.lotteryUsed || 0);
+    if (drawnMilestones.length === 0 && oldLotteryUsed > 0) {
+      for (var m = 7; m <= checkInStreak && drawnMilestones.length < oldLotteryUsed; m += 7) {
+        drawnMilestones.push(m);
+      }
+    }
+
+    var lotteryUsedMonth = currentUser.lotteryUsedMonth || 0;
+    var lotteryMonth = currentUser.lotteryMonth || '';
+    if (lotteryMonth !== currentMonth) {
+      lotteryUsedMonth = 0;
+      lotteryMonth = currentMonth;
+    }
+
+    // 抽奖次数：按连续签到计算，当月有效
+    var lotteryEarned = getLotteryDrawsForStreak(checkInStreak);
+    var availableDraws = Math.max(0, lotteryEarned - lotteryUsedMonth);
+    var canLottery = availableDraws > 0;
+
+    var drawnToday = (currentUser && currentUser._lastDrawDate || '') === today;
+    var hasDrawnBefore = drawnMilestones.length > 0;
+
+    // ════════════════════════════════════════════════════
+    // 累积签到奖励检查
+    // ════════════════════════════════════════════════════
+    var claimedCumulativeMilestones = currentUser.claimedCumulativeMilestones || [];
+    var cumulReward = calcCumulativeRewards(totalCheckIns, claimedCumulativeMilestones);
+
+    // ════════════════════════════════════════════════════
+    // 日历构建（传入 drawnMilestones）
+    // ════════════════════════════════════════════════════
+    var calendarWeek = buildCheckInWeek(lastCheckInDate, checkInStreak, makeUpDates, drawnMilestones);
+    var calendarMonth = buildCheckInMonth(lastCheckInDate, checkInStreak, makeUpDates, drawnMilestones);
+    var streakReached7 = checkInStreak >= 7;
+    var nextMilestone = streakReached7 ? (Math.floor(checkInStreak / 7) + 1) * 7 : 7;
+    var daysUntilLottery = nextMilestone - checkInStreak;
+
+    // 测试用：首次赠送 20 张补签卡
+    var cards = makeUpCards;
+    if (!currentUser._testCardsSeeded) {
+      cards = 20;
+      currentUser.makeUpCards = 20;
+      currentUser._testCardsSeeded = true;
+      try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+      if (currentUser._id) {
+        clouddb.updateUser(currentUser._id, { makeUpCards: 20 }).catch(function() {});
+      }
+    }
+
+    console.log('[mine] loadUserInfo debug:', JSON.stringify({
+      lastCheckInDate, checkInStreak, totalCheckIns, checkedInToday,
+      makeUpCards: cards, makeUpDates, streakReached7, daysUntilLottery,
+      lotteryEarned, lotteryUsedMonth, availableDraws, canLottery,
+      drawnMilestones, monthlyMakeUpCount
+    }));
+
     this.setData({
       nickname,
       avatar: currentUser && currentUser.avatar || '',
@@ -59,7 +211,29 @@ Page({
       avatarType,
       phone: currentUser && currentUser.phone
         ? currentUser.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
-        : ''
+        : '',
+      points,
+      checkedInToday,
+      checkInStreak,
+      totalCheckIns,
+      calendarWeek,
+      calendarMonth,
+      showFullCalendar: false,
+      canLottery,
+      availableDraws,
+      drawnMilestones,
+      drawnToday,
+      hasDrawnBefore,
+      streakReached7,
+      daysUntilLottery,
+      makeUpCards: cards,
+      makeUpDates,
+      lastGroupShareDate,
+      lastTimelineShareDate,
+      monthlyMakeUpCount,
+      monthlyMakeUpMonth,
+      claimedCumulativeMilestones,
+      showingCumulReward: cumulReward.earned ? cumulReward : null
     });
 
     try {
@@ -81,7 +255,11 @@ Page({
   goCats()      { wx.switchTab({ url: '/pages/cat-list/cat-list' }); },
   goReminders() { wx.switchTab({ url: '/pages/reminders/reminders' }); },
   goRecords()   { wx.navigateTo({ url: '/pages/health-records/health-records' }); },
-  goAbout()     { wx.navigateTo({ url: '/pages/about/about' }); },
+  goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
+  goPointsMall()    { wx.navigateTo({ url: '/pages/points-mall/points-mall' }); },
+  goInventory()    { wx.navigateTo({ url: '/pages/inventory/inventory' }); },
+  goAdmin()         { wx.navigateTo({ url: '/pages/admin-items/admin-items' }); },
+  goAbout()        { wx.navigateTo({ url: '/pages/about/about' }); },
 
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
 
@@ -225,6 +403,454 @@ Page({
 
   closeBindPhone() { this.setData({ showBindPhone: false }); },
 
+  // ─── 签到积分 ───
+  async doCheckIn() {
+    if (this.data.checkedInToday) {
+      wx.showToast({ title: '今日已签到', icon: 'none' });
+      return;
+    }
+
+    let currentUser = {};
+    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+
+    const today = todayStr();
+    const lastDate = currentUser.lastCheckInDate || '';
+
+    // 计算连续签到天数
+    let streak = 1;
+    if (lastDate) {
+      const last = new Date(lastDate.replace(/-/g, '/'));
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      if (last.toDateString() === yesterday.toDateString()) {
+        streak = (currentUser.checkInStreak || 0) + 1;
+      } else if (last.toDateString() === new Date().toDateString()) {
+        return;
+      }
+    }
+
+    // 累积签到 +1
+    var totalCheckIns = (currentUser.totalCheckIns || 0) + 1;
+    currentUser.totalCheckIns = totalCheckIns;
+
+    const pointsEarned = calcCheckInPoints(streak);
+    currentUser.totalPoints = (currentUser.totalPoints || 0) + pointsEarned;
+    currentUser.lastCheckInDate = today;
+    currentUser.checkInStreak = streak;
+
+    // 累积签到奖励检查
+    var claimedCumulative = currentUser.claimedCumulativeMilestones || [];
+    var cumulReward = calcCumulativeRewards(totalCheckIns, claimedCumulative);
+    if (cumulReward.earned) {
+      currentUser.totalPoints += cumulReward.points;
+      claimedCumulative.push(cumulReward.milestone);
+      currentUser.claimedCumulativeMilestones = claimedCumulative;
+    }
+
+    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+
+    if (currentUser._id) {
+      clouddb.updateUser(currentUser._id, {
+        totalPoints: currentUser.totalPoints,
+        totalCheckIns: totalCheckIns,
+        lastCheckInDate: today,
+        checkInStreak: streak,
+        claimedCumulativeMilestones: claimedCumulative
+      }).catch(function() {});
+    }
+
+    // 抽奖：按连续签到计算，当月有效
+    var lotteryEarned = getLotteryDrawsForStreak(streak);
+    var currentMonth = today.slice(0, 7);
+    var lotteryUsedMonth = currentUser.lotteryUsedMonth || 0;
+    var lotteryMonth = currentUser.lotteryMonth || '';
+    if (lotteryMonth !== currentMonth) { lotteryUsedMonth = 0; }
+    var availableDraws2 = Math.max(0, lotteryEarned - lotteryUsedMonth);
+    var canLottery2 = availableDraws2 > 0;
+    var nextMilestone2 = streak >= 7 ? (Math.floor(streak / 7) + 1) * 7 : 7;
+    var drawnMilestones = currentUser.drawnMilestones || [];
+
+    var calendarWeek2 = buildCheckInWeek(today, streak, this.data.makeUpDates, drawnMilestones);
+    var calendarMonth2 = buildCheckInMonth(today, streak, this.data.makeUpDates, drawnMilestones);
+
+    this.setData({
+      points: currentUser.totalPoints,
+      checkedInToday: true,
+      totalCheckIns: totalCheckIns,
+      checkInStreak: streak,
+      calendarWeek: calendarWeek2,
+      calendarMonth: calendarMonth2,
+      canLottery: canLottery2,
+      availableDraws: availableDraws2,
+      drawnMilestones: drawnMilestones,
+      streakReached7: streak >= 7,
+      daysUntilLottery: nextMilestone2 - streak,
+      drawnToday: false,
+      hasDrawnBefore: drawnMilestones.length > 0,
+      claimedCumulativeMilestones: claimedCumulative
+    });
+
+    if (cumulReward.earned) {
+      wx.showToast({ title: '签到成功！累积' + cumulReward.label + '奖励+' + cumulReward.points + '分', icon: 'success' });
+    } else {
+      wx.showToast({ title: '签到成功 +' + pointsEarned + '分', icon: 'success' });
+    }
+
+    if (canLottery2 && streak % 7 === 0) {
+      var self = this;
+      setTimeout(function() { self.setData({ drawingMilestone: streak }); self.openLottery(); }, 1500);
+    }
+  },
+
+  openShareTask() { this.setData({ showShareTask: true }); },
+  closeShareTask() { this.setData({ showShareTask: false }); },
+
+  // 点击“可抽奖 xN次”文字触发抽奖
+  openLotteryIfAvailable() {
+    if (!this.data.canLottery) return;
+    var milestones = [7, 14, 21, 28];
+    var drawn = this.data.drawnMilestones || [];
+    var drawMilestone = 0;
+    for (var i = 0; i < milestones.length; i++) {
+      if (drawn.indexOf(milestones[i]) === -1) {
+        drawMilestone = milestones[i];
+        break;
+      }
+    }
+    if (!drawMilestone) drawMilestone = 7;
+    this.setData({ drawingMilestone: drawMilestone });
+    this.openLottery();
+  },
+
+  // ─── 补签 ───
+  onTapCalDay(e) {
+    var dataset = e.currentTarget.dataset;
+    var canMakeUp = dataset.canmakeup === true || dataset.canmakeup === 'true';
+    var isJackpot = dataset.isjackpot === true || dataset.isjackpot === 'true';
+    var hasDrawn = dataset.hasdrawn === true || dataset.hasdrawn === 'true';
+    var drawMilestone = parseInt(dataset.drawmilestone) || 0;
+
+    if (hasDrawn) { wx.showToast({ title: '已抽过奖了', icon: 'none' }); return; }
+    if (isJackpot) {
+      // 如果 drawMilestone 为 0（周历通过 canLottery 触发），
+      // 自动取下一个未抽过的里程碑
+      if (drawMilestone === 0) {
+        var milestones = [7, 14, 21, 28];
+        var drawn = this.data.drawnMilestones || [];
+        for (var j = 0; j < milestones.length; j++) {
+          if (drawn.indexOf(milestones[j]) === -1) {
+            drawMilestone = milestones[j];
+            break;
+          }
+        }
+      }
+      this.setData({ drawingMilestone: drawMilestone });
+      this.openLottery();
+      return;
+    }
+    // 补签月限检查
+    if (this.data.monthlyMakeUpCount >= 4) {
+      wx.showToast({ title: '本月补签次数已达上限（4次）', icon: 'none' });
+      return;
+    }
+    if (!canMakeUp) return;
+
+    var nextMakeUpCost = (this.data.monthlyMakeUpCount || 0) + 1;
+    if (this.data.makeUpCards < nextMakeUpCost) {
+      wx.showToast({ title: '补签卡不足，需要 ' + nextMakeUpCost + ' 张', icon: 'none' });
+      return;
+    }
+    this.setData({
+      showMakeUpModal: true,
+      makeUpTargetDate: dataset.date,
+      makeUpTargetLabel: dataset.label,
+      nextMakeUpCost: nextMakeUpCost
+    });
+  },
+
+  cancelMakeUp() { this.setData({ showMakeUpModal: false }); },
+
+  async confirmMakeUp() {
+    var self = this;
+    var date = this.data.makeUpTargetDate;
+    var cards = this.data.makeUpCards;
+    var cost = this.data.nextMakeUpCost || 1;
+    if (cards < cost) { wx.showToast({ title: '补签卡不足', icon: 'none' }); return; }
+    if (this.data.monthlyMakeUpCount >= 4) {
+      wx.showToast({ title: '本月补签次数已达上限（4次）', icon: 'none' });
+      this.setData({ showMakeUpModal: false });
+      return;
+    }
+
+    var currentUser = {};
+    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+
+    var today = todayStr();
+    var actualCost = (self.data.monthlyMakeUpCount || 0) + 1;
+    if (actualCost > cost) cost = actualCost;
+
+    // 补签：只增加累积签到，不改变连续签到
+    var newDates = (self.data.makeUpDates || []).concat([date]);
+    var newCards = cards - cost;
+    var newTotalCheckIns = (currentUser.totalCheckIns || 0) + 1;
+    var streakUnchanged = currentUser.checkInStreak || 0;
+
+    var currentMonth = today.slice(0, 7);
+    var monthlyMakeUpCount = currentUser.monthlyMakeUpCount || 0;
+    var monthlyMakeUpMonth = currentUser.monthlyMakeUpMonth || '';
+    if (monthlyMakeUpMonth !== currentMonth) { monthlyMakeUpCount = 0; }
+    monthlyMakeUpCount += 1;
+
+    currentUser.totalCheckIns = newTotalCheckIns;
+    currentUser.makeUpCards = newCards;
+    currentUser.makeUpDates = newDates;
+    currentUser.monthlyMakeUpCount = monthlyMakeUpCount;
+    currentUser.monthlyMakeUpMonth = currentMonth;
+    // checkInStreak 不变！
+    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+
+    if (currentUser._id) {
+      clouddb.updateUser(currentUser._id, {
+        totalCheckIns: newTotalCheckIns,
+        makeUpCards: newCards,
+        makeUpDates: newDates,
+        monthlyMakeUpCount: monthlyMakeUpCount,
+        monthlyMakeUpMonth: currentMonth
+      }).catch(function() {});
+    }
+
+    // 累积奖励检查
+    var claimedCumulative = currentUser.claimedCumulativeMilestones || [];
+    var cumulReward = calcCumulativeRewards(newTotalCheckIns, claimedCumulative);
+    if (cumulReward.earned) {
+      claimedCumulative.push(cumulReward.milestone);
+      currentUser.claimedCumulativeMilestones = claimedCumulative;
+      currentUser.totalPoints = (currentUser.totalPoints || 0) + cumulReward.points;
+      try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+      if (currentUser._id) {
+        clouddb.updateUser(currentUser._id, {
+          totalPoints: currentUser.totalPoints,
+          claimedCumulativeMilestones: claimedCumulative
+        }).catch(function() {});
+      }
+    }
+
+    var drawnMilestones = currentUser.drawnMilestones || [];
+    var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streakUnchanged, newDates, drawnMilestones);
+    var lotteryEarned = getLotteryDrawsForStreak(streakUnchanged);
+    var lotteryUsedMonth2 = currentUser.lotteryUsedMonth || 0;
+    var availableDraws3 = Math.max(0, lotteryEarned - lotteryUsedMonth2);
+    var nextMilestone3 = streakUnchanged >= 7 ? (Math.floor(streakUnchanged / 7) + 1) * 7 : 7;
+
+    self.setData({
+      makeUpCards: newCards,
+      makeUpDates: newDates,
+      checkInStreak: streakUnchanged,
+      totalCheckIns: newTotalCheckIns,
+      monthlyMakeUpCount: monthlyMakeUpCount,
+      showMakeUpModal: false,
+      calendarWeek: calendarWeek,
+      calendarMonth: buildCheckInMonth(currentUser.lastCheckInDate || '', streakUnchanged, newDates, drawnMilestones),
+      canLottery: availableDraws3 > 0,
+      availableDraws: availableDraws3,
+      drawnMilestones: drawnMilestones,
+      streakReached7: streakUnchanged >= 7,
+      daysUntilLottery: nextMilestone3 - streakUnchanged,
+      drawnToday: self.data.drawnToday,
+      hasDrawnBefore: drawnMilestones.length > 0,
+      claimedCumulativeMilestones: claimedCumulative,
+      points: cumulReward.earned ? currentUser.totalPoints : self.data.points
+    });
+
+    wx.showToast({ title: '补签成功！累积+1天', icon: 'success' });
+  },
+
+  onShareAppMessage: function() {
+    this._awardShareCard('group');
+    return { title: '猫咪健康管家 - 记录猫咪的每一个瞬间', path: '/pages/cat-list/cat-list' };
+  },
+
+  onShareTimeline: function() {
+    this._awardShareCard('timeline');
+    return { title: '猫咪健康管家 - 记录猫咪的每一个瞬间' };
+  },
+
+  async _awardShareCard(type) {
+    var self = this;
+    var today = todayStr();
+    var currentUser = {};
+    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+
+    var dateField = type === 'group' ? 'lastGroupShareDate' : 'lastTimelineShareDate';
+    if ((currentUser[dateField] || '') === today) {
+      wx.showToast({ title: '今日已领取分享奖励', icon: 'none' });
+      return;
+    }
+
+    var newCards = (currentUser.makeUpCards || 0) + 1;
+    currentUser.makeUpCards = newCards;
+    currentUser[dateField] = today;
+    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+
+    if (currentUser._id) {
+      clouddb.updateUser(currentUser._id, { makeUpCards: newCards, [dateField]: today }).catch(function() {});
+    }
+
+    var drawnMilestones = currentUser.drawnMilestones || [];
+    var streak = currentUser.checkInStreak || 0;
+    var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streak, currentUser.makeUpDates || [], drawnMilestones);
+    var lotteryEarned = getLotteryDrawsForStreak(streak);
+    var lotteryUsedMonth = currentUser.lotteryUsedMonth || 0;
+    var availableDraws4 = Math.max(0, lotteryEarned - lotteryUsedMonth);
+    var nextMilestone4 = streak >= 7 ? (Math.floor(streak / 7) + 1) * 7 : 7;
+
+    self.setData({
+      makeUpCards: newCards,
+      calendarWeek: calendarWeek,
+      calendarMonth: buildCheckInMonth(currentUser.lastCheckInDate || '', streak, currentUser.makeUpDates || [], drawnMilestones),
+      canLottery: availableDraws4 > 0,
+      availableDraws: availableDraws4,
+      drawnMilestones: drawnMilestones,
+      streakReached7: streak >= 7,
+      daysUntilLottery: nextMilestone4 - streak,
+      drawnToday: self.data.drawnToday,
+      hasDrawnBefore: drawnMilestones.length > 0,
+      showShareTask: false,
+      lastGroupShareDate: type === 'group' ? today : self.data.lastGroupShareDate,
+      lastTimelineShareDate: type === 'timeline' ? today : self.data.lastTimelineShareDate
+    });
+
+    wx.showToast({ title: '+1补签卡 🎫', icon: 'success' });
+  },
+
+  openLottery() {
+    var prizes = this.data.lotteryPrizes;
+    var labels = [];
+    for (var i = 0; i < prizes.length; i++) {
+      labels.push({ name: prizes[i].name, rotate: i * 60 + 30 });
+    }
+    this.setData({
+      showLottery: true, spinning: false, hasSpun: false,
+      wheelAngle: 0, lotteryResult: '', lotteryResultColor: '',
+      wheelLabels: labels
+    });
+  },
+
+  closeLottery() {
+    if (this.data.spinning) return;
+    this.setData({ showLottery: false, lotteryResult: '', lotteryResultColor: '' });
+  },
+
+  spinWheel() {
+    var self = this;
+    if (self.data.spinning || self.data.hasSpun) return;
+
+    var prizes = self.data.lotteryPrizes;
+    var prizeIndex = Math.floor(Math.random() * prizes.length);
+    var segAngle = 360 / prizes.length;
+    var targetAngle = 360 * 5 + 360 - (prizeIndex * segAngle + segAngle / 2);
+
+    self.setData({ spinning: true, hasSpun: true, wheelAngle: targetAngle });
+
+    setTimeout(function() {
+      var prize = prizes[prizeIndex];
+      self._awardPrize(prize);
+    }, 4200);
+  },
+
+  async _awardPrize(prize) {
+    var self = this;
+    var currentUser = {};
+    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+    var today = todayStr();
+    var currentMonth = today.slice(0, 7);
+
+    // 记录抽过的里程碑 + 月度消费一次
+    var milestone = self.data.drawingMilestone;
+    var drawnMilestones = currentUser.drawnMilestones || [];
+    if (milestone && drawnMilestones.indexOf(milestone) === -1) {
+      drawnMilestones.push(milestone);
+    }
+    var lotteryUsedMonth = (currentUser.lotteryUsedMonth || 0) + 1;
+
+    currentUser.drawnMilestones = drawnMilestones;
+    currentUser.lotteryUsedMonth = lotteryUsedMonth;
+    currentUser.lotteryMonth = currentMonth;
+    currentUser.lotteryUsed = drawnMilestones.length;
+    currentUser._lastDrawDate = today;
+
+    var resultColor = '#4A90D9';
+    if (prize.type === 'points') {
+      currentUser.totalPoints = (currentUser.totalPoints || 0) + prize.value;
+      resultColor = '#4A90D9';
+    } else if (prize.type === 'card') {
+      currentUser.makeUpCards = (currentUser.makeUpCards || 0) + prize.value;
+      resultColor = '#5CB85C';
+    } else { resultColor = '#999'; }
+
+    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+
+    if (currentUser._id) {
+      var updates = {
+        drawnMilestones: drawnMilestones,
+        lotteryUsedMonth: lotteryUsedMonth,
+        lotteryMonth: currentMonth,
+        lotteryUsed: drawnMilestones.length,
+        _lastDrawDate: today
+      };
+      if (prize.type === 'points') updates.totalPoints = currentUser.totalPoints;
+      if (prize.type === 'card') updates.makeUpCards = currentUser.makeUpCards;
+      clouddb.updateUser(currentUser._id, updates).catch(function() {});
+    }
+
+    var newPoints = prize.type === 'points' ? currentUser.totalPoints : self.data.points;
+    var newCards = prize.type === 'card' ? currentUser.makeUpCards : self.data.makeUpCards;
+    var streak = currentUser.checkInStreak || 0;
+    var lotteryEarned = getLotteryDrawsForStreak(streak);
+    var newAvailableDraws = Math.max(0, lotteryEarned - lotteryUsedMonth);
+
+    self.setData({
+      spinning: false,
+      lotteryResult: '恭喜获得 ' + prize.icon + ' ' + prize.name + '！',
+      lotteryResultColor: resultColor,
+      canLottery: newAvailableDraws > 0,
+      availableDraws: newAvailableDraws,
+      drawnMilestones: drawnMilestones,
+      hasSpun: true,
+      drawnToday: true,
+      hasDrawnBefore: newAvailableDraws <= 0 && drawnMilestones.length > 0,
+      points: newPoints,
+      makeUpCards: newCards
+    });
+
+    if (prize.type === 'card') {
+      var calendarWeek = buildCheckInWeek(
+        currentUser.lastCheckInDate || '',
+        currentUser.checkInStreak || 0,
+        currentUser.makeUpDates || [],
+        drawnMilestones
+      );
+      self.setData({
+        calendarWeek: calendarWeek,
+        calendarMonth: buildCheckInMonth(
+          currentUser.lastCheckInDate || '',
+          currentUser.checkInStreak || 0,
+          currentUser.makeUpDates || [],
+          drawnMilestones
+        )
+      });
+    }
+
+    if (prize.type === 'physical') {
+      // 预留：写入 user_inventory 集合
+    }
+  },
+
+  // ─── 切换日历视图（周/月） ───
+  toggleCalendar() {
+    this.setData({ showFullCalendar: !this.data.showFullCalendar });
+  },
+
   logout() {
     wx.showModal({
       title: '确认退出',
@@ -233,7 +859,6 @@ Page({
         if (!res.confirm) return;
         wx.clearStorageSync();
         getApp().globalData.openid = null;
-        // 退出后留在当前页，刷新显示未登录状态
         this.setData({
           isLoggedIn: false,
           nickname: '',
@@ -246,5 +871,109 @@ Page({
         wx.showToast({ title: '已退出', icon: 'success' });
       }
     });
+  },
+
+  // ─── 开发者：重置签到数据 ───
+  devResetCheckIn() {
+    var self = this;
+    wx.showModal({
+      title: '重置签到数据',
+      content: '设置连续签到4天 + 20张补签卡，清空抽奖/补签记录。确定？',
+      success: function(res) {
+        if (!res.confirm) return;
+        var currentUser = {};
+        try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+
+        var today = todayStr();
+        currentUser.lastCheckInDate = today;
+        currentUser.checkInStreak = 4;
+        currentUser.totalCheckIns = 4;
+        currentUser.makeUpCards = 20;
+        currentUser.makeUpDates = [];
+        currentUser._makeUpCountToday = 0;
+        currentUser._lastMakeUpDate = '';
+        currentUser.monthlyMakeUpCount = 0;
+        currentUser.monthlyMakeUpMonth = '';
+        currentUser.drawnMilestones = [];
+        currentUser.drawingMilestone = 0;
+        currentUser.lotteryUsed = 0;
+        currentUser.lotteryUsedMonth = 0;
+        currentUser.lotteryMonth = '';
+        currentUser._lastDrawDate = '';
+        currentUser.claimedCumulativeMilestones = [];
+        currentUser._testCardsSeeded = true;
+
+        try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+        if (currentUser._id) {
+          clouddb.updateUser(currentUser._id, {
+            lastCheckInDate: today,
+            checkInStreak: 4,
+            totalCheckIns: 4,
+            makeUpCards: 20,
+            makeUpDates: [],
+            monthlyMakeUpCount: 0,
+            drawnMilestones: [],
+            lotteryUsed: 0,
+            lotteryUsedMonth: 0,
+            claimedCumulativeMilestones: []
+          }).catch(function() {});
+        }
+
+        self.loadUserInfo();
+        wx.showToast({ title: '已重置：连签4天 + 补签卡20张', icon: 'success' });
+      }
+    });
+  },
+  async devClearBackpack() {
+    var self = this;
+    var res = await new Promise(function(r) {
+      wx.showModal({
+        title: '清除背包和记录',
+        content: '删除云端所有背包数据(user_inventory)和兑换记录(redeem_records)。确定？',
+        confirmColor: '#e74c3c',
+        success: r
+      });
+    });
+    if (!res.confirm) return;
+    wx.showLoading({ title: '清除中...', mask: true });
+    try {
+      var n1 = await clouddb.clearUserInventory() || 0;
+      var n2 = await clouddb.clearUserRedeemRecords() || 0;
+      wx.hideLoading();
+      wx.showToast({ title: '已清除: ' + n1 + '背包 + ' + n2 + '记录', icon: 'success', duration: 2000 });
+      self.loadUserInfo();
+    } catch (e) {
+      wx.hideLoading();
+      wx.showToast({ title: '清除失败', icon: 'none' });
+    }
+  },
+
+  // ── 开发：增加500积分 ──
+  async devAddPoints() {
+    var self = this;
+    wx.showModal({
+      title: '增加500积分',
+      content: '确认当前账号增加500积分？',
+      success: async function(res) {
+        if (!res.confirm) return;
+        wx.showLoading({ title: '处理中...', mask: true });
+        try {
+          var currentUser = wx.getStorageSync('currentUser') || {};
+          var newPoints = (currentUser.totalPoints || 0) + 500;
+          currentUser.totalPoints = newPoints;
+          try { wx.setStorageSync('currentUser', currentUser); } catch(e) {}
+          if (currentUser._id) {
+            await clouddb.updateUser(currentUser._id, { totalPoints: newPoints }).catch(function(){});
+          }
+          wx.hideLoading();
+          wx.showToast({ title: '积分 +500！当前：' + newPoints, icon: 'none', duration: 2000 });
+          self.loadUserInfo();
+        } catch (e) {
+          wx.hideLoading();
+          wx.showToast({ title: '操作失败', icon: 'none' });
+        }
+      }
+    });
   }
+
 });
