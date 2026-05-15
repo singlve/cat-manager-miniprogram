@@ -4,6 +4,7 @@
 
 const CAT_KEY     = 'cats';
 const RECORD_KEY = 'health_records';
+const WEIGHT_KEY = 'weight_records';
 const REMIND_KEY = 'reminders';
 const SHIPPING_ADDRESS_KEY = 'shipping_addresses';
 

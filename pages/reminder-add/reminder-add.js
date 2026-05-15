@@ -2,6 +2,9 @@
 // 添加/编辑提醒页
 const clouddb = require('../../utils/clouddb.js');
 
+// 订阅消息模板 ID — 在微信公众平台「功能 > 订阅消息」中申请，替换为实际模板 ID
+const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
+
 const TYPE_OPTIONS = [
   { key: 'bath',    label: '洗澡',     icon: '🛁' },
   { key: 'deworm',  label: '驱虫',     icon: '💊' },
@@ -50,7 +53,7 @@ Page({
 
   async loadCats() {
     let cats = await clouddb.getCats();
-    // 过滤已已离世的猫，不给它们添加提醒
+    // 过滤已经离世的猫，不给它们添加提醒
     cats = cats.filter(c => c.status !== 'passed_away');
     this.setData({ cats, noCatsAvailable: cats.length === 0 });
   },
@@ -137,25 +140,46 @@ Page({
     this.setData({ nextPreviewDate: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` });
   },
 
-  async save() {
+  save() {
     const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, note } = this.data;
     const intervalDays = this._getIntervalDays();
     if (!selectedCatId) { wx.showToast({ title: '请先添加宠物', icon: 'none' }); return; }
     if (!lastDate) { wx.showToast({ title: '请选择上次时间', icon: 'none' }); return; }
 
-    wx.showLoading({ title: '保存中...' });
-    const data = { catId: selectedCatId, catName: selectedCatName, type, lastDate, intervalDays, note };
-
-    if (isEdit) {
-      await clouddb.updateReminder(reminderId, data);
+    // 请求订阅消息授权（必须在按钮点击手势内直接调用）
+    if (SUBSCRIBE_TMPL_ID) {
+      wx.requestSubscribeMessage({
+        tmplIds: [SUBSCRIBE_TMPL_ID],
+        complete: () => { this._doSave({ isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, intervalDays, note }); }
+      });
     } else {
-      data._id = 'rem_' + Date.now();
-      await clouddb.addReminder(data);
+      this._doSave({ isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, intervalDays, note });
     }
+  },
 
-    wx.hideLoading();
-    wx.showToast({ title: '保存成功', icon: 'success' });
-    setTimeout(() => wx.navigateBack(), 1000);
+  async _doSave(params) {
+    const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, intervalDays, note } = params;
+
+    wx.showLoading({ title: '保存中...' });
+
+    try {
+      const data = { catId: selectedCatId, catName: selectedCatName, type, lastDate, intervalDays, note };
+
+      if (isEdit) {
+        await clouddb.updateReminder(reminderId, data);
+      } else {
+        data._id = 'rem_' + Date.now();
+        await clouddb.addReminder(data);
+      }
+
+      wx.showToast({ title: '保存成功', icon: 'success' });
+      setTimeout(() => wx.navigateBack(), 1000);
+    } catch (e) {
+      console.error('[reminder-add] save error:', e);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 
   onShareAppMessage() {

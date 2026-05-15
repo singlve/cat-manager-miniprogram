@@ -46,26 +46,32 @@ Page(Object.assign({}, catFormMethods, {
     this.setData({ saving: true });
     wx.showLoading({ title: "保存中..." });
 
-    var catId = "cat_" + Date.now();
-    var { tempAvatarPath, name, gender, breed, birthday, adoptedDate, note, neutered, status, passedDate, species } = this.data;
+    try {
+      var catId = "cat_" + Date.now();
+      var { tempAvatarPath, name, gender, breed, birthday, adoptedDate, note, neutered, status, passedDate, species } = this.data;
 
-    var avatar = "";
-    if (tempAvatarPath) {
-      avatar = await clouddb.uploadAvatar(tempAvatarPath, catId);
+      var avatar = "";
+      if (tempAvatarPath) {
+        avatar = await clouddb.uploadAvatar(tempAvatarPath, catId);
+      }
+
+      var newCat = {
+        _id: catId, name: name.trim(), gender, breed: breed.trim(), birthday,
+        adoptedDate, species, note: note.trim(), avatar, neutered,
+        status: status, passedDate: status === "passed_away" ? passedDate : "",
+        _createTime: Date.now()
+      };
+      await clouddb.addCat(newCat);
+
+      wx.showToast({ title: "添加成功 🎉", icon: "success" });
+      setTimeout(function() { wx.switchTab({ url: "/pages/cat-list/cat-list" }); }, 1200);
+    } catch (e) {
+      console.error("[cat-add] saveCat error:", e);
+      wx.showToast({ title: "保存失败，请重试", icon: "none" });
+    } finally {
+      wx.hideLoading();
+      this.setData({ saving: false });
     }
-
-    var newCat = {
-      _id: catId, name: name.trim(), gender, breed: breed.trim(), birthday,
-      adoptedDate, species, note: note.trim(), avatar, neutered,
-      status: status, passedDate: status === "passed_away" ? passedDate : "",
-      _createTime: Date.now()
-    };
-    await clouddb.addCat(newCat);
-
-    wx.hideLoading();
-    wx.showToast({ title: "添加成功 🎉", icon: "success" });
-    this.setData({ saving: false });
-    setTimeout(function() { wx.switchTab({ url: "/pages/cat-list/cat-list" }); }, 1200);
   },
 
   onShareAppMessage() {

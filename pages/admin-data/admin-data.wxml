@@ -1,0 +1,87 @@
+<!-- pages/admin-data/admin-data.wxml -->
+<view wx:if="{{!isAdmin}}" class="empty-state">
+  <text class="empty-icon">🔒</text>
+  <text class="empty-text">无权访问此页面</text>
+</view>
+
+<block wx:else>
+  <!-- 搜索栏 -->
+  <view class="search-bar">
+    <picker mode="selector" range="{{searchLabels}}" bindchange="onSearchTypeChange" class="search-type">
+      <text>{{searchLabels[searchType]}} ▾</text>
+    </picker>
+    <input class="search-input"
+           placeholder="{{searchType === 0 ? '输入昵称模糊搜索' : '输入手机号搜索'}}"
+           value="{{keyword}}"
+           bindinput="onKeywordInput"
+           confirm-type="search"
+           bindconfirm="doSearch"/>
+    <button class="search-btn" bindtap="doSearch" disabled="{{loading}}">{{loading ? '...' : '搜索'}}</button>
+  </view>
+
+  <!-- 结果列表 -->
+  <view class="user-list" wx:if="{{searched}}">
+    <view wx:if="{{errorMsg}}" class="empty-state">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">{{errorMsg}}</text>
+    </view>
+
+    <view class="user-card" wx:for="{{users}}" wx:key="_id" bindtap="openEditor" data-user="{{item}}">
+      <view class="user-card-top">
+        <text class="user-nickname">{{item.nickname || '未设置'}}</text>
+        <text class="user-phone">{{item.phone || '无手机号'}}</text>
+      </view>
+      <view class="user-stats">
+        <view class="stat-item">
+          <text class="stat-val">{{item.checkInStreak || 0}}</text>
+          <text class="stat-label">连签</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{item.totalCheckIns || 0}}</text>
+          <text class="stat-label">总签到</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{item.totalPoints || 0}}</text>
+          <text class="stat-label">积分</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{item.makeUpCards || 0}}</text>
+          <text class="stat-label">补签卡</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{!searched && !loading}}" class="empty-state">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-text">输入昵称或手机号搜索用户</text>
+  </view>
+
+  <!-- 编辑面板 -->
+  <view wx:if="{{showEditor}}" class="mask" catchtap="closeEditor">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">编辑 - {{editingUser.nickname || '未命名'}}</text>
+
+      <view class="field-group" wx:for="{{EDIT_FIELDS}}" wx:key="key" wx:for-item="f">
+        <text class="field-label">{{f.label}}</text>
+        <input wx:if="{{f.type === 'text'}}"
+               class="field-input"
+               value="{{editValues[f.key]}}"
+               data-key="{{f.key}}"
+               bindinput="onFieldInput"/>
+        <input wx:if="{{f.type === 'number'}}"
+               class="field-input"
+               type="number"
+               value="{{editValues[f.key]}}"
+               data-key="{{f.key}}"
+               bindinput="onFieldInput"/>
+      </view>
+
+      <view class="sheet-btns">
+        <button class="cancel" bindtap="closeEditor">取消</button>
+        <button class="confirm {{saving ? 'disabled' : ''}}" bindtap="saveEdit">{{saving ? '保存中...' : '保存'}}</button>
+      </view>
+    </view>
+  </view>
+</block>

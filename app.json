@@ -17,6 +17,7 @@
     "pages/expense-add/expense-add",
     "pages/points-mall/points-mall",
     "pages/admin-items/admin-items",
+    "pages/admin-data/admin-data",
     "pages/webview/webview",
     "pages/shipping-address/shipping-address"
   ],

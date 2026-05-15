@@ -230,7 +230,7 @@ Page({
     const cats = await clouddb.getCats();
     const alive = cats.filter(c => c.status !== 'passed_away');
     if (alive.length === 0) {
-      wx.showToast({ title: '所有宠物都已已离世了', icon: 'none' });
+      wx.showToast({ title: '所有宠物都已经离世了', icon: 'none' });
       return;
     }
     wx.navigateTo({ url: '/pages/reminder-add/reminder-add' });

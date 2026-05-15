@@ -2,7 +2,7 @@
 // 注册页：支持手机号注册
 const clouddb = require('../../utils/clouddb.js');
 
-const FORCE_MOCK = false;  // TODO: 云开发部署完成后改为 false
+const FORCE_MOCK = false;  // 调试开关：true 使用模拟数据，false 正常模式
 
 Page({
   data: { nickname: '', phone: '', password: '', confirmPassword: '' },
@@ -31,23 +31,29 @@ Page({
       return;
     }
 
-    // 查重
-    const existing = await clouddb.getUserByPhone(phone);
-    if (existing) { wx.hideLoading(); wx.showToast({ title: '该手机号已注册', icon: 'none' }); return; }
-
-    // 获取 openid（让同一微信号下注册的账号关联到同一个用户）
-    let openid = '';
     try {
-      const r = await wx.cloud.callFunction({ name: 'login' });
-      openid = r.result && r.result.openid || '';
-    } catch (e) { console.warn('[register] get openid failed:', e); }
+      // 查重
+      const existing = await clouddb.getUserByPhone(phone);
+      if (existing) { wx.hideLoading(); wx.showToast({ title: '该手机号已注册', icon: 'none' }); return; }
 
-    // 写入（平台自动注入 _openid）
-    const userId = await clouddb.addUser({ nickname, phone, password, loginType: 'phone' });
-    try { wx.setStorageSync('currentUser', { _id: userId, nickname, phone, loginType: 'phone' }); } catch (e) {}
-    wx.hideLoading();
-    wx.showToast({ title: '注册成功', icon: 'success' });
-    setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
+      // 获取 openid（让同一微信号下注册的账号关联到同一个用户）
+      let openid = '';
+      try {
+        const r = await wx.cloud.callFunction({ name: 'login' });
+        openid = r.result && r.result.openid || '';
+      } catch (e) { console.warn('[register] get openid failed:', e); }
+
+      // 写入（平台自动注入 _openid）
+      const userId = await clouddb.addUser({ nickname, phone, password, loginType: 'phone' });
+      try { wx.setStorageSync('currentUser', { _id: userId, nickname, phone, loginType: 'phone' }); } catch (e) {}
+      wx.showToast({ title: '注册成功', icon: 'success' });
+      setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
+    } catch (e) {
+      console.error('[register] register error:', e);
+      wx.showToast({ title: '注册失败，请重试', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 
   goLogin() { wx.navigateBack(); },

@@ -34,14 +34,7 @@ App({
     }
 
     try {
-      // ⚠️ 重要：请在微信开发者工具中右键项目目录 → 「更多设置」→ 「云开发」→ 开通
-      // 开通后在「云开发」面板的「设置」→「环境ID」复制粘贴到下面
-      const envId = 'cloud1-5gylr1n55da68050'; // 云环境ID
-
-      if (envId === 'YOUR_ENV_ID') {
-        console.warn('[app] 云环境ID未配置，使用本地数据模式');
-        return;
-      }
+      const envId = 'cloud1-5gylr1n55da68050';
 
       wx.cloud.init({
         env: envId,
@@ -49,7 +42,6 @@ App({
       });
 
       this.globalData.cloudReady = true;
-      console.log('[app] 云开发初始化成功，环境ID:', envId);
 
       // 获取 openid
       await this.fetchOpenId();

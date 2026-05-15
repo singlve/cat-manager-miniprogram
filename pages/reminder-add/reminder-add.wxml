@@ -1,9 +1,9 @@
 <!-- pages/reminder-add/reminder-add.wxml -->
 <view class="container">
-  <!-- 无可用宠物：全部已已离世 -->
+  <!-- 无可用宠物：全部已经离世 -->
   <view wx:if="{{noCatsAvailable}}" class="empty-cats">
     <text class="empty-cats-icon">😿</text>
-    <text class="empty-cats-text">所有宠物都已已离世了</text>
+    <text class="empty-cats-text">所有宠物都已经离世了</text>
     <text class="empty-cats-desc">不再需要为它们添加健康提醒</text>
   </view>
 

@@ -12,13 +12,12 @@ const db = cloud.database();
 // ════════════════════════════════════════════
 // 🔑 快递100 配置
 // ════════════════════════════════════════════
-// 生产环境请在云开发控制台 → 云函数 → queryExpress → 环境变量 中配置：
+// 生产环境需在云开发控制台 → 云函数 → queryExpress → 环境变量 中配置：
 //   KUAIDI100_CUSTOMER = 你的customer
 //   KUAIDI100_KEY      = 你的key
-// 本地调试时使用下方默认值（生产部署后将下方值设为空字符串，强制走环境变量）
 const CONFIG = {
-  customer: process.env.KUAIDI100_CUSTOMER || 'wfFMUsNP2069',
-  key: process.env.KUAIDI100_KEY || 'C4BDA9A1BAE76D5B42A3A0647E975F1F',
+  customer: process.env.KUAIDI100_CUSTOMER,
+  key: process.env.KUAIDI100_KEY,
 };
 
 // 快递公司名称 → 快递100编码
@@ -122,6 +121,10 @@ exports.main = async (event) => {
 
   if (!trackingNo || !trackingNo.trim()) {
     return { success: false, error: '缺少快递单号' };
+  }
+
+  if (!CONFIG.customer || !CONFIG.key) {
+    return { success: false, error: '快递查询服务未配置，请联系管理员在云函数环境变量中设置 KUAIDI100_CUSTOMER 和 KUAIDI100_KEY' };
   }
 
   const com = CARRIER_MAP[carrier] || 'auto';

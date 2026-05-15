@@ -3,7 +3,7 @@
 // 所有页面统一通过此模块操作数据，无需关心底层数据源
 
 // ⚙️ 调试开关：true=强制本地模式，false=自动判断（云环境ID配好后走云端）
-const FORCE_LOCAL = false;  // TODO: 云开发部署完成后改为 false
+const FORCE_LOCAL = false;  // 调试开关：true 强制本地模式，false 自动判断
 
 // 集合名常量
 const CAT_COL    = 'cats';
@@ -271,6 +271,18 @@ async function getUserByOpenid(openid) {
   }
 }
 
+async function getUserById(id) {
+  if (!isCloudReady()) return null;
+  if (!id) return null;
+  try {
+    const data = await _cloudQuery(USER_COL, { _id: id });
+    return data.length > 0 ? data[0] : null;
+  } catch (e) {
+    console.error('[clouddb] getUserById error:', e);
+    return null;
+  }
+}
+
 async function getUserByPhone(phone) {
   if (!isCloudReady()) return null;
   const data = await _cloudQuery(USER_COL, { phone: phone });
@@ -288,6 +300,35 @@ async function addUser(user) {
 async function updateUser(id, updates) {
   if (!isCloudReady()) return;
   await _cloudUpdate(USER_COL, id, updates);
+}
+
+async function searchUsers(type, keyword) {
+  if (!isCloudReady()) return [];
+  try {
+    const res = await wx.cloud.callFunction({
+      name: 'adminUsers',
+      data: { action: 'search', type, keyword }
+    });
+    if (res.result && res.result.code === 0) {
+      return res.result.data || [];
+    }
+    throw new Error((res.result && res.result.msg) || '搜索失败');
+  } catch (e) {
+    console.error('[clouddb] searchUsers error:', e);
+    throw e;
+  }
+}
+
+async function adminUpdateUser(userId, updates) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const res = await wx.cloud.callFunction({
+    name: 'adminUsers',
+    data: { action: 'update', userId, updates }
+  });
+  if (res.result && res.result.code === 0) {
+    return res.result;
+  }
+  throw new Error((res.result && res.result.msg) || '更新失败');
 }
 
 // ════════════════════════════════════════════════════
@@ -786,9 +827,7 @@ async function getExpenses(query = {}) {
         }
         cloudQuery.date = dateFilter;
       }
-      console.log('[clouddb] getExpenses 云查询条件:', JSON.stringify(cloudQuery));
       var result = await _cloudQuery(EXPENSE_COL, cloudQuery, { orderBy: 'date', orderDesc: 'desc' });
-      console.log('[clouddb] getExpenses 云返回', result ? result.length : 0, '条');
       return result || [];
     } catch (e) { console.error('[clouddb] getExpenses cloud fail:', e); }
   }
@@ -816,7 +855,8 @@ module.exports = {
   // reminders
   getReminders, addReminder, updateReminder, deleteReminder,
   // users
-  getUserByOpenid, getUserByPhone, addUser, updateUser,
+  getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
+  searchUsers, adminUpdateUser,
   // storage
   uploadAvatar, getAvatarUrl,
   // auth

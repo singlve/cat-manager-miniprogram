@@ -225,6 +225,16 @@
       </view>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goAdminData" wx:if="{{isAdmin}}">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">🗄️</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">数据管理</text>
+        <text class="menu-desc">搜索和编辑用户数据</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
 
     <view class="menu-divider"></view>
     <view class="menu-group-label">账号</view>

@@ -161,10 +161,15 @@ Page({
       }
     }
 
-    await clouddb.updateRecord(editId, { date: editDate, note: editNote, type: editType });
-    this.setData({ showEditModal: false });
-    this.loadRecords();
-    wx.showToast({ title: '修改成功', icon: 'success' });
+    try {
+      await clouddb.updateRecord(editId, { date: editDate, note: editNote, type: editType });
+      this.setData({ showEditModal: false });
+      this.loadRecords();
+      wx.showToast({ title: '修改成功', icon: 'success' });
+    } catch (e) {
+      console.error('[health-records] saveEdit error:', e);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    }
   },
 
   cancelEdit() { this.setData({ showEditModal: false }); },
@@ -174,9 +179,14 @@ Page({
       wx.showModal({ title: '确认删除', content: '确定要删除这条记录吗？', success: res => r(res.confirm) })
     );
     if (!confirmed) return;
-    await clouddb.deleteRecord(e.currentTarget.dataset.id);
-    this.loadRecords();
-    wx.showToast({ title: '已删除', icon: 'success' });
+    try {
+      await clouddb.deleteRecord(e.currentTarget.dataset.id);
+      this.loadRecords();
+      wx.showToast({ title: '已删除', icon: 'success' });
+    } catch (e) {
+      console.error('[health-records] deleteRecord error:', e);
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+    }
   },
 
   async onPullDownRefresh() {

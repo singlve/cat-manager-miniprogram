@@ -1,22 +1,33 @@
-// 云函数：清空指定集合或所有集合的所有文档
+// 云函数：清空指定集合或所有集合的所有文档（仅限管理员）
 const cloud = require('wx-server-sdk');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
-const COLLECTIONS = ['users', 'cats', 'health_records', 'reminders', 'reminder_logs'];
+const db = cloud.database();
+
+// 管理员 openid 白名单（需与 utils/util.js 中的 ADMIN_OPENIDS 保持一致）
+const ADMIN_OPENIDS = [
+  'oYBpx3ZRljxCk6pODSAyMShkyFJA'  // 主账号 openid
+];
+
+// 允许清理的集合白名单
+const ALLOWED_COLLECTIONS = ['users', 'cats', 'health_records', 'reminders', 'reminder_logs'];
 
 exports.main = async (event, context) => {
+  const wxContext = cloud.getWXContext();
+  if (ADMIN_OPENIDS.indexOf(wxContext.OPENID) === -1) {
+    return { success: false, message: '无管理员权限' };
+  }
+
   const { action } = event;
 
-  // 允许的操作：清空指定集合 或 清空所有
   const toClean = action === 'all'
-    ? COLLECTIONS
-    : (COLLECTIONS.includes(action) ? [action] : []);
+    ? ALLOWED_COLLECTIONS
+    : (ALLOWED_COLLECTIONS.includes(action) ? [action] : []);
 
   if (toClean.length === 0) {
     return { success: false, message: '无效的集合名称' };
   }
 
-  const db = cloud.database();
   const results = {};
 
   for (const col of toClean) {

@@ -1,7 +1,7 @@
 {
-  "name": "cleanupAll",
+  "name": "adminUsers",
   "version": "1.0.0",
-  "description": "清空所有集合数据",
+  "description": "管理员搜索/更新用户数据",
   "main": "index.js",
   "dependencies": {
     "wx-server-sdk": "~3.0.0"

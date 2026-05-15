@@ -207,7 +207,7 @@ Page({
   stopBubble() {},
 
   async onPullDownRefresh() {
-    try { this.loadUser(); await this.loadItems(); } finally { wx.stopPullDownRefresh(); }
+    try { await this.loadUser(); await this.loadItems(); } finally { wx.stopPullDownRefresh(); }
   },
 
   onShareAppMessage() {

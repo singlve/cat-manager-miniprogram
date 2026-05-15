@@ -65,9 +65,7 @@ Page({
       var start = y + '-01-01';
       var end = y + '-12-31';
 
-      console.log('[expense] loadYearData 查询', start, '~', end);
       var expenses = await clouddb.getExpenses({ dateStart: start, dateEnd: end });
-      console.log('[expense] getExpenses 返回', expenses ? expenses.length : 0, '条, 首条:', expenses && expenses[0] ? JSON.stringify(expenses[0]) : '空');
       expenses = expenses || [];
 
       var cats = [];

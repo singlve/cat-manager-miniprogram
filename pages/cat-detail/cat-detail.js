@@ -53,30 +53,42 @@ Page({
   },
 
   async loadCat() {
-    const cat = await clouddb.getCatById(this.data.catId);
-    if (cat) {
-      if (cat.avatar && cat.avatar.startsWith('cloud://')) {
-        cat._displayAvatar = await clouddb.getAvatarUrl(cat.avatar);
-      } else {
-        cat._displayAvatar = cat.avatar;
+    try {
+      const cat = await clouddb.getCatById(this.data.catId);
+      if (cat) {
+        if (cat.avatar && cat.avatar.startsWith('cloud://')) {
+          cat._displayAvatar = await clouddb.getAvatarUrl(cat.avatar);
+        } else {
+          cat._displayAvatar = cat.avatar;
+        }
+        this.setData({ cat });
       }
-      this.setData({ cat });
+    } catch (e) {
+      console.error('[cat-detail] loadCat error:', e);
     }
   },
 
   async loadRecords() {
-    const records = await clouddb.getRecords({ catId: this.data.catId });
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const withAgo = records.map(function(r) { return Object.assign({}, r, { _ago: calcAgo(r.date) }); });
-    this.setData({ records: withAgo });
+    try {
+      const records = await clouddb.getRecords({ catId: this.data.catId });
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const withAgo = records.map(function(r) { return Object.assign({}, r, { _ago: calcAgo(r.date) }); });
+      this.setData({ records: withAgo });
+    } catch (e) {
+      console.error('[cat-detail] loadRecords error:', e);
+    }
   },
 
   // ─── 体重记录 ───
   async loadWeightRecords() {
-    const records = await clouddb.getWeightRecords({ catId: this.data.catId });
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const latestWeight = records.length > 0 ? records[0].weight : null;
-    this.setData({ weightRecords: records, latestWeight });
+    try {
+      const records = await clouddb.getWeightRecords({ catId: this.data.catId });
+      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+      const latestWeight = records.length > 0 ? records[0].weight : null;
+      this.setData({ weightRecords: records, latestWeight });
+    } catch (e) {
+      console.error('[cat-detail] loadWeightRecords error:', e);
+    }
   },
 
   openWeightModal() {
@@ -119,16 +131,22 @@ Page({
     const fullDate = `${weightDate} ${weightTime || '00:00'}:00`;
 
     wx.showLoading({ title: '保存中...' });
-    await clouddb.addWeightRecord({
-      catId: this.data.catId,
-      date: fullDate,
-      weight: w,
-      note: weightNote || ''
-    });
-    wx.hideLoading();
-    this.setData({ showWeightModal: false });
-    this.loadWeightRecords();
-    wx.showToast({ title: '体重已记录', icon: 'success' });
+    try {
+      await clouddb.addWeightRecord({
+        catId: this.data.catId,
+        date: fullDate,
+        weight: w,
+        note: weightNote || ''
+      });
+      this.setData({ showWeightModal: false });
+      this.loadWeightRecords();
+      wx.showToast({ title: '体重已记录', icon: 'success' });
+    } catch (e) {
+      console.error('[cat-detail] saveWeightRecord error:', e);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
   },
 
   goWeightRecords() {
@@ -173,11 +191,15 @@ Page({
       note: ''
     };
 
-    await clouddb.addRecord(newRecord);
-    this.loadRecords();
-
-    const typeLabel = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checkup: '体检' }[type];
-    wx.showToast({ title: typeLabel + '已记录', icon: 'success' });
+    try {
+      await clouddb.addRecord(newRecord);
+      this.loadRecords();
+      const typeLabel = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checkup: '体检' }[type];
+      wx.showToast({ title: typeLabel + '已记录', icon: 'success' });
+    } catch (e) {
+      console.error('[cat-detail] onQuickRecord error:', e);
+      wx.showToast({ title: '记录失败，请重试', icon: 'none' });
+    }
   },
 
   goHealthRecords() {
@@ -203,10 +225,17 @@ Page({
         if (!res.confirm) return;
         this.setData({ deleting: true });
         wx.showLoading({ title: '删除中...' });
-        await clouddb.deleteCat(this.data.catId);
-        wx.hideLoading();
-        wx.showToast({ title: '已删除', icon: 'success' });
-        setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
+        try {
+          await clouddb.deleteCat(this.data.catId);
+          wx.showToast({ title: '已删除', icon: 'success' });
+          setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
+        } catch (e) {
+          console.error('[cat-detail] deleteCat error:', e);
+          wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+        } finally {
+          wx.hideLoading();
+          this.setData({ deleting: false });
+        }
       }
     });
   },

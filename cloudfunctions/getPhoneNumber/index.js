@@ -30,7 +30,6 @@ exports.main = async (event, context) => {
   return {
     errCode: -3,
     errMsg: '无法在此环境解密手机号',
-    rawCode: code,
     hint: '请确认云函数运行环境为正式版，且小程序已开通手机号快速验证组件'
   };
 };

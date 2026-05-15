@@ -230,9 +230,9 @@ function isCurrentMonth(dateStr) {
   return +parts[0] === now.getFullYear() && +parts[1] === now.getMonth() + 1;
 }
 
-// ─── 连续签到对应的抽奖次数（上限4） ───
+// ─── 连续签到对应的抽奖次数（每7天1次） ───
 function getLotteryDrawsForStreak(streak) {
-  return Math.min(4, Math.floor((streak || 0) / 7));
+  return Math.floor((streak || 0) / 7);
 }
 
 // ─── 累积签到奖励配置 ───
@@ -312,7 +312,7 @@ function buildCheckInWeek(lastCheckInDate, checkInStreak, makeUpDates, drawnMile
     var drawUsed = false;
     if (checked && !isMadeUp && streakStartDate) {
       // 计算当天在连签序列中的位置（1-based）
-      var daysIntoStreak = Math.round((lastCheck.getTime() - d.getTime()) / 86400000) + 1;
+      var daysIntoStreak = Math.round((d.getTime() - streakStartDate.getTime()) / 86400000) + 1;
       if (daysIntoStreak > 0 && daysIntoStreak % 7 === 0) {
         isDrawDay = true;
         drawMilestone = daysIntoStreak;

@@ -128,6 +128,14 @@ Page({
     try {
       const cats = await clouddb.getCats();
 
+      // 批量获取所有宠物的健康记录，按 catId 分组取最近日期
+      const allRecords = await clouddb.getRecords();
+      const latestRecordByCat = {};
+      for (const r of allRecords) {
+        const existing = latestRecordByCat[r.catId];
+        if (!existing || r.date > existing) latestRecordByCat[r.catId] = r.date;
+      }
+
       const catsWithExtras = await Promise.all(cats.map(async cat => {
         const avatarUrl = cat.avatar ? await clouddb.getAvatarUrl(cat.avatar) : '';
 
@@ -161,12 +169,9 @@ Page({
         }
 
         let daysSinceRecord;
-        if (cat._id) {
-          const records = await clouddb.getRecords({ catId: cat._id });
-          if (records.length > 0) {
-            const latest = records.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-            daysSinceRecord = Math.floor((Date.now() - new Date(latest.date).getTime()) / 86400000);
-          }
+        const latestDate = latestRecordByCat[cat._id];
+        if (latestDate) {
+          daysSinceRecord = Math.floor((Date.now() - new Date(latestDate).getTime()) / 86400000);
         }
 
         return Object.assign({}, cat, {

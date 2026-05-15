@@ -33,7 +33,7 @@ Page({
     summaryCount: 0,      // 记录次数
     summaryChangeText: '', // 累计变化文字
     summaryChangeClass: '', // up/down 样式类
-    isCurrentCatPassed: false, // 当前选中宠物是否已已离世
+    isCurrentCatPassed: false, // 当前选中宠物是否已经离世
     showAddModal: false,
     addCatId: '',
     addDate: todayStr(),

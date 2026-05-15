@@ -39,7 +39,6 @@ Page({
 
   // ─── 微信一键登录 ───
   onWxLogin(e) {
-    console.log('[login] onWxLogin triggered, detail:', JSON.stringify(e.detail));
     if (e.detail && e.detail.errMsg && e.detail.errMsg.indexOf('deny') !== -1) {
       wx.showToast({ title: '需要授权才能登录', icon: 'none' }); return;
     }
@@ -53,7 +52,7 @@ Page({
     wx.showLoading({ title: '登录中...' });
     wx.login({
       success: loginRes => {
-        console.log('[login] wx.login success, code:', loginRes.code);
+
         if (!loginRes.code) { wx.hideLoading(); wx.showToast({ title: '微信登录失败', icon: 'none' }); return; }
 
         if (FORCE_MOCK) {
@@ -77,24 +76,23 @@ Page({
           name: 'login', data: { code: loginRes.code },
           success: async cloudRes => {
             wx.hideLoading();
-            console.log('[login] login cloud result:', JSON.stringify(cloudRes));
+
             const openid = cloudRes.result && (cloudRes.result.openid || cloudRes.result.userinfo && cloudRes.result.userinfo.openid);
             if (!openid) {
               wx.showModal({ title: '获取用户失败', content: '云函数 login 未返回 openid，请确认已部署且云数据库权限正确', showCancel: false });
               return;
             }
-            console.log('[login] step1: openid=', openid);
+
 
             let user = null;
             try { user = await clouddb.getUserByOpenid(openid); } catch (e) { console.error('[login] getUserByOpenid error:', e); }
-            console.log('[login] step2: user=', JSON.stringify(user));
+
 
             if (user && user.phone) {
               try { wx.setStorageSync('currentUser', user); } catch (err) {}
               wx.showToast({ title: '登录成功', icon: 'success' });
               setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
             } else if (user) {
-              console.log('[login] step3: 已有账号无手机号，显示绑定弹窗');
               this.setData({ tempUser: user, showBindPhone: true, showPasswordInput: true });
             } else {
               const newUser = {
@@ -104,17 +102,17 @@ Page({
                 loginType: 'wechat',
                 createdAt: new Date().toISOString()
               };
-              console.log('[login] step3: 新用户，创建账号, newUser=', JSON.stringify(newUser));
+
               let id = null;
               try { id = await clouddb.addUser(newUser); } catch (e) { console.error('[login] addUser error:', e); }
-              console.log('[login] step4: addUser returned id=', id);
+
               newUser._id = id;
               try { wx.setStorageSync('currentUser', newUser); } catch (err) {}
-              console.log('[login] step5: setData({tempUser, showBindPhone:true, isNewUser:true})');
+
               this.setData({ tempUser: newUser, showBindPhone: true, showPasswordInput: true, isNewUser: true });
-              console.log('[login] step6: showToast');
+
               wx.showToast({ title: id ? '登录成功，请绑定手机号' : '请绑定手机号', icon: 'none', duration: 2500 });
-              console.log('[login] done, id=', id);
+
             }
           },
           fail: err => {
@@ -162,7 +160,7 @@ Page({
     }
     try {
       const res = await wx.cloud.callFunction({ name: 'getPhoneNumber', data: { code } });
-      console.log('[login] getPhoneNumber result:', JSON.stringify(res));
+
       
       // 兼容两种返回格式
       let phone = null;
@@ -182,7 +180,6 @@ Page({
       } else {
         wx.hideLoading();
         const errMsg = res.result && (res.result.errMsg || res.result.errmsg) || JSON.stringify(res.result || res);
-        console.error('[login] getPhoneNumber no phone, result:', errMsg);
         wx.showModal({
           title: '获取手机号失败',
           content: '错误信息：' + errMsg + '\n\n请确认：\n1. 云函数 getPhoneNumber 已部署\n2. 小程序已开通手机号快速验证组件',
@@ -409,7 +406,6 @@ Page({
         const cloudPath = `user-avatars/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const res = await wx.cloud.uploadFile({ cloudPath, filePath: profileAvatar });
         avatarUrl = res.fileID;
-        console.log('[login] avatar uploaded:', avatarUrl);
       } catch (e) {
         console.error('[login] avatar upload failed:', e);
         wx.showToast({ title: '头像上传失败，已跳过', icon: 'none' });
@@ -429,7 +425,6 @@ Page({
         currentUser.nickname = nickname;
         currentUser.avatar = avatarUrl;
         wx.setStorageSync('currentUser', currentUser);
-        console.log('[login] profile saved:', nickname);
       }
     } catch (e) {
       console.error('[login] save profile error:', e);
