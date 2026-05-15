@@ -74,7 +74,7 @@
 /* ─── 内容区 ─── */
 .content { padding-bottom: 20rpx; }
 
-/* ─── 猫咪筛选标签栏 ─── */
+/* ─── 宠物筛选标签栏 ─── */
 .cat-filter-tabs {
   display: flex;
   white-space: nowrap;
@@ -238,7 +238,8 @@
 /* ─── 底部添加按钮 ─── */
 .fab-wrap {
   position: fixed;
-  bottom: 40rpx;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  bottom: calc(40rpx + constant(safe-area-inset-bottom));
   left: 0;
   right: 0;
   display: flex;

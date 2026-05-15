@@ -1,14 +1,15 @@
 // pages/weight-records/weight-records.js
-// 体重记录列表页：按猫咪筛选，查看每条体重记录，支持增删改
+// 体重记录列表页：按宠物筛选，查看每条体重记录，支持增删改
 const clouddb = require('../../utils/clouddb.js');
 const { datePart, calcAgo, nowTimeStr, datetime, todayStr } = require('../../utils/util.js');
 
 Page({
   data: {
-    catId: '',           // 从猫咪详情页进入时传入，用于默认筛选
-    cats: [],            // 所有猫咪列表
+    isOnline: true,
+    catId: '',           // 从宠物详情页进入时传入，用于默认筛选
+    cats: [],            // 所有宠物列表
     catOptions: [],      // 筛选标签
-    currentCat: 'all',  // 当前筛选的猫咪 key
+    currentCat: 'all',  // 当前筛选的宠物 key
     currentPeriod: 'all', // 时间段筛选
     periodOptions: [
       { key: 'all',    label: '全部' },
@@ -21,13 +22,18 @@ Page({
     ],
     customStartDate: '',  // 自定义起始日期
     customEndDate: '',    // 自定义结束日期
-    records: [],        // 所有体重记录（带猫咪名）
+    // 分页
+    recordsPage: 1,
+    recordsPageSize: 20,
+    hasMoreRecords: false,
+    recordsLoading: false,
+    records: [],        // 所有体重记录（带宠物名）
     filteredRecords: [], // 筛选后记录
     summaryLatest: '',    // 最新体重
     summaryCount: 0,      // 记录次数
     summaryChangeText: '', // 累计变化文字
     summaryChangeClass: '', // up/down 样式类
-    isCurrentCatPassed: false, // 当前选中猫咪是否已去喵星
+    isCurrentCatPassed: false, // 当前选中宠物是否已已离世
     showAddModal: false,
     addCatId: '',
     addDate: todayStr(),
@@ -51,36 +57,67 @@ Page({
     await this.loadRecords();
   },
 
-  onShow() { this.loadCats().then(() => this.loadRecords()); },
+  onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
+    this.loadCats().then(() => this.loadRecords());
+  },
 
-  // 加载所有猫咪
+  // 加载所有宠物
   async loadCats() {
     const cats = await clouddb.getAllCats();
-    const catOptions = [{ key: 'all', label: '全部猫咪' }];
+    const catOptions = [{ key: 'all', label: '全部宠物' }];
     cats.forEach(c => catOptions.push({ key: c._id, label: c.name }));
     this.setData({ cats, catOptions });
   },
 
-  // 加载所有体重记录，关联猫咪名
-  async loadRecords() {
-    const records = await clouddb.getWeightRecords({});
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // 加载体重记录（resetPage=true 从头加载，false 加载更多）
+  async loadRecords(resetPage) {
+    if (resetPage !== false) {
+      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [] });
+    }
+    if (this.data.recordsLoading) return;
+    this.setData({ recordsLoading: true });
 
-    const catsMap = {};
-    this.data.cats.forEach(c => { catsMap[c._id] = c; });
+    try {
+      const page = this.data.recordsPage;
+      const pageSize = this.data.recordsPageSize;
+      const skip = (page - 1) * pageSize;
 
-    const withCat = records.map(r => ({
-      ...r,
-      _catName: catsMap[r.catId] ? catsMap[r.catId].name : '未知猫咪',
-      _catAvatar: catsMap[r.catId] ? (catsMap[r.catId]._displayAvatar || catsMap[r.catId].avatar || '') : '',
-      _ago: calcAgo(r.date)
-    }));
+      const newRecords = await clouddb.getWeightRecords({}, { limit: pageSize, skip: skip });
+      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    this.setData({ records: withCat });
-    this.applyFilter();
+      const catsMap = {};
+      this.data.cats.forEach(c => { catsMap[c._id] = c; });
+
+      const withCat = newRecords.map(function(r) { return Object.assign({}, r, {
+        _catName: catsMap[r.catId] ? catsMap[r.catId].name : '未知宠物',
+        _catAvatar: catsMap[r.catId] ? (catsMap[r.catId]._displayAvatar || catsMap[r.catId].avatar || '') : '',
+        _ago: calcAgo(r.date)
+      }); });
+
+      const allRecords = page === 1 ? withCat : [].concat(this.data.records, withCat);
+      const hasMore = newRecords.length >= pageSize;
+
+      this.setData({
+        records: allRecords,
+        recordsPage: page + 1,
+        hasMoreRecords: hasMore,
+        recordsLoading: false,
+      }, () => { this.applyFilter(); });
+    } catch (e) {
+      console.error('[weight-records] loadRecords error:', e);
+      this.setData({ recordsLoading: false });
+    }
   },
 
-  // 切换猫咪筛选
+  // 触底加载更多
+  onReachBottom() {
+    if (this.data.hasMoreRecords && !this.data.recordsLoading) {
+      this.loadRecords(false);
+    }
+  },
+
+  // 切换宠物筛选
   setCatFilter(e) {
     this.setData({ currentCat: e.currentTarget.dataset.cat, currentPeriod: 'all' });
     this.applyFilter();
@@ -106,14 +143,14 @@ Page({
     const { records, currentCat, currentPeriod, cats } = this.data;
     let filtered = records;
 
-    // 判断当前选中猫咪是否去喵星了
+    // 判断当前选中宠物是否已离世了
     let isCurrentCatPassed = false;
     if (currentCat !== 'all') {
       const cat = cats.find(c => c._id === currentCat);
       isCurrentCatPassed = cat && cat.status === 'passed_away';
     }
 
-    // 猫咪筛选
+    // 宠物筛选
     if (currentCat !== 'all') {
       filtered = filtered.filter(r => r.catId === currentCat);
     }
@@ -141,7 +178,7 @@ Page({
     let summaryChangeClass = '';
     if (filtered.length >= 2) {
       // 汇总应基于筛选后的全部数据，而非只取首尾
-      const sortedByDate = [...filtered].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const sortedByDate = filtered.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
       summaryLatest = sortedByDate[sortedByDate.length - 1].weight;
       const change = sortedByDate[sortedByDate.length - 1].weight - sortedByDate[0].weight;
       summaryChangeClass = change > 0 ? 'up' : 'down';
@@ -174,7 +211,7 @@ Page({
         ctx.scale(dpr, dpr);
 
         // 日期升序排列用于绘图
-        const sorted = [...filteredRecords].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const sorted = filteredRecords.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
 
         // 布局
         const pad = { top: 28, right: 16, bottom: 46, left: 52 };
@@ -183,8 +220,8 @@ Page({
 
         // Y 轴范围
         const ws = sorted.map(r => r.weight);
-        const minW = Math.min(...ws);
-        const maxW = Math.max(...ws);
+        const minW = Math.min.apply(null, ws);
+        const maxW = Math.max.apply(null, ws);
         const margin = Math.max((maxW - minW) * 0.4, 0.3);
         const yMin = Math.max(0, minW - margin);
         const yMax = maxW + margin;
@@ -264,7 +301,7 @@ Page({
   // ─── 打开新增弹窗 ───
   openAddModal(e) {
     const catId = e ? e.currentTarget.dataset.catid : '';
-    if (!catId) { wx.showToast({ title: '请先选择猫咪', icon: 'none' }); return; }
+    if (!catId) { wx.showToast({ title: '请先选择宠物', icon: 'none' }); return; }
     this.setData({
       showAddModal: true,
       addCatId: catId,
@@ -305,14 +342,14 @@ Page({
   onCustomStartChange(e) { this.setData({ customStartDate: e.detail.value }); this.applyFilter(); },
   onCustomEndChange(e)   { this.setData({ customEndDate: e.detail.value });   this.applyFilter(); },
 
-  // 快捷录入：使用当前筛选中的猫咪（而非URL传入的 catId）
+  // 快捷录入：使用当前筛选中的宠物（而非URL传入的 catId）
   openQuickAdd() {
     if (this.data.isCurrentCatPassed) {
-      wx.showToast({ title: '去喵星的猫咪不支持记录', icon: 'none' }); return;
+      wx.showToast({ title: '已离世的宠物不支持记录', icon: 'none' }); return;
     }
     const targetCatId = this.data.currentCat;
     if (!targetCatId || targetCatId === 'all') {
-      wx.showToast({ title: '请先选择猫咪', icon: 'none' }); return;
+      wx.showToast({ title: '请先选择宠物', icon: 'none' }); return;
     }
     this.setData({
       showAddModal: true,
@@ -328,9 +365,9 @@ Page({
   async saveAdd() {
     const { addCatId, addDate, addTime, addWeight, addNote, isCurrentCatPassed } = this.data;
     if (isCurrentCatPassed) {
-      wx.showToast({ title: '去喵星的猫咪不支持记录', icon: 'none' }); return;
+      wx.showToast({ title: '已离世的宠物不支持记录', icon: 'none' }); return;
     }
-    if (!addCatId) { wx.showToast({ title: '请选择猫咪', icon: 'none' }); return; }
+    if (!addCatId) { wx.showToast({ title: '请选择宠物', icon: 'none' }); return; }
     if (!addDate)  { wx.showToast({ title: '请选择日期',  icon: 'none' }); return; }
     const w = parseFloat(addWeight);
     if (isNaN(w) || w <= 0) { wx.showToast({ title: '请输入有效体重(kg)', icon: 'none' }); return; }
@@ -368,5 +405,14 @@ Page({
     await clouddb.deleteWeightRecord(e.currentTarget.dataset.id);
     this.loadRecords();
     wx.showToast({ title: '已删除', icon: 'success' });
-  }
+  },
+
+  async onPullDownRefresh() {
+    try { await this.loadCats(); await this.loadRecords(true); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    const name = this.data.catName || '宝贝';
+    return { title: name + ' - 猫咪健康管家 🐱', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
+  },
 });

@@ -1,5 +1,6 @@
 <!--pages/points-mall/points-mall.wxml-->
 <view class="page">
+  <include src="../../templates/offline-tip.wxml" />
 
   <!-- 积分余额 -->
   <view class="points-banner">
@@ -32,7 +33,7 @@
     <view wx:else class="item-list">
       <view class="item-card" wx:for="{{filteredItems}}" wx:key="_id" bindtap="openRedeem" data-item="{{item}}">
         <view class="item-img-wrap">
-          <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill"/>
+          <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill" lazy-load/>
           <view wx:else class="item-img item-img-placeholder">🎁</view>
           <view wx:if="{{item.type === 'physical'}}" class="item-badge physical">实物</view>
           <view wx:else class="item-badge virtual">虚拟</view>

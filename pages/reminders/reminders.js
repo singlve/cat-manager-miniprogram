@@ -44,6 +44,7 @@ function getDemoReminders() {
 
 Page({
   data: {
+    isOnline: true,
     overdueList: [],
     upcomingList: [],
     futureList: [],
@@ -58,6 +59,7 @@ Page({
   },
 
   onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn() });
     if (app.isLoggedIn()) {
@@ -130,7 +132,7 @@ Page({
     }
   },
 
-  // ── 按猫咪 + 状态筛选 ──
+  // ── 按宠物 + 状态筛选 ──
   _applyFilters() {
     const { allReminders, catFilter, statusFilter } = this.data;
     let filtered = catFilter === 'all'
@@ -170,7 +172,7 @@ Page({
     this._applyFilters();
   },
 
-  // ── 切换猫咪筛选 ──
+  // ── 切换宠物筛选 ──
   onCatFilterChange(e) {
     const catId = e.currentTarget.dataset.catid;
     if (catId === this.data.catFilter) return;
@@ -228,7 +230,7 @@ Page({
     const cats = await clouddb.getCats();
     const alive = cats.filter(c => c.status !== 'passed_away');
     if (alive.length === 0) {
-      wx.showToast({ title: '所有猫咪都已去喵星了', icon: 'none' });
+      wx.showToast({ title: '所有宠物都已已离世了', icon: 'none' });
       return;
     }
     wx.navigateTo({ url: '/pages/reminder-add/reminder-add' });
@@ -250,5 +252,14 @@ Page({
     await clouddb.deleteReminder(e.currentTarget.dataset.id);
     this.loadData();
     wx.showToast({ title: '已删除', icon: 'success' });
-  }
+  },
+
+  async onPullDownRefresh() {
+    try { await this.loadData(); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    const name = this.data.catName || '宝贝';
+    return { title: name + ' - 猫咪健康管家 🐱', path: '/pages/reminders/reminders?catId=' + (this.data.catId || '') };
+  },
 });

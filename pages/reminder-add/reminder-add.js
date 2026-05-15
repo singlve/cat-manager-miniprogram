@@ -50,7 +50,7 @@ Page({
 
   async loadCats() {
     let cats = await clouddb.getCats();
-    // 过滤已去喵星的猫，不给它们添加提醒
+    // 过滤已已离世的猫，不给它们添加提醒
     cats = cats.filter(c => c.status !== 'passed_away');
     this.setData({ cats, noCatsAvailable: cats.length === 0 });
   },
@@ -73,7 +73,7 @@ Page({
     });
   },
 
-  // ─── 切换猫咪时：自动查找该猫咪最近一次「当前类型」的健康记录时间 ───
+  // ─── 切换宠物时：自动查找该宠物最近一次「当前类型」的健康记录时间 ───
   async catChange(e) {
     const cat = this.data.cats[parseInt(e.detail.value)];
     if (!cat) return;
@@ -82,7 +82,7 @@ Page({
     this.updateNextPreview();
   },
 
-  // ─── 切换提醒类型时：自动查找该猫咪最近一次「新类型」的健康记录时间 ───
+  // ─── 切换提醒类型时：自动查找该宠物最近一次「新类型」的健康记录时间 ───
   typeChangeTap(e) {
     const type = e.currentTarget.dataset.type;
     const option = TYPE_OPTIONS.find(t => t.key === type);
@@ -140,7 +140,7 @@ Page({
   async save() {
     const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, note } = this.data;
     const intervalDays = this._getIntervalDays();
-    if (!selectedCatId) { wx.showToast({ title: '请先添加猫咪', icon: 'none' }); return; }
+    if (!selectedCatId) { wx.showToast({ title: '请先添加宠物', icon: 'none' }); return; }
     if (!lastDate) { wx.showToast({ title: '请选择上次时间', icon: 'none' }); return; }
 
     wx.showLoading({ title: '保存中...' });
@@ -156,5 +156,9 @@ Page({
     wx.hideLoading();
     wx.showToast({ title: '保存成功', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 1000);
-  }
+  },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+  },
 });

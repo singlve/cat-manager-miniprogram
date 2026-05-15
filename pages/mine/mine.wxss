@@ -563,6 +563,7 @@ page { background: #f0f2f7; }
 .icon-green { background: linear-gradient(135deg, #e8faf0, #d4f5e4); }
 .icon-orange { background: linear-gradient(135deg, #fff4e5, #ffe8cc); }
 .icon-purple { background: linear-gradient(135deg, #f5e8ff, #ead4ff); }
+.icon-teal { background: linear-gradient(135deg, #e8faf5, #d4f5e8); }
 
 .menu-icon-text { font-size: 36rpx; }
 
@@ -637,7 +638,8 @@ page { background: #f0f2f7; }
   position: fixed; left: 0; right: 0; bottom: 0;
   background: #fff;
   border-radius: 32rpx 32rpx 0 0;
-  padding: 16rpx 48rpx 60rpx;
+  padding: 16rpx 48rpx calc(60rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 48rpx calc(60rpx + constant(safe-area-inset-bottom));
   z-index: 999;
 }
 .sheet-handle {
@@ -723,7 +725,8 @@ page { background: #f0f2f7; }
   position: fixed; left: 0; right: 0; bottom: 0;
   background: #fff;
   border-radius: 32rpx 32rpx 0 0;
-  padding: 16rpx 48rpx 80rpx;
+  padding: 16rpx 48rpx calc(80rpx + env(safe-area-inset-bottom));
+  padding: 16rpx 48rpx calc(80rpx + constant(safe-area-inset-bottom));
   z-index: 999;
   /* stopBubble 防止点击内容穿透到遮罩 */
 }

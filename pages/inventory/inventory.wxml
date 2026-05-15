@@ -1,5 +1,6 @@
 <!--pages/inventory/inventory.wxml-->
 <view class="page">
+  <include src="../../templates/offline-tip.wxml" />
 
   <!-- 顶部标题 -->
   <view class="page-header">
@@ -33,7 +34,7 @@
 
       <!-- 主行：图片 + 信息 + 数量角标 -->
       <view class="card-main">
-        <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill"/>
+        <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill" lazy-load/>
         <view wx:else class="item-img placeholder">{{item.itemType === 'virtual' ? '🎫' : '📦'}}</view>
 
         <view class="item-body">
@@ -63,7 +64,10 @@
               <text class="ship-no">{{t.trackingNo || '暂无单号'}}</text>
             </view>
           </view>
-          <text class="ship-copy" catchtap="copyTracking" data-tracking="{{t.trackingNo}}" data-carrier="{{t.carrier}}">复制</text>
+          <view class="ship-right">
+            <text class="ship-track" catchtap="queryTracking" data-tracking="{{t.trackingNo}}" data-carrier="{{t.carrier}}">物流</text>
+            <text class="ship-copy" catchtap="copyTracking" data-tracking="{{t.trackingNo}}" data-carrier="{{t.carrier}}">复制</text>
+          </view>
         </view>
       </view>
 
@@ -121,6 +125,55 @@
       <view class="sheet-btns">
         <view class="s-btn s-cancel" catchtap="closeConfirmModal">取消</view>
         <view class="s-btn s-confirm {{saving ? 'disabled' : ''}}" catchtap="doConfirm">{{saving ? '提交中...' : '确认兑换'}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ── 物流查询弹窗 ── -->
+  <view wx:if="{{showTracking}}" class="mask" bindtap="closeTracking">
+    <view class="sheet track-sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">📦 物流详情</text>
+
+      <view class="track-header">
+        <text class="track-carrier">{{currentTrackingCarrier || '快递'}}</text>
+        <text class="track-no">{{currentTrackingNo}}</text>
+      </view>
+
+      <!-- 加载中 -->
+      <view wx:if="{{trackingLoading}}" class="track-loading">
+        <text>查询中...</text>
+      </view>
+
+      <!-- 查询结果 -->
+      <view wx:elif="{{trackingResult}}" class="track-body">
+        <!-- 当前状态 -->
+        <view class="track-state">
+          <text class="track-state-label">当前状态：</text>
+          <text class="track-state-value">{{trackingResult.state === '1' ? '已签收 ✅' : trackingResult.state === '0' ? '运输中 🚚' : trackingResult.state === '4' ? '派件中 📦' : trackingResult.state === '2' ? '疑难件 ⚠️' : trackingResult.state === '3' ? '已退回 ↩️' : '未知'}}</text>
+        </view>
+
+        <!-- 轨迹时间线 -->
+        <view wx:if="{{trackingResult.data && trackingResult.data.length > 0}}" class="track-timeline">
+          <view wx:for="{{trackingResult.data}}" wx:for-item="step" wx:key="time" class="track-step {{index === 0 ? 'latest' : ''}}">
+            <view class="track-step-dot"></view>
+            <view class="track-step-line" wx:if="{{index < trackingResult.data.length - 1}}"></view>
+            <view class="track-step-body">
+              <text class="track-step-context">{{step.context}}</text>
+              <text class="track-step-time">{{step.time}}</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 无轨迹 -->
+        <view wx:else class="track-empty">
+          <text>暂未查到物流轨迹</text>
+          <text class="track-empty-hint">单号可能还未录入系统，请稍后再试</text>
+        </view>
+      </view>
+
+      <view class="sheet-btns">
+        <view class="s-btn s-confirm" catchtap="closeTracking">关闭</view>
       </view>
     </view>
   </view>

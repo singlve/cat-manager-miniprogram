@@ -1,0 +1,9 @@
+{
+  "name": "queryExpress",
+  "version": "1.0.0",
+  "description": "查询快递物流信息",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

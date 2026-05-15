@@ -1,0 +1,192 @@
+<!--pages/expense/expense.wxml-->
+<view class="page">
+  <include src="../../templates/offline-tip.wxml" />
+  <!-- ═══════════════ 顶部导航栏：年份 + 视图切换 ═══════════════ -->
+  <view class="nav-bar">
+    <view class="nav-year-row">
+      <text class="nav-arrow" bindtap="onPrevYear" aria-label="上一年">◀</text>
+      <text class="nav-year-text">{{currentYear}}年</text>
+      <text class="nav-arrow {{currentYear >= maxYear ? 'disabled' : ''}}" bindtap="onNextYear" aria-label="下一年">▶</text>
+    </view>
+    <view class="view-toggle">
+      <view class="tog-btn {{viewMode === 'month' ? 'active' : ''}}" bindtap="onSwitchView" data-mode="month">月度</view>
+      <view class="tog-btn {{viewMode === 'year' ? 'active' : ''}}" bindtap="onSwitchView" data-mode="year">年度</view>
+    </view>
+  </view>
+
+  <!-- ═══════════════ 加载中 ═══════════════ -->
+  <view wx:if="{{loading}}" class="loading-box">
+    <text>加载中...</text>
+  </view>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- 月度视图 -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <block wx:elif="{{viewMode === 'month'}}">
+
+    <!-- 月度统计卡片 -->
+    <view class="month-card">
+      <view class="mc-header">
+        <text class="mc-arrow" bindtap="onPrevMonth" aria-label="上一月">〈</text>
+        <text class="mc-label">{{currentMonthLabel}}支出</text>
+        <text class="mc-arrow" bindtap="onNextMonth" aria-label="下一月">〉</text>
+      </view>
+      <text class="mc-total">¥{{stats.total}}</text>
+      <view wx:if="{{stats.cats && groupedExpenses.length > 0}}" class="mc-breakdown">
+        <block wx:for="{{stats.cats}}" wx:for-index="k" wx:for-item="v" wx:key="k">
+          <text class="mc-cat">{{k === '__shared' ? '🏠 公共' : '🐱 ' + (stats.catsByName[k] || '未知')}} ¥{{v.toFixed(2)}}</text>
+        </block>
+      </view>
+    </view>
+
+    <!-- 猫咪筛选 -->
+    <view wx:if="{{catFilterOptions.length > 1}}" class="filter-row">
+      <picker mode="selector" range="{{catFilterOptions}}" range-key="name" bindchange="onCatFilterChange" value="{{catFilterIdx}}">
+        <view class="filter-pick">
+          <text>{{catFilterOptions[catFilterIdx || 0] ? catFilterOptions[catFilterIdx || 0].name : '全部猫咪'}}</text>
+          <text class="filter-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{groupedExpenses.length === 0}}" class="empty-tip">
+      <text class="empty-icon">💰</text>
+      <text class="empty-text">本月还没有记账</text>
+      <text class="empty-hint">点击下方按钮开始记录</text>
+    </view>
+
+    <!-- 记账列表 -->
+    <view wx:else class="expense-list">
+      <view wx:for="{{groupedExpenses}}" wx:for-item="group" wx:key="date" class="date-group">
+        <view class="date-label">
+          <text class="date-text">{{group.date}}</text>
+          <text class="date-sum">¥{{group.dayTotalStr}}</text>
+        </view>
+        <view
+          wx:for="{{group.items}}" wx:for-item="e" wx:key="_id"
+          class="expense-item"
+          bindlongpress="onLongPress"
+          data-id="{{e._id}}"
+        >
+          <view class="exp-left">
+            <view class="exp-icon-wrap">
+              <text class="exp-emoji">{{e.categoryIcon || '💰'}}</text>
+            </view>
+            <view class="exp-info">
+              <text class="exp-cat">{{e.categoryIcon || ''}} {{e.categoryName || e.category}}</text>
+              <text wx:if="{{e.note}}" class="exp-note">{{e.note}}</text>
+              <text class="exp-pet-name">{{e.petId ? (stats.catsByName[e.petId] || '猫咪') : '公共花销'}}</text>
+            </view>
+          </view>
+          <text class="exp-amount">-¥{{e.amount}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{groupedExpenses.length > 0}}" class="hint-box">
+      <text>长按任意记录可删除</text>
+    </view>
+
+  </block>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- 年度视图 -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <block wx:elif="{{viewMode === 'year'}}">
+
+    <!-- 年总额卡片 -->
+    <view class="year-summary-card">
+      <text class="ys-label">{{currentYear}}年总支出</text>
+      <text class="ys-total">¥{{annualStats.total}}</text>
+      <view class="ys-row">
+        <view class="ys-cell">
+          <text class="ysc-val">¥{{annualStats.avgMonth}}</text>
+          <text class="ysc-lbl">月均支出</text>
+        </view>
+        <view class="ys-divider"></view>
+        <view class="ys-cell">
+          <text class="ysc-val">{{annualStats.cats.length}}只</text>
+          <text class="ysc-lbl">涉及宠物</text>
+        </view>
+        <view class="ys-divider"></view>
+        <view class="ys-cell">
+          <text class="ysc-val">{{annualStats.months.length > 0 ? (annualStats.maxMonthLabel || '-') : '-'}}</text>
+          <text class="ysc-lbl">最高月份</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 月度柱状图 -->
+    <view class="chart-card">
+      <text class="chart-title">月度分布</text>
+      <view class="bar-chart">
+        <view wx:for="{{annualStats.months}}" wx:key="month"
+              class="bar-col" bindtap="onTapMonth" data-month="{{item.month}}">
+          <text class="bar-val">{{item.total > 0 ? '¥' + item.total : ''}}</text>
+          <view class="bar {{item.isMax ? 'bar-max' : ''}} {{item.total > 0 ? '' : 'bar-zero'}}"
+                style="height: {{item.height}}rpx"></view>
+          <text class="bar-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view wx:if="{{annualStats.total == 0}}" class="empty-tip">
+      <text class="empty-icon">📊</text>
+      <text class="empty-text">今年还没有记账数据</text>
+    </view>
+
+    <!-- 分类占比 -->
+    <view wx:if="{{annualStats.total > 0}}" class="chart-card">
+      <text class="chart-title">分类占比</text>
+      <view class="cat-rows">
+        <view wx:for="{{annualStats.categories}}" wx:key="key" wx:if="{{item.total > 0}}" class="cat-row">
+          <view class="cr-left">
+            <text class="cr-icon">{{item.icon}}</text>
+            <text class="cr-name">{{item.name}}</text>
+            <text class="cr-pct">{{item.pct}}%</text>
+          </view>
+          <view class="cr-track">
+            <view class="cr-fill" style="width: {{item.pct}}%; background: {{item.color}}"></view>
+          </view>
+          <text class="cr-amt">¥{{item.totalStr}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 猫咪排行 -->
+    <view wx:if="{{annualStats.total > 0}}" class="chart-card">
+      <text class="chart-title">猫咪排行</text>
+      <view class="rank-list">
+        <view wx:for="{{annualStats.cats}}" wx:key="id" wx:if="{{item.total > 0}}" class="rank-item">
+          <text class="rk-idx {{index === 0 ? 'rk-gold' : index === 1 ? 'rk-silver' : index === 2 ? 'rk-bronze' : ''}}">{{index + 1}}</text>
+          <text class="rk-name">{{item.name}}</text>
+          <view class="rk-bar-wrap">
+            <view class="rk-bar" style="width: {{item.pct}}%; background: {{annualStats.categories[0] ? annualStats.categories[0].color : '#4A90D9'}}"></view>
+          </view>
+          <text class="rk-amt">¥{{item.totalStr}}</text>
+        </view>
+      </view>
+    </view>
+
+  </block>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="goAdd" aria-label="添加记账">
+    <text class="fab-text">+</text>
+  </view>
+
+  <!-- 删除确认弹窗 -->
+  <view wx:if="{{showDeleteModal}}" class="mask" bindtap="closeDeleteModal">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">确认删除？</text>
+      <text class="sheet-sub">删除后无法恢复</text>
+      <view class="sheet-btns">
+        <view class="s-btn s-cancel" catchtap="closeDeleteModal">取消</view>
+        <view class="s-btn s-confirm" catchtap="confirmDelete">删除</view>
+      </view>
+    </view>
+  </view>
+</view>

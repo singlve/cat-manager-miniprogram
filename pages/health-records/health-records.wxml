@@ -1,10 +1,11 @@
 <!-- pages/health-records/health-records.wxml -->
 <view class="container">
+  <include src="../../templates/offline-tip.wxml" />
   <view class="page-header">
     <text class="page-title">📋 健康记录</text>
   </view>
 
-  <!-- 猫咪筛选标签 -->
+  <!-- 宠物筛选标签 -->
   <scroll-view class="cat-tabs-scroll" scroll-x>
     <view class="cat-tabs">
       <view
@@ -38,7 +39,7 @@
       <text class="empty-emoji">📋</text>
     </view>
     <text class="empty-text">暂无健康记录</text>
-    <text class="empty-hint">在猫咪详情页点击快速记录按钮为猫咪添加第一条记录</text>
+    <text class="empty-hint">在宠物详情页点击快速记录按钮为宠物添加第一条记录</text>
     <view class="empty-cta" hover-class="btn-hover" bindtap="goBack">去添加记录 ›</view>
   </view>
 
@@ -51,9 +52,9 @@
         </view>
       </view>
       <view class="record-center">
-        <!-- 筛选全部猫咪时显示猫咪名 -->
+        <!-- 筛选全部宠物时显示宠物名 -->
         <view wx:if="{{currentCat === 'all'}}" class="record-cat-name">
-          <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill"></image>
+          <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill" lazy-load></image>
           <text wx:else class="cat-avatar-placeholder">🐱</text>
           <text>{{item._catName}}</text>
         </view>
@@ -66,6 +67,12 @@
         <view class="delete-record" data-id="{{item._id}}" bindtap="deleteRecord">删除</view>
       </view>
     </view>
+  </view>
+
+  <!-- 底部分页状态 -->
+  <view wx:if="{{records.length > 0}}" class="list-footer">
+    <text wx:if="{{recordsLoading}}" class="list-footer-text">加载中...</text>
+    <text wx:elif="{{!hasMoreRecords}}" class="list-footer-text">— 没有更多了 —</text>
   </view>
 
   <!-- 编辑弹窗 -->

@@ -1,0 +1,6 @@
+<!-- 离线提示条 - 通过 <include src="../../templates/offline-tip.wxml" /> 引入 -->
+<!-- 需要在页面 data 中有 isOnline 字段 -->
+<view class="offline-tip" wx:if="{{!isOnline}}">
+  <text class="offline-tip__icon">⚠️</text>
+  <text class="offline-tip__text">当前无网络，数据可能无法同步</text>
+</view>

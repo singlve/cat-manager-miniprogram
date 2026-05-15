@@ -225,3 +225,76 @@ page { background: #f5f6fa; }
 .s-cancel { background: #f5f5f5; color: #666; }
 .s-confirm { background: #4A90D9; color: #fff; }
 .s-disabled { opacity: .5; }
+
+/* ── 快递行右侧按钮组 ── */
+.ship-right { display: flex; align-items: center; gap: 8rpx; flex-shrink: 0; margin-left: 12rpx; }
+
+.ship-track {
+  flex-shrink: 0; font-size: 23rpx; color: #FF6B6B;
+  padding: 6rpx 18rpx; background: #FFF0F0; border-radius: 8rpx;
+}
+.ship-track:active { background: #FFE0E0; }
+
+/* ════════════════════════════════════════════════════
+   物流查询弹窗
+   ════════════════════════════════════════════════════ */
+.track-sheet { max-height: 85vh; }
+
+.track-header {
+  display: flex; align-items: center; justify-content: center; gap: 16rpx;
+  padding: 20rpx 0 16rpx; border-bottom: 1rpx solid #f0f0f0; margin-bottom: 16rpx;
+}
+.track-carrier { font-size: 28rpx; font-weight: 700; color: #333; }
+.track-no { font-size: 24rpx; color: #999; font-family: monospace; }
+
+.track-loading { text-align: center; padding: 60rpx 0; font-size: 28rpx; color: #999; }
+
+.track-body { padding: 0 4rpx; }
+
+/* 当前状态 */
+.track-state {
+  display: flex; align-items: center;
+  padding: 18rpx 20rpx; background: #F0F7FF;
+  border-radius: 12rpx; margin-bottom: 24rpx;
+}
+.track-state-label { font-size: 26rpx; color: #666; }
+.track-state-value { font-size: 26rpx; color: #4A90D9; font-weight: 600; }
+
+/* 轨迹时间线 */
+.track-timeline { padding-left: 28rpx; }
+
+.track-step { position: relative; padding-left: 40rpx; padding-bottom: 24rpx; }
+.track-step:last-child { padding-bottom: 0; }
+
+/* 时间线圆点 */
+.track-step-dot {
+  position: absolute; left: 0; top: 6rpx;
+  width: 16rpx; height: 16rpx; border-radius: 50%;
+  background: #d0d0d0; border: 3rpx solid #f0f0f0;
+  z-index: 1;
+}
+.track-step.latest .track-step-dot {
+  background: #4A90D9; border-color: #CDE3F8;
+  box-shadow: 0 0 0 6rpx rgba(74,144,217,.15);
+}
+
+/* 时间线竖线 */
+.track-step-line {
+  position: absolute; left: 7rpx; top: 26rpx; bottom: 0;
+  width: 2rpx; background: #e8e8e8;
+}
+
+/* 轨迹内容 */
+.track-step-body { padding-top: 2rpx; }
+.track-step-context {
+  display: block; font-size: 26rpx; color: #333; line-height: 1.6;
+}
+.track-step.latest .track-step-context { font-weight: 600; color: #1a1a1a; }
+.track-step-time {
+  display: block; font-size: 22rpx; color: #999; margin-top: 4rpx;
+}
+
+/* 空状态 */
+.track-empty { text-align: center; padding: 60rpx 0; }
+.track-empty > text:first-child { display: block; font-size: 28rpx; color: #999; }
+.track-empty-hint { display: block; font-size: 24rpx; color: #ccc; margin-top: 10rpx; }

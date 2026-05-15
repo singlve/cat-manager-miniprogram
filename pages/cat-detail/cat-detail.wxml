@@ -1,7 +1,7 @@
 <!-- pages/cat-detail/cat-detail.wxml -->
 <view class="container">
 
-  <!-- 猫咪头部卡片 -->
+  <!-- 宠物头部卡片 -->
   <view class="cat-header">
     <view class="avatar-wrap">
       <image wx:if="{{cat.avatar}}" src="{{cat._displayAvatar || cat.avatar}}" mode="aspectFill" class="avatar" />
@@ -20,7 +20,7 @@
         <view class="tag" wx:if="{{cat.adoptedDate}}">🏠 {{cat.adoptedDate}}</view>
         <view class="tag tag-neutered" wx:if="{{cat.neutered === true}}">⚥ 已绝育</view>
         <view class="tag" wx:if="{{cat.neutered !== true}}">⚥ 未绝育</view>
-        <view class="tag tag-passed" wx:if="{{cat.status === 'passed_away'}}">🌈 去喵星了{{cat.passedDate ? ' ' + cat.passedDate : ''}}</view>
+        <view class="tag tag-passed" wx:if="{{cat.status === 'passed_away'}}">🌈 已离世{{cat.passedDate ? ' ' + cat.passedDate : ''}}</view>
         <view class="tag tag-withme" wx:if="{{cat.status !== 'passed_away'}}">🏠 在身边</view>
       </view>
       <text class="note" wx:if="{{cat.note}}">{{cat.note}}</text>
@@ -33,7 +33,7 @@
 
   <!-- 快速记录区：每个按钮直接包 picker，点一下弹原生日期选择 -->
   <view class="section" wx:if="{{cat.status !== 'passed_away'}}">
-    <text class="section-title">🏥 快速记录</text>
+    <text class="section-title">📋 快速记录</text>
     <view class="quick-actions">
       <picker mode="date" value="{{nowDate}}" data-type="bath" bindchange="onQuickRecord">
         <view class="quick-btn bath">
@@ -106,7 +106,7 @@
 
     <view wx:if="{{!latestWeight}}" class="empty-records">
       <text class="empty-main">还没有体重记录</text>
-      <text class="empty-sub">记录猫咪体重，关注健康变化</text>
+      <text class="empty-sub">记录宠物体重，关注健康变化</text>
     </view>
 
     <view wx:else class="weight-summary-card">
@@ -128,14 +128,6 @@
     <view class="quick-add-weight" catchtap="openWeightModal" wx:if="{{cat.status !== 'passed_away'}}">
       <text class="quick-add-icon">⚖️</text>
       <text class="quick-add-text">录入今日体重</text>
-    </view>
-  </view>
-
-  <!-- 提醒设置区 -->
-  <view class="section">
-    <view class="section-header">
-      <text class="section-title">🔔 提醒设置</text>
-      <text class="view-more" bindtap="goReminders">管理提醒 ›</text>
     </view>
   </view>
 

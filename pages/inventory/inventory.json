@@ -1,4 +1,6 @@
 {
   "navigationBarTitleText": "我的背包",
-  "navigationBarBackgroundColor": "#4A90D9"
+  "navigationBarBackgroundColor": "#4A90D9",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
 }

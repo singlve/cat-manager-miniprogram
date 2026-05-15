@@ -1,0 +1,70 @@
+/* pages/expense-add/expense-add.wxss */
+page { background: #f5f6fa; }
+
+.card {
+  margin: 24rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 32rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,.04);
+}
+
+.field { margin-bottom: 32rpx; }
+.field:last-child { margin-bottom: 0; }
+.field-label {
+  display: block;
+  font-size: 28rpx; color: #333; font-weight: 600;
+  margin-bottom: 14rpx;
+}
+
+/* ── picker ── */
+.picker-box {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f8f9fc; border-radius: 16rpx; padding: 22rpx 28rpx;
+}
+.picker-box text { font-size: 30rpx; color: #333; }
+.picker-arrow { font-size: 24rpx; color: #aaa; }
+
+/* ── 分类网格 ── */
+.category-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16rpx;
+}
+.cat-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: #f8f9fc; border-radius: 16rpx; padding: 20rpx 0;
+  border: 2rpx solid transparent; transition: all .2s;
+}
+.cat-item.active {
+  background: rgba(74,144,217,.08); border-color: #4A90D9;
+}
+.cat-icon { font-size: 40rpx; }
+.cat-name { font-size: 24rpx; color: #888; margin-top: 8rpx; }
+.cat-item.active .cat-name { color: #4A90D9; font-weight: 600; }
+
+/* ── 金额 ── */
+.amount-box {
+  display: flex; align-items: center;
+  background: #f8f9fc; border-radius: 16rpx; padding: 16rpx 28rpx;
+}
+.amount-yuan { font-size: 44rpx; color: #4A90D9; font-weight: 700; flex-shrink: 0; }
+.amount-input {
+  flex: 1; font-size: 44rpx; font-weight: 700; color: #333;
+  padding-left: 8rpx; min-height: 60rpx;
+}
+
+/* ── 备注 ── */
+.note-input {
+  background: #f8f9fc; border-radius: 16rpx; padding: 20rpx 28rpx;
+  width: 100%; box-sizing: border-box; font-size: 28rpx; color: #333;
+  min-height: 80rpx;
+}
+
+/* ── 保存 ── */
+.save-section { padding: 28rpx 24rpx; }
+.save-btn {
+  background: linear-gradient(135deg, #4A90D9, #60A5FA);
+  border-radius: 44rpx; padding: 28rpx 0; text-align: center;
+}
+.save-btn text { font-size: 32rpx; color: #fff; font-weight: 700; }
+.save-btn.disabled { opacity: .5; }

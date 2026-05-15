@@ -22,7 +22,7 @@
       <view class="add-btn" bindtap="openAddItem">+ 添加商品</view>
       <view wx:if="{{items.length === 0}}" class="empty-tip">暂无商品</view>
       <view class="item-row" wx:for="{{items}}" wx:key="_id">
-        <image wx:if="{{item.image}}" class="item-thumb" src="{{item.image}}" mode="aspectFill"/>
+        <image wx:if="{{item.image}}" class="item-thumb" src="{{item.image}}" mode="aspectFill" lazy-load/>
         <view wx:else class="item-thumb item-thumb-placeholder">🎁</view>
         <view class="item-info">
           <text class="item-name">{{item.name}}</text>

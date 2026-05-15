@@ -1,5 +1,6 @@
 <!-- pages/reminders/reminders.wxml -->
 <view class="page">
+  <include src="../../templates/offline-tip.wxml" />
 
   <!-- 未登录提示 -->
   <view wx:if="{{!isLoggedIn}}" class="guest-banner">
@@ -7,14 +8,14 @@
       <text class="guest-emoji">🔔</text>
     </view>
     <text class="guest-title">登录后管理提醒</text>
-    <text class="guest-desc">登录后可以为猫咪设置定期提醒，不错过每一次护理</text>
+    <text class="guest-desc">登录后可以为宠物设置定期提醒，不错过每一次护理</text>
     <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
   </view>
 
   <!-- 已登录：筛选区域 + 卡片列表 -->
   <view wx:if="{{isLoggedIn}}">
 
-    <!-- 猫咪筛选标签栏 -->
+    <!-- 宠物筛选标签栏 -->
     <scroll-view wx:if="{{catTabs.length > 1}}" class="cat-filter-tabs" scroll-x enhanced show-scrollbar="{{false}}">
       <view class="cat-filter-tab {{catFilter === 'all' ? 'active' : ''}}" bindtap="onCatFilterChange" data-catid="all">全部</view>
       <view

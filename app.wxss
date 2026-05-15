@@ -1,0 +1,22 @@
+/* 全局样式 - 离线提示条 */
+.offline-tip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12rpx 24rpx;
+  background: #fff3cd;
+  border-bottom: 2rpx solid #ffc107;
+}
+.offline-tip__icon {
+  font-size: 28rpx;
+  margin-right: 12rpx;
+}
+.offline-tip__text {
+  font-size: 24rpx;
+  color: #856404;
+}

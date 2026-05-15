@@ -4,6 +4,7 @@ const clouddb = require('../../utils/clouddb.js');
 
 Page({
   data: {
+    isOnline: true,
     filterTab: 'all',       // 'all' | 'physical' | 'virtual'
     items: [],              // all consolidated items
     filteredItems: [],      // filtered view
@@ -16,10 +17,20 @@ Page({
     confirmQty: 1,
     confirmMax: 1,
     selectedAddressId: '',
-    saving: false
+    saving: false,
+
+    // 物流查询弹窗
+    showTracking: false,
+    trackingLoading: false,
+    trackingResult: null,
+    currentTrackingCarrier: '',
+    currentTrackingNo: '',
   },
 
-  onShow() { this.loadAll(); },
+  onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
+    this.loadAll();
+  },
 
   async loadAll() {
     this.setData({ loading: true });
@@ -323,8 +334,47 @@ Page({
     wx.navigateTo({ url: '/pages/webview/webview?url=' + encodeURIComponent('https://m.kuaidi100.com/query?nu=' + encodeURIComponent(no)) });
   },
 
+  async queryTracking(e) {
+    const carrier = e.currentTarget.dataset.carrier || '';
+    const no = e.currentTarget.dataset.tracking || '';
+    if (!no) return;
+
+    this.setData({
+      showTracking: true, trackingLoading: true, trackingResult: null,
+      currentTrackingCarrier: carrier, currentTrackingNo: no
+    });
+
+    try {
+      const res = await wx.cloud.callFunction({
+        name: 'queryExpress',
+        data: { carrier, trackingNo: no }
+      });
+      const r = res.result || {};
+      if (r.success) {
+        this.setData({ trackingResult: r.data, trackingLoading: false });
+      } else {
+        wx.showToast({ title: r.error || '查询失败', icon: 'none' });
+        this.setData({ showTracking: false, trackingLoading: false });
+      }
+    } catch (e) {
+      console.error('[queryTracking]', e);
+      wx.showToast({ title: '查询失败，请重试', icon: 'none' });
+      this.setData({ showTracking: false, trackingLoading: false });
+    }
+  },
+
+  closeTracking() { this.setData({ showTracking: false }); },
+
   goMall() { wx.navigateTo({ url: '/pages/points-mall/points-mall' }); },
 
   stopBubble() {},
-  goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); }
+  goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
+
+  async onPullDownRefresh() {
+    try { await this.loadAll(); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 我的背包 🎒', path: '/pages/inventory/inventory' };
+  },
 });

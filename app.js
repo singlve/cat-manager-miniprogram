@@ -1,14 +1,17 @@
 // app.js
-// 猫咪健康管家 - 应用入口
+// 宠物健康管家 - 应用入口
 App({
   globalData: {
     userInfo: null,
     openid: null,
-    cloudReady: false
+    cloudReady: false,
+    isOnline: true,    // 网络状态（默认在线）
+    catsCache: { data: null, ts: 0 }  // 猫咪列表缓存（5分钟过期）
   },
 
   onLaunch() {
     this.initCloud();
+    this._initNetworkMonitor();
   },
 
   // 判断用户是否已登录（本地 storage 中有 currentUser 且有 openid）
@@ -65,5 +68,27 @@ App({
     } catch (e) {
       console.warn('[app] login 云函数未部署或调用失败（正常，部署后消失）:', e);
     }
+  },
+
+  // ─── 网络状态监听 ───
+  _initNetworkMonitor() {
+    // 初始化：获取当前网络类型
+    wx.getNetworkType({
+      success: (res) => {
+        this.globalData.isOnline = res.networkType !== 'none';
+      },
+      fail: () => {
+        this.globalData.isOnline = false;
+      }
+    });
+    // 监听网络状态变化
+    wx.onNetworkStatusChange((res) => {
+      const wasOffline = !this.globalData.isOnline;
+      this.globalData.isOnline = res.isConnected;
+      if (wasOffline && res.isConnected) {
+        // 从离线恢复 → 提示用户
+        wx.showToast({ title: '网络已恢复', icon: 'success', duration: 1500 });
+      }
+    });
   }
 });

@@ -1,4 +1,6 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "提醒列表"
+  "navigationBarTitleText": "提醒列表",
+  "enablePullDownRefresh": true,
+  "backgroundTextStyle": "dark"
 }

@@ -13,6 +13,8 @@
     "pages/mine/mine",
     "pages/about/about",
     "pages/inventory/inventory",
+    "pages/expense/expense",
+    "pages/expense-add/expense-add",
     "pages/points-mall/points-mall",
     "pages/admin-items/admin-items",
     "pages/webview/webview",
@@ -21,7 +23,7 @@
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#4A90D9",
-    "navigationBarTitleText": "猫咪健康管家",
+    "navigationBarTitleText": "宠物健康管家",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {
@@ -32,9 +34,9 @@
     "list": [
       {
         "pagePath": "pages/cat-list/cat-list",
-        "text": "猫咪",
-        "iconPath": "assets/icons/cat.png",
-        "selectedIconPath": "assets/icons/cat-active.png"
+        "text": "宠物",
+        "iconPath": "assets/icons/pet.png",
+        "selectedIconPath": "assets/icons/pet-active.png"
       },
       {
         "pagePath": "pages/reminders/reminders",
@@ -54,11 +56,12 @@
   "sitemapLocation": "sitemap.json",
   "permission": {
     "scope.userLocation": {
-      "desc": "用于添加猫咪位置信息"
+      "desc": "用于添加宠物位置信息"
     }
   },
   "requiredBackgroundModes": [
     "audio"
   ],
-  "usingComponents": {}
+  "usingComponents": {},
+  "lazyCodeLoading": "requiredComponents"
 }

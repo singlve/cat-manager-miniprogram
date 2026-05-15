@@ -50,5 +50,9 @@ Page({
     setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
   },
 
-  goLogin() { wx.navigateBack(); }
+  goLogin() { wx.navigateBack(); },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+  },
 });

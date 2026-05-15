@@ -1,5 +1,5 @@
 // pages/cat-detail/cat-detail.js
-// 猫咪详情页：快速记录 + 健康时间轴
+// 宠物详情页：快速记录 + 健康时间轴
 const clouddb = require('../../utils/clouddb.js');
 const { calcAgo } = require('../../utils/util.js');
 
@@ -67,7 +67,7 @@ Page({
   async loadRecords() {
     const records = await clouddb.getRecords({ catId: this.data.catId });
     records.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const withAgo = records.map(r => ({ ...r, _ago: calcAgo(r.date) }));
+    const withAgo = records.map(function(r) { return Object.assign({}, r, { _ago: calcAgo(r.date) }); });
     this.setData({ records: withAgo });
   },
 
@@ -83,7 +83,7 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     if (this.data.cat.status === 'passed_away') {
-      wx.showToast({ title: '去喵星的猫咪不支持记录', icon: 'none' }); return;
+      wx.showToast({ title: '已离世的宠物不支持记录', icon: 'none' }); return;
     }
     const now = new Date();
     this.setData({
@@ -109,11 +109,11 @@ Page({
     const w = parseFloat(weightValue);
     if (!weightDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     if (isNaN(w) || w <= 0) { wx.showToast({ title: '请输入有效体重(kg)', icon: 'none' }); return; }
-    if (w > 30) { wx.showToast({ title: '体重数值过大，请检查', icon: 'none' }); return; }
+    if (w > 60) { wx.showToast({ title: '体重数值过大，请检查', icon: 'none' }); return; }
 
-    // 日期不能早于猫咪生日（按日期部分比较即可）
+    // 日期不能早于宠物生日（按日期部分比较即可）
     if (this.data.cat.birthday && weightDate < this.data.cat.birthday) {
-      wx.showToast({ title: '记录日期不能早于猫咪生日', icon: 'none' }); return;
+      wx.showToast({ title: '记录日期不能早于宠物生日', icon: 'none' }); return;
     }
 
     const fullDate = `${weightDate} ${weightTime || '00:00'}:00`;
@@ -153,7 +153,7 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     if (this.data.cat.status === 'passed_away') {
-      wx.showToast({ title: '去喵星的猫咪不支持记录', icon: 'none' }); return;
+      wx.showToast({ title: '已离世的宠物不支持记录', icon: 'none' }); return;
     }
 
     const type = e.currentTarget.dataset.type;
@@ -186,15 +186,6 @@ Page({
     wx.navigateTo({ url: '/pages/health-records/health-records?catId=' + this.data.catId });
   },
 
-  goReminders() {
-    if (this.data.cat && this.data.cat.status === 'passed_away') {
-      wx.showToast({ title: '去喵星的猫咪不需要提醒了', icon: 'none' }); return;
-    }
-    const app = getApp();
-    if (!app.isLoggedIn()) { this._promptLogin(); return; }
-    wx.navigateTo({ url: '/pages/reminder-add/reminder-add' });
-  },
-
   goEdit() {
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
@@ -207,7 +198,7 @@ Page({
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     wx.showModal({
       title: '确认删除',
-      content: '确定要删除这只猫咪吗？相关记录也会一并删除',
+      content: '确定要删除这只宠物吗？相关记录也会一并删除',
       success: async res => {
         if (!res.confirm) return;
         this.setData({ deleting: true });
@@ -218,5 +209,10 @@ Page({
         setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
       }
     });
+  },
+
+  onShareAppMessage() {
+    const name = this.data.cat?.name || '宝贝';
+    return { title: `看看${name}的健康记录 🐱`, path: `/pages/cat-detail/cat-detail?catId=${this.data.cat?._id || ''}` };
   }
 });

@@ -1,13 +1,14 @@
 // pages/health-records/health-records.js
-// 健康记录列表页：查看所有猫咪的记录，支持按猫咪和类型筛选
+// 健康记录列表页：查看所有宠物的记录，支持按宠物和类型筛选
 const clouddb = require('../../utils/clouddb.js');
 
 Page({
   data: {
-    catId: '',           // 从猫咪详情页进入时传入，用于默认筛选
-    cats: [],            // 所有猫咪列表
+    isOnline: true,
+    catId: '',           // 从宠物详情页进入时传入，用于默认筛选
+    cats: [],            // 所有宠物列表
     catOptions: [],      // 筛选标签：[{key, label}]
-    currentCat: 'all',   // 当前筛选的猫咪 key
+    currentCat: 'all',   // 当前筛选的宠物 key
     records: [],
     filteredRecords: [],
     currentFilter: 'all',
@@ -18,6 +19,11 @@ Page({
       { key: 'vaccine', label: '💉 免疫' },
       { key: 'checkup', label: '🩺 体检' }
     ],
+    // 分页
+    recordsPage: 1,
+    recordsPageSize: 20,
+    hasMoreRecords: false,
+    recordsLoading: false,
     showEditModal: false,
     editId: '',
     editType: '',
@@ -28,44 +34,75 @@ Page({
   async onLoad(options) {
     this.setData({ catId: options.catId || '' });
     await this.loadCats();
-    // 从猫咪详情页进入时，默认筛选该猫咪
+    // 从宠物详情页进入时，默认筛选该宠物
     if (options.catId) {
       this.setData({ currentCat: options.catId });
     }
     this.loadRecords();
   },
 
-  onShow() { this.loadRecords(); },
+  onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
+    this.loadRecords();
+  },
 
-  // 加载所有猫咪，构建筛选标签
+  // 加载所有宠物，构建筛选标签
   async loadCats() {
     const cats = await clouddb.getAllCats();
-    const catOptions = [{ key: 'all', label: '全部猫咪' }];
+    const catOptions = [{ key: 'all', label: '全部宠物' }];
     cats.forEach(c => {
       catOptions.push({ key: c._id, label: c.name });
     });
     this.setData({ cats, catOptions });
   },
 
-  async loadRecords() {
-    // 加载所有健康记录
-    const records = await clouddb.getRecords({});
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+  // 加载健康记录（resetPage=true 从头加载，false 加载更多）
+  async loadRecords(resetPage) {
+    if (resetPage !== false) {
+      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [] });
+    }
+    if (this.data.recordsLoading) return;
+    this.setData({ recordsLoading: true });
 
-    // 为每条记录关联猫咪信息
-    const catsMap = {};
-    this.data.cats.forEach(c => { catsMap[c._id] = c; });
-    const withCat = records.map(r => ({
-      ...r,
-      _catName: catsMap[r.catId] ? catsMap[r.catId].name : '未知猫咪',
-      _catAvatar: catsMap[r.catId] ? (catsMap[r.catId]._displayAvatar || catsMap[r.catId].avatar || '') : ''
-    }));
+    try {
+      const page = this.data.recordsPage;
+      const pageSize = this.data.recordsPageSize;
+      const skip = (page - 1) * pageSize;
 
-    this.setData({ records: withCat });
-    this.applyFilter();
+      const newRecords = await clouddb.getRecords({}, { limit: pageSize, skip: skip });
+      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      // 为每条记录关联宠物信息
+      const catsMap = {};
+      this.data.cats.forEach(c => { catsMap[c._id] = c; });
+      const withCat = newRecords.map(function(r) { return Object.assign({}, r, {
+        _catName: catsMap[r.catId] ? catsMap[r.catId].name : '未知宠物',
+        _catAvatar: catsMap[r.catId] ? (catsMap[r.catId]._displayAvatar || catsMap[r.catId].avatar || '') : ''
+      }); });
+
+      const allRecords = page === 1 ? withCat : [].concat(this.data.records, withCat);
+      const hasMore = newRecords.length >= pageSize;
+
+      this.setData({
+        records: allRecords,
+        recordsPage: page + 1,
+        hasMoreRecords: hasMore,
+        recordsLoading: false,
+      }, () => { this.applyFilter(); });
+    } catch (e) {
+      console.error('[health-records] loadRecords error:', e);
+      this.setData({ recordsLoading: false });
+    }
   },
 
-  // 切换猫咪筛选
+  // 触底加载更多
+  onReachBottom() {
+    if (this.data.hasMoreRecords && !this.data.recordsLoading) {
+      this.loadRecords(false);
+    }
+  },
+
+  // 切换宠物筛选
   setCatFilter(e) {
     this.setData({ currentCat: e.currentTarget.dataset.cat });
     this.applyFilter();
@@ -140,5 +177,14 @@ Page({
     await clouddb.deleteRecord(e.currentTarget.dataset.id);
     this.loadRecords();
     wx.showToast({ title: '已删除', icon: 'success' });
-  }
+  },
+
+  async onPullDownRefresh() {
+    try { await this.loadRecords(true); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    const name = this.data.catName || '宝贝';
+    return { title: name + ' - 猫咪健康管家 🐱', path: '/pages/health-records/health-records?catId=' + (this.data.catId || '') };
+  },
 });

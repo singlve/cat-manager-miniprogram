@@ -1,0 +1,72 @@
+<!--pages/expense-add/expense-add.wxml-->
+<view class="page">
+  <view class="card">
+    <!-- 选择宠物 -->
+    <view class="field" wx:if="{{cats.length > 0}}">
+      <text class="field-label">宠物</text>
+      <picker mode="selector" range="{{cats}}" range-key="name" bindchange="onPetChange" value="{{selectedCatIdx}}">
+        <view class="picker-box">
+          <text>{{cats[selectedCatIdx] ? cats[selectedCatIdx].name : '选择猫咪'}}</text>
+          <text class="picker-arrow">▼</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 选择分类 -->
+    <view class="field">
+      <text class="field-label">分类</text>
+      <view class="category-grid">
+        <view
+          wx:for="{{categories}}" wx:for-item="c" wx:for-index="ci" wx:key="key"
+          class="cat-item {{selectedCategoryIdx === ci ? 'active' : ''}}"
+          bindtap="selectCategory"
+          data-idx="{{ci}}"
+        >
+          <text class="cat-icon">{{c.icon}}</text>
+          <text class="cat-name">{{c.name}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 金额 -->
+    <view class="field">
+      <text class="field-label">金额</text>
+      <view class="amount-box">
+        <text class="amount-yuan">¥</text>
+        <input
+          class="amount-input" type="digit" placeholder="0.00"
+          value="{{amount}}" bindinput="onAmountInput"
+          focus="{{true}}"
+        />
+      </view>
+    </view>
+
+    <!-- 日期 -->
+    <view class="field">
+      <text class="field-label">日期</text>
+      <picker mode="date" value="{{date}}" bindchange="onDateChange">
+        <view class="picker-box">
+          <text>{{date || '选择日期'}}</text>
+          <text class="picker-arrow">📅</text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 备注 -->
+    <view class="field">
+      <text class="field-label">备注（选填）</text>
+      <textarea
+        class="note-input" placeholder="例如：皇家猫粮5kg..."
+        value="{{note}}" bindinput="onNoteInput"
+        maxlength="100" auto-height
+      />
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="save-section">
+    <view class="save-btn {{saving ? 'disabled' : ''}}" bindtap="doSave">
+      <text>{{saving ? '保存中...' : '保存'}}</text>
+    </view>
+  </view>
+</view>

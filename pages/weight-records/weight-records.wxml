@@ -1,5 +1,6 @@
 <!-- pages/weight-records/weight-records.wxml -->
 <view class="container">
+  <include src="../../templates/offline-tip.wxml" />
 
   <!-- 页面头部 -->
   <view class="page-header">
@@ -7,7 +8,7 @@
     <text class="add-btn" catchtap="openQuickAdd" wx:if="{{currentCat !== 'all' && filteredRecords.length > 0 && !isCurrentCatPassed}}">+ 录入体重</text>
   </view>
 
-  <!-- 猫咪筛选标签（横向滚动） -->
+  <!-- 宠物筛选标签（横向滚动） -->
   <scroll-view class="cat-tabs-scroll" scroll-x>
     <view class="cat-tabs">
       <view
@@ -60,7 +61,7 @@
       <text class="empty-emoji">⚖️</text>
     </view>
     <text class="empty-text">暂无体重记录</text>
-    <text class="empty-hint" wx:if="{{currentCat === 'all'}}">选择上方猫咪后，点击「录入体重」添加记录</text>
+    <text class="empty-hint" wx:if="{{currentCat === 'all'}}">选择上方宠物后，点击「录入体重」添加记录</text>
     <text class="empty-hint" wx:else>还没有这只猫的体重记录</text>
     <view wx:if="{{currentCat !== 'all' && !isCurrentCatPassed}}" class="empty-cta" hover-class="btn-hover" catchtap="openQuickAdd">去录入 ›</view>
   </view>
@@ -93,9 +94,9 @@
 
     <!-- 体重卡片列表 -->
     <view wx:for="{{filteredRecords}}" wx:key="_id" class="record-card">
-      <!-- 全部猫咪视图下显示猫咪名+头像 -->
+      <!-- 全部宠物视图下显示宠物名+头像 -->
       <view wx:if="{{currentCat === 'all'}}" class="record-cat-row">
-        <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill"></image>
+        <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill" lazy-load></image>
         <text wx:else class="cat-avatar-placeholder">🐱</text>
         <text class="cat-name-label">{{item._catName}}</text>
       </view>
@@ -117,6 +118,12 @@
         <view class="action-btn delete" data-id="{{item._id}}" bindtap="deleteRecord">删除</view>
       </view>
     </view>
+  </view>
+
+  <!-- 底部分页状态 -->
+  <view wx:if="{{records.length > 0}}" class="list-footer">
+    <text wx:if="{{recordsLoading}}" class="list-footer-text">加载中...</text>
+    <text wx:elif="{{!hasMoreRecords}}" class="list-footer-text">— 没有更多了 —</text>
   </view>
 
   <!-- ─── 新增体重弹窗 ─── -->

@@ -17,6 +17,7 @@ function getAvatarType(currentUser) {
 
 Page({
   data: {
+    isOnline: true,
     isLoggedIn: false,
     isAdmin: false,
     nickname: '加载中...',
@@ -97,6 +98,7 @@ Page({
   },
 
   onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn(), isAdmin: isAdmin() });
     if (app.isLoggedIn()) this.loadUserInfo();
@@ -106,7 +108,7 @@ Page({
     let currentUser = null;
     try { currentUser = wx.getStorageSync('currentUser'); } catch (e) {}
 
-    const nickname = (currentUser && currentUser.nickname) || '猫咪爱好者';
+    const nickname = (currentUser && currentUser.nickname) || '宠物爱好者';
     const avatarEmoji = getAvatarEmoji(currentUser);
     const avatarType = getAvatarType(currentUser);
 
@@ -187,22 +189,23 @@ Page({
 
     // 测试用：首次赠送 20 张补签卡
     var cards = makeUpCards;
-    if (!currentUser._testCardsSeeded) {
-      cards = 20;
-      currentUser.makeUpCards = 20;
-      currentUser._testCardsSeeded = true;
-      try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-      if (currentUser._id) {
-        clouddb.updateUser(currentUser._id, { makeUpCards: 20 }).catch(function() {});
-      }
-    }
+    // 测试用：首次赠送 20 张补签卡（已关闭）
+    // if (!currentUser._testCardsSeeded) {
+    //   cards = 20;
+    //   currentUser.makeUpCards = 20;
+    //   currentUser._testCardsSeeded = true;
+    //   try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+    //   if (currentUser._id) {
+    //     clouddb.updateUser(currentUser._id, { makeUpCards: 20 }).catch(function() {});
+    //   }
+    // }
 
-    console.log('[mine] loadUserInfo debug:', JSON.stringify({
-      lastCheckInDate, checkInStreak, totalCheckIns, checkedInToday,
-      makeUpCards: cards, makeUpDates, streakReached7, daysUntilLottery,
-      lotteryEarned, lotteryUsedMonth, availableDraws, canLottery,
-      drawnMilestones, monthlyMakeUpCount
-    }));
+    // console.log('[mine] loadUserInfo debug:', JSON.stringify({
+    //   lastCheckInDate, checkInStreak, totalCheckIns, checkedInToday,
+    //   makeUpCards: cards, makeUpDates, streakReached7, daysUntilLottery,
+    //   lotteryEarned, lotteryUsedMonth, availableDraws, canLottery,
+    //   drawnMilestones, monthlyMakeUpCount
+    // }));
 
     this.setData({
       nickname,
@@ -255,6 +258,7 @@ Page({
   goCats()      { wx.switchTab({ url: '/pages/cat-list/cat-list' }); },
   goReminders() { wx.switchTab({ url: '/pages/reminders/reminders' }); },
   goRecords()   { wx.navigateTo({ url: '/pages/health-records/health-records' }); },
+  goExpense()   { wx.navigateTo({ url: '/pages/expense/expense' }); },
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
   goPointsMall()    { wx.navigateTo({ url: '/pages/points-mall/points-mall' }); },
   goInventory()    { wx.navigateTo({ url: '/pages/inventory/inventory' }); },
@@ -665,14 +669,18 @@ Page({
     wx.showToast({ title: '补签成功！累积+1天', icon: 'success' });
   },
 
+  async onPullDownRefresh() {
+    try { await this.loadUserInfo(); } finally { wx.stopPullDownRefresh(); }
+  },
+
   onShareAppMessage: function() {
     this._awardShareCard('group');
-    return { title: '猫咪健康管家 - 记录猫咪的每一个瞬间', path: '/pages/cat-list/cat-list' };
+    return { title: '宠物健康管家 - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
   },
 
   onShareTimeline: function() {
     this._awardShareCard('timeline');
-    return { title: '猫咪健康管家 - 记录猫咪的每一个瞬间' };
+    return { title: '宠物健康管家 - 记录宠物的每一个瞬间' };
   },
 
   async _awardShareCard(type) {

@@ -1,5 +1,5 @@
 {
-  "desc": "猫咪健康管家小程序 sitemap",
+  "desc": "宠物健康管家小程序 sitemap",
   "rules": [
     { "action": "allow", "page": "*" }
   ]

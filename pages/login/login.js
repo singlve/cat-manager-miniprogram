@@ -4,7 +4,7 @@ const clouddb = require('../../utils/clouddb.js');
 
 const FORCE_MOCK = false;
 
-// ─── 默认头像（灰色猫咪占位符） ───
+// ─── 默认头像（灰色宠物占位符） ───
 const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgcng9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+PHRleHQgeD0iNjAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjU2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+8J+QsTwvdGV4dD48L3N2Zz4=';
 
 Page({
@@ -333,7 +333,7 @@ Page({
     if (tempUser._id) {
       await clouddb.updateUser(tempUser._id, updates);
     }
-    const mergedUser = { ...tempUser, phone, loginType: 'wechat_phone' };
+    const mergedUser = Object.assign({}, tempUser, { phone: phone, loginType: 'wechat_phone' });
     if (password) mergedUser.password = password;
     try { wx.setStorageSync('currentUser', mergedUser); } catch (e) {}
 
@@ -419,7 +419,7 @@ Page({
       avatarUrl = DEFAULT_AVATAR;
     }
 
-    if (!nickname) nickname = '猫咪爱好者';
+    if (!nickname) nickname = '宠物爱好者';
 
     // 更新用户记录
     try {
@@ -447,7 +447,7 @@ Page({
       const currentUser = wx.getStorageSync('currentUser');
       if (currentUser && currentUser._id) {
         const defaults = {
-          nickname: currentUser.nickname || '猫咪爱好者',
+          nickname: currentUser.nickname || '宠物爱好者',
           avatar: currentUser.avatar || DEFAULT_AVATAR
         };
         clouddb.updateUser(currentUser._id, defaults);
@@ -463,5 +463,9 @@ Page({
   },
 
   toggleOtherLogin() { this.setData({ showOtherLogin: !this.data.showOtherLogin }); },
-  goRegister() { wx.navigateTo({ url: '/pages/register/register' }); }
+  goRegister() { wx.navigateTo({ url: '/pages/register/register' }); },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+  },
 });

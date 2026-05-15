@@ -46,7 +46,7 @@ function getOverdueDays(lastDate, intervalDays) {
 }
 
 /**
- * 猫咪类型中文名
+ * 宠物类型中文名
  */
 const TYPE_LABELS = {
   bath: '洗澡',
@@ -110,7 +110,7 @@ function calcDaysBetween(startStr, endStr) {
 // ─── 生日行文本：日期 + 近7天倒计时 ───
 function formatBirthdayRow(birthdayStr, isPassed) {
   if (!birthdayStr) return { text: '🎂 未知', hint: '' };
-  // 去喵星了 → 不显示生日提醒
+  // 已离世的宠物 → 不显示生日提醒
   if (isPassed) return { text: '🎂 ' + birthdayStr, hint: '' };
   const parts = birthdayStr.split('-');
   if (parts.length < 3) return { text: '🎂 ' + birthdayStr, hint: '' };
@@ -237,11 +237,11 @@ function getLotteryDrawsForStreak(streak) {
 
 // ─── 累积签到奖励配置 ───
 var CUMULATIVE_MILESTONES = [
-  { days: 7,   points: 20,  label: '7天'   },
-  { days: 30,  points: 50,  label: '30天'  },
-  { days: 60,  points: 100, label: '60天'  },
-  { days: 100, points: 200, label: '100天' },
-  { days: 365, points: 1000,label: '365天' }
+  { days: 7,   points: 40,  label: '7天'   },
+  { days: 30,  points: 100, label: '30天'  },
+  { days: 60,  points: 200, label: '60天'  },
+  { days: 100, points: 400, label: '100天' },
+  { days: 365, points: 2000,label: '365天' }
 ];
 
 // ─── 检查累积签到是否有可领取的奖励 ───

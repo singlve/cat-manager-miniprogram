@@ -24,8 +24,8 @@ exports.main = async (event, context) => {
 
     // 今天正好是提醒日，或已过期
     if (nextDate <= today) {
-      // 查猫咪名字
-      let catName = '你的猫咪';
+      // 查宠物名字
+      let catName = '你的宠物';
       try {
         const cat = await db.collection('cats').doc(r.catId).get();
         if (cat.data) catName = cat.data.name;

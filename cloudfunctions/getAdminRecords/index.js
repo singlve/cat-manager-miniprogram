@@ -7,21 +7,30 @@ const db = cloud.database();
 const _ = db.command;
 
 // 管理员 openid 白名单（需与 utils/util.js 中的 ADMIN_OPENIDS 保持一致）
-// 留空 = 不做服务端鉴权，依赖客户端页面级权限控制
-const ADMIN_OPENIDS = [];
+const ADMIN_OPENIDS = [
+  'oYBpx3ZRljxCk6pODSAyMShkyFJA'  // 主账号 openid
+];
+
+// 允许查询的集合白名单（防止通过 cloud function 读取敏感数据）
+const ALLOWED_COLLECTIONS = ['redeem_records', 'shipments'];
 
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
   const callerOpenid = wxContext.OPENID;
 
-  // 服务端管理员校验（白名单非空时生效）
-  if (ADMIN_OPENIDS.length > 0 && ADMIN_OPENIDS.indexOf(callerOpenid) === -1) {
+  // 服务端管理员校验
+  if (ADMIN_OPENIDS.indexOf(callerOpenid) === -1) {
     return { code: -1, msg: '无管理员权限' };
   }
 
   const { collection, orderBy, orderDesc, limit: reqLimit } = event;
   if (!collection) {
     return { code: -1, msg: '缺少 collection 参数' };
+  }
+
+  // 集合白名单校验
+  if (ALLOWED_COLLECTIONS.indexOf(collection) === -1) {
+    return { code: -1, msg: '不允许查询该集合: ' + collection };
   }
 
   // 微信云函数单次查询上限 100 条，自动分页拉取

@@ -376,5 +376,13 @@ Page({
     }
   },
 
-  stopBubble() {}
+  stopBubble() {},
+
+  async onPullDownRefresh() {
+    try { await this.loadAll(); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+  },
 });

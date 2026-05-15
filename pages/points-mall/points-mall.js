@@ -3,6 +3,7 @@ const app = getApp();
 
 Page({
   data: {
+    isOnline: true,
     items: [],
     filteredItems: [],
     loading: true,
@@ -20,6 +21,7 @@ Page({
   },
 
   async onShow() {
+    this.setData({ isOnline: getApp().globalData.isOnline });
     this.loadUser();
     await this.loadItems();
   },
@@ -202,5 +204,13 @@ Page({
   },
 
   goInventory() { wx.navigateTo({ url: '/pages/inventory/inventory' }); },
-  stopBubble() {}
+  stopBubble() {},
+
+  async onPullDownRefresh() {
+    try { this.loadUser(); await this.loadItems(); } finally { wx.stopPullDownRefresh(); }
+  },
+
+  onShareAppMessage() {
+    return { title: '猫咪健康管家 - 积分商城 🎁', path: '/pages/points-mall/points-mall' };
+  },
 });

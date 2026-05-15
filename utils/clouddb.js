@@ -16,6 +16,7 @@ const AVATAR_FRAME_COL = 'avatar_frames';
 const REDEEM_ITEM_COL = 'redeem_items';
 const REDEEM_RECORD_COL = 'redeem_records';
 const SHIPPING_ADDRESS_COL = 'shipping_addresses';
+const EXPENSE_COL = 'expenses';
 
 // ════════════════════════════════════════════════════
 // 基础：判断云开发是否可用
@@ -46,6 +47,7 @@ async function _cloudQuery(collection, query = {}, options = {}) {
   const db = wx.cloud.database();
   let q = db.collection(collection).where(query);
   if (options.orderBy) q = q.orderBy(options.orderBy, options.orderDesc || 'desc');
+  if (options.skip) q = q.skip(options.skip);
   if (options.limit) q = q.limit(options.limit);
   const { data } = await q.get();
   return data || [];
@@ -74,12 +76,36 @@ async function _cloudDelete(collection, id) {
 }
 
 // ════════════════════════════════════════════════════
-// 猫咪档案（CATS）
+// 宠物档案（CATS）
 // ════════════════════════════════════════════════════
+
+// 猫咪列表缓存 TTL（5 分钟）
+const CAT_CACHE_TTL = 5 * 60 * 1000;
 
 async function getCats() {
   if (!isCloudReady()) return _storage().getCats() || [];
-  return await _cloudQuery(CAT_COL, {}, { orderBy: '_createTime', orderDesc: 'desc' });
+
+  // 检查全局缓存
+  try {
+    const app = getApp();
+    const cache = app.globalData && app.globalData.catsCache;
+    const now = Date.now();
+    if (cache && cache.data && (now - cache.ts) < CAT_CACHE_TTL) {
+      return cache.data;
+    }
+  } catch (e) { /* 缓存不可用时回退到直接查询 */ }
+
+  const cats = await _cloudQuery(CAT_COL, {}, { orderBy: '_createTime', orderDesc: 'desc' });
+
+  // 写入缓存
+  try {
+    const app = getApp();
+    if (app.globalData) {
+      app.globalData.catsCache = { data: cats, ts: Date.now() };
+    }
+  } catch (e) { /* 忽略 */ }
+
+  return cats;
 }
 
 async function getCatById(id) {
@@ -93,37 +119,55 @@ async function getCatById(id) {
   } catch (e) { return null; }
 }
 
+/** 使猫咪列表缓存失效（增删改猫咪后调用） */
+function refreshCatsCache() {
+  try {
+    const app = getApp();
+    if (app.globalData) {
+      app.globalData.catsCache = { data: null, ts: 0 };
+    }
+  } catch (e) { /* 忽略 */ }
+}
+
 async function addCat(cat) {
   if (!isCloudReady()) { _storage().addCat(cat); return cat._id; }
-  return await _cloudAdd(CAT_COL, { ...cat, _createTime: Date.now() });
+  const id = await _cloudAdd(CAT_COL, { ...cat, _createTime: Date.now() });
+  refreshCatsCache();
+  return id;
 }
 
 async function updateCat(id, updates) {
   if (!isCloudReady()) { _storage().updateCat(id, updates); return; }
   await _cloudUpdate(CAT_COL, id, updates);
+  refreshCatsCache();
 }
 
 async function deleteCat(id) {
   if (!isCloudReady()) { _storage().removeCat(id); return; }
-  // 云端：删除关联记录和提醒，再删猫咪
+  // 云端：删除关联记录和提醒，再删宠物
   const records = await _cloudQuery(RECORD_COL, { catId: id });
   for (const r of records) await _cloudDelete(RECORD_COL, r._id);
   const reminders = await _cloudQuery(REMIND_COL, { catId: id });
   for (const r of reminders) await _cloudDelete(REMIND_COL, r._id);
   await _cloudDelete(CAT_COL, id);
+  refreshCatsCache();
 }
 
 // ════════════════════════════════════════════════════
 // 健康记录（HEALTH RECORDS）
 // ════════════════════════════════════════════════════
 
-async function getRecords(filter = {}) {
+async function getRecords(filter = {}, options = {}) {
   if (!isCloudReady()) {
-    const records = _storage().getRecords();
-    if (filter.catId) return records.filter(r => r.catId === filter.catId);
+    let records = _storage().getRecords() || [];
+    if (filter.catId) records = records.filter(r => r.catId === filter.catId);
+    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (options.skip) records = records.slice(options.skip);
+    if (options.limit) records = records.slice(0, options.limit);
     return records;
   }
-  return await _cloudQuery(RECORD_COL, filter, { orderBy: 'date', orderDesc: 'desc' });
+  const mergedOpts = { orderBy: 'date', orderDesc: 'desc', ...options };
+  return await _cloudQuery(RECORD_COL, filter, mergedOpts);
 }
 
 async function addRecord(record) {
@@ -145,13 +189,17 @@ async function deleteRecord(id) {
 // 体重记录（WEIGHT RECORDS）
 // ════════════════════════════════════════════════════
 
-async function getWeightRecords(filter = {}) {
+async function getWeightRecords(filter = {}, options = {}) {
   if (!isCloudReady()) {
-    const records = _storage().getWeightRecords ? _storage().getWeightRecords() : [];
-    if (filter.catId) return records.filter(r => r.catId === filter.catId);
+    let records = _storage().getWeightRecords ? _storage().getWeightRecords() : [];
+    if (filter.catId) records = records.filter(r => r.catId === filter.catId);
+    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (options.skip) records = records.slice(options.skip);
+    if (options.limit) records = records.slice(0, options.limit);
     return records;
   }
-  return await _cloudQuery(WEIGHT_COL, filter, { orderBy: 'date', orderDesc: 'desc' });
+  const mergedOpts = { orderBy: 'date', orderDesc: 'desc', ...options };
+  return await _cloudQuery(WEIGHT_COL, filter, mergedOpts);
 }
 
 async function addWeightRecord(record) {
@@ -708,10 +756,59 @@ async function deleteAvatarFrame(id) {
   return _storage().deleteAvatarFrame(id);
 }
 
+// ════════════════════════════════════════════════════
+// 记账 (expenses)
+// ════════════════════════════════════════════════════
+async function addExpense(expense) {
+  if (expense.amount) expense.amount = Number(expense.amount);
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      await db.collection(EXPENSE_COL).add({ data: expense });
+    } catch (e) { console.error('[clouddb] addExpense cloud fail:', e); }
+  }
+  _storage().addExpense(expense);
+  return expense;
+}
+
+async function getExpenses(query = {}) {
+  if (isCloudReady()) {
+    try {
+      const db = wx.cloud.database();
+      const _ = db.command;
+      let cloudQuery = {};
+      // 将 dateStart/dateEnd 转为 date 字段的范围查询
+      if (query.dateStart || query.dateEnd) {
+        let dateFilter = null;
+        if (query.dateStart) dateFilter = _.gte(query.dateStart);
+        if (query.dateEnd) {
+          dateFilter = dateFilter ? dateFilter.and(_.lte(query.dateEnd)) : _.lte(query.dateEnd);
+        }
+        cloudQuery.date = dateFilter;
+      }
+      console.log('[clouddb] getExpenses 云查询条件:', JSON.stringify(cloudQuery));
+      var result = await _cloudQuery(EXPENSE_COL, cloudQuery, { orderBy: 'date', orderDesc: 'desc' });
+      console.log('[clouddb] getExpenses 云返回', result ? result.length : 0, '条');
+      return result || [];
+    } catch (e) { console.error('[clouddb] getExpenses cloud fail:', e); }
+  }
+  return _storage().getExpenses(query) || [];
+}
+
+async function deleteExpense(id) {
+  if (!id) return;
+  if (isCloudReady()) {
+    try {
+      await wx.cloud.database().collection(EXPENSE_COL).doc(id).remove();
+    } catch (e) { console.error('[clouddb] deleteExpense cloud fail:', e); }
+  }
+  _storage().deleteExpense(id);
+}
+
 module.exports = {
   isCloudReady,
   // cats
-  getCats, getAllCats: getCats, getCatById, addCat, updateCat, deleteCat,
+  getCats, getAllCats: getCats, getCatById, addCat, updateCat, deleteCat, refreshCatsCache,
   // records
   getRecords, addRecord, updateRecord, deleteRecord,
   // weight
@@ -735,6 +832,8 @@ module.exports = {
   // inventory
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
+  // expenses
+  addExpense, getExpenses, deleteExpense,
   // avatar frames
   getAvatarFrames, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments

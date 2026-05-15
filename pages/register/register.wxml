@@ -2,7 +2,7 @@
 <view class="register-page">
   <view class="header">
     <text class="title">注册账号</text>
-    <text class="subtitle">成为猫咪健康管家的一员</text>
+    <text class="subtitle">成为宠物健康管家的一员</text>
   </view>
 
   <view class="form">

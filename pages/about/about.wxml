@@ -1,19 +1,19 @@
 <!-- pages/about/about.wxml -->
 <view class="page">
   <view class="icon-wrap">
-    <text class="icon">🐱</text>
+    <text class="icon">🐾</text>
   </view>
-  <text class="app-name">猫咪健康管家</text>
+  <text class="app-name">宠物健康管家</text>
   <text class="version">版本 1.0.0</text>
 
   <view class="card">
-    <text class="desc-title">一款帮助记录猫咪健康的小工具</text>
-    <text class="desc-body">从出生日期到每次洗澡驱虫，从健康档案到定时提醒——让每一只猫咪都被好好照顾。</text>
+    <text class="desc-title">一款帮助记录宠物健康的小工具</text>
+    <text class="desc-body">从出生日期到每次洗澡驱虫，从健康档案到定时提醒——让每一只宠物都被好好照顾。</text>
   </view>
 
   <view class="card features">
     <text class="feature-title">主要功能</text>
-    <view class="feature-item"><text class="feature-icon">📋</text><text>猫咪档案管理</text></view>
+    <view class="feature-item"><text class="feature-icon">📋</text><text>宠物档案管理</text></view>
     <view class="feature-item"><text class="feature-icon">🩺</text><text>健康记录追踪</text></view>
     <view class="feature-item"><text class="feature-icon">🔔</text><text>定时护理提醒</text></view>
     <view class="feature-item"><text class="feature-icon">📊</text><text>数据统计看板</text></view>

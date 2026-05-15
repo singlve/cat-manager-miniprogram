@@ -1,16 +1,16 @@
 <!-- pages/reminder-add/reminder-add.wxml -->
 <view class="container">
-  <!-- 无可用猫咪：全部已去喵星 -->
+  <!-- 无可用宠物：全部已已离世 -->
   <view wx:if="{{noCatsAvailable}}" class="empty-cats">
     <text class="empty-cats-icon">😿</text>
-    <text class="empty-cats-text">所有猫咪都已去喵星了</text>
+    <text class="empty-cats-text">所有宠物都已已离世了</text>
     <text class="empty-cats-desc">不再需要为它们添加健康提醒</text>
   </view>
 
   <block wx:else>
   <view class="form-card">
     <view class="form-group">
-      <text class="label">选择猫咪 <text class="required">*</text></text>
+      <text class="label">选择宠物 <text class="required">*</text></text>
       <picker
         mode="selector"
         range="{{cats}}"
@@ -19,7 +19,7 @@
         class="picker"
       >
         <view class="picker-value {{selectedCatId ? '' : 'placeholder'}}">
-          {{selectedCatName || '请选择猫咪'}}
+          {{selectedCatName || '请选择宠物'}}
         </view>
       </picker>
     </view>

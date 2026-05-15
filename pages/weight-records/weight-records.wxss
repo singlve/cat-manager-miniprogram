@@ -24,7 +24,7 @@
   border-radius: 40rpx;
 }
 
-/* ─── 猫咪筛选标签 ─── */
+/* ─── 宠物筛选标签 ─── */
 .cat-tabs-scroll {
   width: 100%;
   white-space: nowrap;
@@ -324,3 +324,5 @@
 }
 
 .btn-hover { opacity: 0.75; }
+.list-footer { padding: 24rpx; text-align: center; }
+.list-footer-text { font-size: 24rpx; color: #999; }

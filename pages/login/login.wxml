@@ -1,14 +1,14 @@
 <!-- pages/login/login.wxml -->
-<scroll-view scroll-y="true" style="width:100%;min-height:100%;background-color:#4A90D9;box-sizing:border-box;">
+<scroll-view scroll-y="true" style="width:100%;min-height:100%;background:linear-gradient(180deg, #5B8FDE, #3A7BD5);box-sizing:border-box;">
   <view style="padding:120rpx 60rpx 60rpx;min-height:100vh;">
 
     <!-- Logo -->
     <view style="display:flex;flex-direction:column;align-items:center;">
-      <view style="width:160rpx;height:160rpx;border-radius:40rpx;overflow:hidden;margin-bottom:32rpx;box-shadow:0 8rpx 30rpx rgba(0,0,0,0.15);background:#fff;">
-        <image src="/images/login-logo.png" mode="aspectFit" style="width:160rpx;height:160rpx;" />
+      <view style="width:160rpx;height:160rpx;border-radius:40rpx;background:#ffffff;display:flex;align-items:center;justify-content:center;margin-bottom:32rpx;box-shadow:0 8rpx 30rpx rgba(0,0,0,0.1);">
+        <text style="font-size:80rpx;">🐾</text>
       </view>
-      <text style="font-size:48rpx;font-weight:800;color:#FFFFFF;margin-bottom:12rpx;">猫咪记</text>
-      <text style="font-size:28rpx;color:rgba(255,255,255,0.8);margin-bottom:100rpx;">记录猫咪成长，守护每一刻</text>
+      <text style="font-size:48rpx;font-weight:800;color:#FFFFFF;margin-bottom:12rpx;">宠物记</text>
+      <text style="font-size:28rpx;color:rgba(255,255,255,0.8);margin-bottom:100rpx;">记录宠物成长，守护每一刻</text>
     </view>
 
     <!-- 微信一键登录 -->

@@ -1,6 +1,6 @@
 // utils/storage.js
 // 本地持久化存储（云开发开通后自动降级为备用）
-// 猫咪 + 健康记录 + 提醒 三组数据
+// 宠物 + 健康记录 + 提醒 三组数据
 
 const CAT_KEY     = 'cats';
 const RECORD_KEY = 'health_records';
@@ -18,7 +18,7 @@ function _set(key, data) {
 }
 
 // ════════════════════════════════════════════════════
-// 猫咪
+// 宠物
 // ════════════════════════════════════════════════════
 
 function getCats()    { return _get(CAT_KEY) || []; }
@@ -204,9 +204,9 @@ var DEFAULT_REDEEM_ITEMS = [
   { _id: 'item_card_1', name: '1张补签卡', type: 'virtual', virtualType: 'card', virtualValue: 1, points: 50, stock: 9999, enabled: true, image: '', desc: '补签一次，可补签过去7天' },
   { _id: 'item_card_5', name: '5张补签卡', type: 'virtual', virtualType: 'card', virtualValue: 5, points: 200, stock: 9999, enabled: true, image: '', desc: '5张补签卡，超值套装' },
   { _id: 'item_points_50', name: '50积分', type: 'virtual', virtualType: 'points', virtualValue: 50, points: 100, stock: 9999, enabled: true, image: '', desc: '兑换后直接到账50积分' },
-  { _id: 'item_cat_toy', name: '猫咪逗猫棒', type: 'physical', points: 300, stock: 50, enabled: true, image: '', desc: '可爱羽毛逗猫棒，让猫咪动起来', category: '玩具' },
-  { _id: 'item_cat_bowl', name: '猫咪陶瓷碗', type: 'physical', points: 500, stock: 30, enabled: true, image: '', desc: '高颜值陶瓷猫碗，安全健康', category: '餐具' },
-  { _id: 'item_cat_bed', name: '猫咪小窝', type: 'physical', points: 1000, stock: 10, enabled: true, image: '', desc: '柔软舒适的猫咪小窝，给主子一个温暖的家', category: '家居' }
+  { _id: 'item_pet_toy', name: '羽毛逗宠棒', type: 'physical', points: 300, stock: 50, enabled: true, image: '', desc: '可爱羽毛逗宠棒，让宠物动起来', category: '玩具' },
+  { _id: 'item_pet_bowl', name: '宠物陶瓷碗', type: 'physical', points: 500, stock: 30, enabled: true, image: '', desc: '高颜值陶瓷宠物碗，安全健康', category: '餐具' },
+  { _id: 'item_pet_bed', name: '宠物小窝', type: 'physical', points: 1000, stock: 10, enabled: true, image: '', desc: '柔软舒适的宠物小窝，给毛孩子一个温暖的家', category: '家居' }
 ];
 
 var _seedDone = false;
@@ -369,6 +369,35 @@ function clearUserInventory() {
   return 0;
 }
 
+// ─── 记账 (expenses) ───
+var EXPENSE_KEY = 'expenses';
+function getAllExpenses() {
+  try { return wx.getStorageSync(EXPENSE_KEY) || []; } catch (e) { return []; }
+}
+function saveExpenses(list) {
+  try { wx.setStorageSync(EXPENSE_KEY, list); } catch (e) {}
+}
+function addExpense(expense) {
+  var list = getAllExpenses();
+  if (!expense._id) expense._id = 'exp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  expense.createdAt = expense.createdAt || new Date().toISOString();
+  list.unshift(expense);
+  saveExpenses(list);
+  return expense;
+}
+function getExpenses(query) {
+  var list = getAllExpenses();
+  if (!query) return list;
+  if (query.dateStart) list = list.filter(function(e) { return e.date >= query.dateStart; });
+  if (query.dateEnd) list = list.filter(function(e) { return e.date <= query.dateEnd; });
+  list.sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+  return list;
+}
+function deleteExpense(id) {
+  var list = getAllExpenses().filter(function(e) { return e._id !== id; });
+  saveExpenses(list);
+}
+
 function clearUserRedeemRecords() {
   saveRedeemRecords([]);
   return 0;
@@ -389,6 +418,8 @@ module.exports = {
   getRedeemRecords, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord,
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
+  // expenses
+  addExpense, getAllExpenses, getExpenses, deleteExpense,
   getAvatarFrames, saveAvatarFrames, DEFAULT_AVATAR_FRAMES, DEFAULT_REDEEM_ITEMS, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments
   getShipments, addShipment, updateShipment, deleteShipment
