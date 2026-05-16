@@ -20,6 +20,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/index/index' };
   },
 });

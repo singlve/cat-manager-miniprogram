@@ -1,0 +1,118 @@
+<!-- pages/feedback/feedback.wxml -->
+<view class="page">
+  <!-- 分类筛选 -->
+  <scroll-view scroll-x class="filter-bar">
+    <view class="filter-item {{filter === item.key ? 'active' : ''}}"
+      wx:for="{{categories}}" wx:key="key"
+      bindtap="setFilter" data-filter="{{item.key}}">
+      <text>{{item.icon}}</text>
+      <text>{{item.label}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="loading-box">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 留言列表 -->
+  <view wx:else class="feedback-list">
+    <view wx:if="{{filteredFeedbacks.length === 0}}" class="empty-state">
+      <text class="empty-icon">💬</text>
+      <text class="empty-text">还没有留言，来抢沙发吧</text>
+    </view>
+
+    <view class="fb-card {{item.adopted ? 'adopted' : ''}}"
+      wx:for="{{filteredFeedbacks}}" wx:key="_id" wx:for-index="idx">
+
+      <!-- 头部：用户 + 分类 + 时间 -->
+      <view class="fb-header">
+        <view class="fb-user">
+          <image wx:if="{{item.userAvatar}}" class="fb-avatar-img" src="{{item.userAvatar}}" mode="aspectFill"/>
+          <text wx:else class="fb-avatar">{{item.userNickname ? item.userNickname.slice(0,1) : '?'}}</text>
+          <view class="fb-user-info">
+            <text class="fb-nickname">{{item.userNickname || '匿名用户'}}</text>
+            <text class="fb-time">{{item._time}}</text>
+          </view>
+        </view>
+        <view class="fb-cat cat-{{item.category}}">
+          <text>{{categories[1].icon}} {{item.category === 'suggestion' ? '建议' : item.category === 'bug' ? 'Bug' : item.category === 'experience' ? '体验' : '其他'}}</text>
+        </view>
+      </view>
+
+      <!-- 采纳标记 -->
+      <view wx:if="{{item.adopted}}" class="adopted-badge">
+        <text>✅ 管理员已采纳</text>
+      </view>
+
+      <!-- 内容 -->
+      <view class="fb-content">
+        <text>{{item.content}}</text>
+      </view>
+
+      <!-- 图片 -->
+      <view wx:if="{{item.images && item.images.length > 0}}" class="fb-images">
+        <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this"
+          src="{{img}}" mode="aspectFill" class="fb-img"
+          bindtap="previewImage" data-url="{{img}}" data-idx="{{idx}}"/>
+      </view>
+
+      <!-- 底部操作栏 -->
+      <view class="fb-actions">
+        <view class="fb-act {{item._liked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item._id}}" data-idx="{{idx}}">
+          <text>{{item._liked ? '❤️' : '🤍'}} {{item.likeCount || 0}}</text>
+        </view>
+        <view class="fb-act" catchtap="openComment" data-idx="{{idx}}" hover-class="fb-act-hover">
+          <text>💬 评论{{item._commentCount > 0 ? ' ' + item._commentCount : ''}}</text>
+        </view>
+        <view wx:if="{{isAdmin && (item.category === 'bug' || item.category === 'suggestion')}}"
+          class="fb-act admin-act" catchtap="toggleAdopted" data-id="{{item._id}}" data-idx="{{idx}}">
+          <text>{{item.adopted ? '取消采纳' : '采纳'}}</text>
+        </view>
+      </view>
+
+      <!-- 评论区 -->
+      <view wx:if="{{item.comments && item.comments.length > 0}}" class="fb-comments">
+        <view class="cmt-item" wx:for="{{item.comments}}" wx:for-item="c" wx:for-index="cmtIdx" wx:key="_id"
+          catchtap="replyComment" data-idx="{{idx}}" data-cmt-idx="{{cmtIdx}}" hover-class="cmt-hover">
+          <view class="cmt-main">
+            <text class="cmt-user">{{c.userNickname || '匿名'}}：</text>
+            <text class="cmt-text">{{c.content}}</text>
+          </view>
+          <!-- 子回复 -->
+          <view wx:if="{{c.replies && c.replies.length > 0}}" class="cmt-replies">
+            <view class="cmt-item cmt-sub" wx:for="{{c.replies}}" wx:for-item="r" wx:key="_id">
+              <text class="cmt-user">{{r.userNickname || '匿名'}}：</text>
+              <text class="cmt-text">{{r.content}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="openPost">
+    <text class="fab-text">✏️</text>
+  </view>
+
+  <!-- 评论弹窗 -->
+  <view wx:if="{{showCommentModal}}" class="mask" catchtap="closeComment">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">写评论</text>
+      <text class="sheet-sub" wx:if="{{commentTarget !== null}}">回复：{{filteredFeedbacks[commentTarget].content.slice(0, 50)}}...</text>
+
+      <view class="field-group">
+        <textarea class="field-textarea" placeholder="写点想法..."
+          value="{{commentContent}}" bindinput="onCommentInput"
+          maxlength="200" auto-height/>
+      </view>
+
+      <view class="sheet-btns">
+        <button class="cancel" bindtap="closeComment">取消</button>
+        <button class="confirm {{commenting ? 'disabled' : ''}}" bindtap="doComment">{{commenting ? '发送中...' : '发送'}}</button>
+      </view>
+    </view>
+  </view>
+</view>

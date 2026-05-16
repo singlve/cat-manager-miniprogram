@@ -59,6 +59,7 @@ Page({
     speciesCounts: { all: 0, cat: 0, dog: 0 },
     quickCatId: '', quickCatName: '', quickType: '', quickTypeName: '',
     showQuickModal: false, quickDate: new Date().toISOString().split('T')[0],
+    announcement: null,
     banners: [
       {
         emoji: '⚖️',
@@ -105,6 +106,7 @@ Page({
 
   onShow() {
     this.setData({ isOnline: getApp().globalData.isOnline });
+    this._loadAnnouncement();
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn() });
     if (app.isLoggedIn()) {
@@ -235,6 +237,13 @@ Page({
   onQuickDateChange(e) { this.setData({ quickDate: e.detail.value }); },
   closeQuickModal() { this.setData({ showQuickModal: false }); },
   stopBubble() {},
+
+  async _loadAnnouncement() {
+    try { var a = await clouddb.getActiveAnnouncement(); this.setData({ announcement: a }); } catch (e) {}
+  },
+
+  onAnnounceTap() {},
+
   async saveQuickRecord() {
     const { quickCatId, quickType, quickDate } = this.data;
     if (!quickType || !quickDate) return;
@@ -348,6 +357,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

@@ -90,6 +90,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { title: "编辑宠物信息 - 猫咪健康管家 ✏️", path: "/pages/cat-edit/cat-edit" };
+    return { imageUrl: '/assets/logo.png', title: "编辑宠物信息 - 宠物健康管家 ✏️", path: "/pages/cat-edit/cat-edit" };
   },
 }));

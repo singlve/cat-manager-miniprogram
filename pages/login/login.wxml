@@ -47,7 +47,7 @@
 
 <!-- 手机号绑定弹窗（底部弹出） -->
 <view wx:if="{{showBindPhone}}" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:9998;">
-  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" catchtap="stopBubble">
+  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" class="bind-sheet" catchtap="stopBubble">
     <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
     <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
     <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可用手机号登录小程序</text>
@@ -79,7 +79,7 @@
 
 <!-- 完善资料弹窗（新用户绑定手机后弹出） -->
 <view wx:if="{{showProfileSetup}}" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:9998;">
-  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" catchtap="stopBubble">
+  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" class="bind-sheet" catchtap="stopBubble">
     <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
     <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">完善资料</text>
     <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">设置你的头像和昵称</text>

@@ -298,7 +298,7 @@ Page({
       // 删除对应兑换记录 + 删除背包条目
       for (var j = 0; j < toCancel.length; j++) {
         if (toCancel[j].redeemRecordId) {
-          await clouddb.deleteRedeemRecord(toCancel[j].redeemRecordId).catch(function() {});
+          await clouddb.deleteRedeemRecord(toCancel[j].redeemRecordId).catch(function(e) { console.error('[inventory] deleteRedeemRecord fail:', e); });
         }
         await clouddb.deleteInventoryItem(toCancel[j]._id);
       }
@@ -375,6 +375,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '猫咪健康管家 - 我的背包 🎒', path: '/pages/inventory/inventory' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 我的背包 🎒', path: '/pages/inventory/inventory' };
   },
 });

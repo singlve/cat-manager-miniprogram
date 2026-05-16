@@ -1,5 +1,10 @@
 /* pages/login/login.wxss */
 
+/* 绑定手机号弹窗 */
+.bind-sheet input {
+  box-sizing: border-box;
+}
+
 /* 微信登录按钮 - 白底绿字 */
 .wx-login-btn {
   width: 100% !important;

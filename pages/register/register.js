@@ -1,8 +1,7 @@
 // pages/register/register.js
 // 注册页：支持手机号注册
 const clouddb = require('../../utils/clouddb.js');
-
-const FORCE_MOCK = false;  // 调试开关：true 使用模拟数据，false 正常模式
+const { hashPassword } = require('../../utils/crypto.js');
 
 Page({
   data: { nickname: '', phone: '', password: '', confirmPassword: '' },
@@ -21,16 +20,6 @@ Page({
 
     wx.showLoading({ title: '注册中...' });
 
-    if (FORCE_MOCK) {
-      setTimeout(() => {
-        wx.hideLoading();
-        try { wx.setStorageSync('currentUser', { _id: 'user_' + Date.now(), nickname, phone, loginType: 'phone' }); } catch (e) {}
-        wx.showToast({ title: '注册成功', icon: 'success' });
-        setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
-      }, 800);
-      return;
-    }
-
     try {
       // 查重
       const existing = await clouddb.getUserByPhone(phone);
@@ -44,7 +33,8 @@ Page({
       } catch (e) { console.warn('[register] get openid failed:', e); }
 
       // 写入（平台自动注入 _openid）
-      const userId = await clouddb.addUser({ nickname, phone, password, loginType: 'phone' });
+      const hashedPwd = hashPassword(password);
+      const userId = await clouddb.addUser({ nickname, phone, password: hashedPwd, loginType: 'phone' });
       try { wx.setStorageSync('currentUser', { _id: userId, nickname, phone, loginType: 'phone' }); } catch (e) {}
       wx.showToast({ title: '注册成功', icon: 'success' });
       setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
@@ -59,6 +49,6 @@ Page({
   goLogin() { wx.navigateBack(); },
 
   onShareAppMessage() {
-    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/index/index' };
   },
 });

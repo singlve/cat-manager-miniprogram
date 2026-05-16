@@ -17,6 +17,8 @@ const REDEEM_ITEM_COL = 'redeem_items';
 const REDEEM_RECORD_COL = 'redeem_records';
 const SHIPPING_ADDRESS_COL = 'shipping_addresses';
 const EXPENSE_COL = 'expenses';
+const FEEDBACK_COL = 'feedback';
+const NOTIFY_COL = 'notifications';
 
 // ════════════════════════════════════════════════════
 // 基础：判断云开发是否可用
@@ -91,7 +93,7 @@ async function getCats() {
     const cache = app.globalData && app.globalData.catsCache;
     const now = Date.now();
     if (cache && cache.data && (now - cache.ts) < CAT_CACHE_TTL) {
-      return cache.data;
+      return cache.data.slice(); // 返回副本，防止调用方污染缓存
     }
   } catch (e) { /* 缓存不可用时回退到直接查询 */ }
 
@@ -844,6 +846,159 @@ async function deleteExpense(id) {
   _storage().deleteExpense(id);
 }
 
+// ════════════════════════════════════════════════════
+// 留言板（feedback）
+// ════════════════════════════════════════════════════
+
+async function getFeedback() {
+  if (!isCloudReady()) return [];
+  try {
+    return await _cloudQuery(FEEDBACK_COL, {}, { orderBy: 'createdAt', orderDesc: 'desc' });
+  } catch (e) {
+    console.error('[clouddb] getFeedback error:', e);
+    return [];
+  }
+}
+
+async function addFeedback(data) {
+  if (!isCloudReady()) return null;
+  return await _cloudAdd(FEEDBACK_COL, { ...data, createdAt: Date.now() });
+}
+
+async function toggleFeedbackLike(feedbackId, openid) {
+  if (!isCloudReady()) return;
+  try {
+    const db = wx.cloud.database();
+    const _ = db.command;
+    const doc = await db.collection(FEEDBACK_COL).doc(feedbackId).get();
+    if (!doc.data) return;
+    const likes = doc.data.likes || [];
+    const idx = likes.indexOf(openid);
+    if (idx === -1) {
+      await db.collection(FEEDBACK_COL).doc(feedbackId).update({
+        data: { likes: _.push([openid]), likeCount: _.inc(1) }
+      });
+    } else {
+      await db.collection(FEEDBACK_COL).doc(feedbackId).update({
+        data: { likes: _.pull(openid), likeCount: _.inc(-1) }
+      });
+    }
+  } catch (e) { console.error('[clouddb] toggleFeedbackLike error:', e); }
+}
+
+async function addFeedbackComment(feedbackId, comment) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const db = wx.cloud.database();
+  const _ = db.command;
+  comment._id = 'cmt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  comment.replies = [];
+  await db.collection(FEEDBACK_COL).doc(feedbackId).update({
+    data: { comments: _.push([comment]) }
+  });
+}
+
+async function addCommentReply(feedbackId, commentIdx, reply) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const db = wx.cloud.database();
+  const _ = db.command;
+  // 读取当前评论列表，将回复 push 到对应评论的 replies 数组中
+  const doc = await db.collection(FEEDBACK_COL).doc(feedbackId).get();
+  if (!doc.data) throw new Error('留言不存在');
+  var comments = doc.data.comments || [];
+  if (!comments[commentIdx]) throw new Error('评论不存在');
+
+  reply._id = 'rpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  if (!comments[commentIdx].replies) comments[commentIdx].replies = [];
+  comments[commentIdx].replies.push(reply);
+
+  await db.collection(FEEDBACK_COL).doc(feedbackId).update({
+    data: { comments: comments }
+  });
+}
+
+async function toggleFeedbackAdopted(feedbackId) {
+  if (!isCloudReady()) return;
+  try {
+    const res = await wx.cloud.callFunction({
+      name: 'adminFeedback',
+      data: { action: 'toggleAdopted', feedbackId }
+    });
+    return res.result;
+  } catch (e) {
+    console.error('[clouddb] toggleFeedbackAdopted error:', e);
+    return { code: -1, msg: e.message };
+  }
+}
+
+// ════════════════════════════════════════════════════
+// 通知（notifications）
+// ════════════════════════════════════════════════════
+
+async function addNotification(data) {
+  if (!isCloudReady()) return;
+  try {
+    await _cloudAdd(NOTIFY_COL, { ...data, read: false, createdAt: Date.now() });
+  } catch (e) { console.error('[clouddb] addNotification fail:', e); }
+}
+
+async function getUnreadNotifyCount(openid) {
+  if (!isCloudReady() || !openid) return 0;
+  try {
+    var res = await _cloudQuery(NOTIFY_COL, { toOpenid: openid, read: false });
+    return res.length;
+  } catch (e) { console.error('[clouddb] getUnreadNotifyCount fail:', e); return 0; }
+}
+
+async function getNotifications(openid) {
+  if (!isCloudReady() || !openid) return [];
+  try {
+    return await _cloudQuery(NOTIFY_COL, { toOpenid: openid }, { orderBy: 'createdAt', orderDesc: 'desc' });
+  } catch (e) { console.error('[clouddb] getNotifications fail:', e); return []; }
+}
+
+async function markNotificationsRead(openid) {
+  if (!isCloudReady() || !openid) return;
+  try {
+    var db = wx.cloud.database();
+    // 获取所有未读通知 ID
+    var { data } = await db.collection(NOTIFY_COL).where({ toOpenid: openid, read: false }).get();
+    for (var item of data) {
+      await db.collection(NOTIFY_COL).doc(item._id).update({ data: { read: true } });
+    }
+  } catch (e) { console.error('[clouddb] markNotificationsRead fail:', e); }
+}
+
+// ════════════════════════════════════════════════════
+// 公告（announcements）
+// ════════════════════════════════════════════════════
+
+async function getActiveAnnouncement() {
+  if (!isCloudReady()) return null;
+  try {
+    var res = await wx.cloud.callFunction({
+      name: 'adminAnnouncement',
+      data: { action: 'list' }
+    });
+    if (res.result && res.result.code === 0) {
+      var list = res.result.data || [];
+      return list.find(function(a) { return a.isActive; }) || null;
+    }
+    return null;
+  } catch (e) {
+    console.error('[clouddb] getActiveAnnouncement error:', e);
+    return null;
+  }
+}
+
+async function callAnnouncementAdmin(action, data) {
+  if (!isCloudReady()) return { code: -1, msg: '云开发不可用' };
+  var res = await wx.cloud.callFunction({
+    name: 'adminAnnouncement',
+    data: Object.assign({ action: action }, data || {})
+  });
+  return res.result || { code: -1, msg: '调用失败' };
+}
+
 module.exports = {
   isCloudReady,
   // cats
@@ -857,6 +1012,12 @@ module.exports = {
   // users
   getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
   searchUsers, adminUpdateUser,
+  // feedback
+  getFeedback, addFeedback, toggleFeedbackLike, addFeedbackComment, addCommentReply, toggleFeedbackAdopted,
+  // notifications
+  addNotification, getUnreadNotifyCount, getNotifications, markNotificationsRead,
+  // announcements
+  getActiveAnnouncement, callAnnouncementAdmin,
   // storage
   uploadAvatar, getAvatarUrl,
   // auth

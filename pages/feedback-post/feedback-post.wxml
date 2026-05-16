@@ -1,0 +1,51 @@
+<!-- pages/feedback-post/feedback-post.wxml -->
+<view class="page">
+  <!-- 分类 -->
+  <view class="section">
+    <text class="section-label">分类</text>
+    <picker mode="selector" range="{{categories}}" range-key="label" bindchange="onCategoryChange" value="{{categoryIdx}}">
+      <view class="picker-val">{{categories[categoryIdx].label}}</view>
+    </picker>
+  </view>
+
+  <!-- 内容 -->
+  <view class="section">
+    <text class="section-label">内容</text>
+    <textarea class="content-input"
+      placeholder="畅所欲言，分享使用体验、反馈Bug或提建议..."
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="1000"
+      auto-height
+      focus="{{true}}"/>
+    <text class="char-count">{{content.length || 0}}/1000</text>
+  </view>
+
+  <!-- 图片 -->
+  <view class="section">
+    <text class="section-label">图片（选填，最多{{maxImages}}张）</text>
+    <view class="image-grid">
+      <view class="img-item" wx:for="{{images}}" wx:key="path">
+        <image src="{{item.path}}" mode="aspectFill" class="img-preview"/>
+        <view wx:if="{{item.uploading}}" class="img-mask">
+          <text>上传中...</text>
+        </view>
+        <view wx:if="{{item.error}}" class="img-mask img-error">
+          <text>上传失败</text>
+        </view>
+        <view class="img-del" catchtap="removeImage" data-idx="{{index}}">✕</view>
+      </view>
+      <view class="img-add" wx:if="{{images.length < maxImages}}" bindtap="chooseImage">
+        <text class="img-add-icon">+</text>
+        <text class="img-add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交 -->
+  <view class="btn-area">
+    <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submit">
+      {{submitting ? '发布中...' : '发布留言'}}
+    </button>
+  </view>
+</view>

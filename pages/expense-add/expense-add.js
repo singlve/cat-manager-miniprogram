@@ -24,10 +24,13 @@ Page({
   onLoad() {
     // 加载用户猫咪
     clouddb.getCats().then(function(cats) {
-      cats = cats || [];
+      cats = (cats || []).slice(); // 复制一份，避免污染缓存
       cats.unshift({ _id: null, name: '公共花销' });
       this.setData({ cats: cats });
-    }.bind(this)).catch(function() {});
+    }.bind(this)).catch(function(e) {
+      console.error('[expense-add] load cats fail:', e);
+      this.setData({ cats: [{ _id: null, name: '公共花销' }] });
+    }.bind(this));
 
     // 默认日期：今天
     var now = new Date();
@@ -105,6 +108,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '我给宠物记账了 💰', path: '/pages/expense/expense' };
+    return { imageUrl: '/assets/logo.png', title: '我给宠物记账了 💰', path: '/pages/expense/expense' };
   }
 });

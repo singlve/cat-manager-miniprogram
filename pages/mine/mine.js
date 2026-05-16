@@ -20,6 +20,7 @@ Page({
     isOnline: true,
     isLoggedIn: false,
     isAdmin: false,
+    notifyCount: 0,
     nickname: '加载中...',
     avatar: '',
     avatarEmoji: '😺',
@@ -101,7 +102,7 @@ Page({
     this.setData({ isOnline: getApp().globalData.isOnline });
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn(), isAdmin: isAdmin() });
-    if (app.isLoggedIn()) this.loadUserInfo();
+    if (app.isLoggedIn()) { this.loadUserInfo(); this._loadNotifyCount(); }
   },
 
   async loadUserInfo() {
@@ -249,8 +250,26 @@ Page({
   goPointsMall()    { wx.navigateTo({ url: '/pages/points-mall/points-mall' }); },
   goInventory()    { wx.navigateTo({ url: '/pages/inventory/inventory' }); },
   goAdmin()         { wx.navigateTo({ url: '/pages/admin-items/admin-items' }); },
+  goAdminAnnounce() { wx.navigateTo({ url: '/pages/admin-announcement/admin-announcement' }); },
   goAdminData()    { wx.navigateTo({ url: '/pages/admin-data/admin-data' }); },
+  goFeedback()    { this._markNotifyRead(); wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   goAbout()        { wx.navigateTo({ url: '/pages/about/about' }); },
+
+  async _loadNotifyCount() {
+    try {
+      var currentUser = wx.getStorageSync('currentUser') || {};
+      var count = await clouddb.getUnreadNotifyCount(currentUser._openid);
+      this.setData({ notifyCount: count });
+    } catch (e) {}
+  },
+
+  async _markNotifyRead() {
+    this.setData({ notifyCount: 0 });
+    try {
+      var currentUser = wx.getStorageSync('currentUser') || {};
+      await clouddb.markNotificationsRead(currentUser._openid);
+    } catch (e) {}
+  },
 
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
 
@@ -669,12 +688,12 @@ Page({
 
   onShareAppMessage: function() {
     this._awardShareCard('group');
-    return { title: '宠物健康管家 - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
   },
 
   onShareTimeline: function() {
     this._awardShareCard('timeline');
-    return { title: '宠物健康管家 - 记录宠物的每一个瞬间' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宠物的每一个瞬间' };
   },
 
   async _awardShareCard(type) {

@@ -32,11 +32,6 @@
         <text class="mc-arrow" bindtap="onNextMonth" aria-label="下一月">〉</text>
       </view>
       <text class="mc-total">¥{{stats.total}}</text>
-      <view wx:if="{{stats.cats && groupedExpenses.length > 0}}" class="mc-breakdown">
-        <block wx:for="{{stats.cats}}" wx:for-index="k" wx:for-item="v" wx:key="k">
-          <text class="mc-cat">{{k === '__shared' ? '🏠 公共' : '🐱 ' + (stats.catsByName[k] || '未知')}} ¥{{v.toFixed(2)}}</text>
-        </block>
-      </view>
     </view>
 
     <!-- 猫咪筛选 -->
@@ -74,7 +69,7 @@
               <text class="exp-emoji">{{e.categoryIcon || '💰'}}</text>
             </view>
             <view class="exp-info">
-              <text class="exp-cat">{{e.categoryIcon || ''}} {{e.categoryName || e.category}}</text>
+              <text class="exp-cat">{{e.categoryName || e.category}}</text>
               <text wx:if="{{e.note}}" class="exp-note">{{e.note}}</text>
               <text class="exp-pet-name">{{e.petId ? (stats.catsByName[e.petId] || '猫咪') : '公共花销'}}</text>
             </view>
@@ -157,7 +152,7 @@
 
     <!-- 猫咪排行 -->
     <view wx:if="{{annualStats.total > 0}}" class="chart-card">
-      <text class="chart-title">猫咪排行</text>
+      <text class="chart-title">宠物排行</text>
       <view class="rank-list">
         <view wx:for="{{annualStats.cats}}" wx:key="id" wx:if="{{item.total > 0}}" class="rank-item">
           <text class="rk-idx {{index === 0 ? 'rk-gold' : index === 1 ? 'rk-silver' : index === 2 ? 'rk-bronze' : ''}}">{{index + 1}}</text>

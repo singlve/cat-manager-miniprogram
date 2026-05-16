@@ -1,0 +1,76 @@
+page { background: #f5f6fa; }
+
+.section {
+  background: #fff; padding: 24rpx 32rpx;
+  margin-bottom: 16rpx;
+}
+.section-label {
+  font-size: 28rpx; font-weight: 600; color: #333;
+  display: block; margin-bottom: 16rpx;
+}
+
+.picker-val {
+  padding: 16rpx 20rpx; background: #f5f6fa;
+  border-radius: 8rpx; font-size: 30rpx; color: #333;
+}
+
+.content-input {
+  width: 100%; min-height: 320rpx;
+  font-size: 30rpx; line-height: 1.6;
+  background: #f5f6fa; border-radius: 8rpx;
+  padding: 16rpx 20rpx; box-sizing: border-box;
+}
+.char-count {
+  font-size: 24rpx; color: #bbb;
+  text-align: right; display: block; padding-top: 8rpx;
+}
+
+/* ── images ── */
+.image-grid {
+  display: flex; flex-wrap: wrap; gap: 16rpx;
+}
+.img-item {
+  position: relative;
+  width: 160rpx; height: 160rpx;
+  border-radius: 8rpx; overflow: hidden;
+}
+.img-preview {
+  width: 100%; height: 100%;
+}
+.img-mask {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-mask text { color: #fff; font-size: 22rpx; }
+.img-error { background: rgba(231,76,60,.7); }
+.img-del {
+  position: absolute; top: -2rpx; right: -2rpx;
+  width: 40rpx; height: 40rpx;
+  background: rgba(0,0,0,.6); color: #fff;
+  border-radius: 0 8rpx 0 8rpx;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24rpx;
+}
+
+.img-add {
+  width: 160rpx; height: 160rpx;
+  border: 2rpx dashed #ccc; border-radius: 8rpx;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: #fafafa;
+}
+.img-add-icon { font-size: 48rpx; color: #bbb; }
+.img-add-text { font-size: 22rpx; color: #bbb; margin-top: 4rpx; }
+
+/* ── submit ── */
+.btn-area { padding: 32rpx; }
+.submit-btn {
+  width: 100%; height: 88rpx; line-height: 88rpx;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff; font-size: 32rpx; font-weight: 600;
+  border-radius: 16rpx; text-align: center;
+  padding: 0; margin: 0;
+}
+.submit-btn::after { border: none; }
+.submit-btn.disabled { opacity: .5; }

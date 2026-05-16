@@ -413,6 +413,6 @@ Page({
 
   onShareAppMessage() {
     const name = this.data.catName || '宝贝';
-    return { title: name + ' - 猫咪健康管家 🐱', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
+    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物健康管家', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
   },
 });

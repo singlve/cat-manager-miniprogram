@@ -6,8 +6,9 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const _ = db.command;
 
+// 管理员 openid 白名单（需与 utils/util.js、getAdminRecords 中的 ADMIN_OPENIDS 保持一致）
 const ADMIN_OPENIDS = [
-  'oYBpx3ZRljxCk6pODSAyMShkyFJA'
+  'oYBpx3ZRljxCk6pODSAyMShkyFJA' // 主账号 openid
 ];
 
 // 允许管理员修改的字段

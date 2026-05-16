@@ -97,6 +97,29 @@ page { background: #f0f2f7; }
 }
 .empty-cta::after { border: none; }
 
+/* ─── 公告栏 ─── */
+.announce-bar {
+  margin: 8rpx 0 16rpx;
+  padding: 12rpx 24rpx;
+  background: linear-gradient(135deg, #FFF8E1, #FFF3CD);
+  border-radius: 8rpx;
+  display: flex; align-items: center; gap: 12rpx;
+}
+.announce-icon { font-size: 32rpx; flex-shrink: 0; }
+.announce-wrap {
+  flex: 1; overflow: hidden; white-space: nowrap;
+}
+.announce-text {
+  font-size: 26rpx; color: #5D4037; line-height: 36rpx;
+  display: inline-block; white-space: nowrap;
+  padding-left: 100%;
+  animation: marquee 15s linear infinite;
+}
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
 /* ─── 顶部滚动 Banner ─── */
 .banner-wrap {
   margin-bottom: 24rpx;

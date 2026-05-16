@@ -1,0 +1,7 @@
+{
+  "name": "adminAnnouncement",
+  "version": "1.0.0",
+  "description": "管理员公告管理",
+  "main": "index.js",
+  "dependencies": { "wx-server-sdk": "~3.0.0" }
+}

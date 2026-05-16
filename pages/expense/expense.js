@@ -271,18 +271,22 @@ Page({
     });
 
     // 月度柱状图数据
-    var maxMonth = Math.max.apply(null, Object.values(monthTotals)) || 1;
+    var maxAmount = Math.max.apply(null, Object.values(monthTotals)) || 1;
+    var maxMonth = 0;
+    for (var mi = 1; mi <= 12; mi++) {
+      if (monthTotals[mi] === maxAmount) { maxMonth = mi; break; }
+    }
     var barMax = 160;  // 最高柱子 rpx
     var months = [];
     for (var mth = 1; mth <= 12; mth++) {
       var mt = monthTotals[mth] || 0;
-      var h = mt > 0 ? Math.max(8, (mt / maxMonth) * barMax) : 0;
+      var h = mt > 0 ? Math.max(8, (mt / maxAmount) * barMax) : 0;
       months.push({
         month: mth,
         label: MONTH_NAMES[mth - 1],
         total: mt.toFixed(2),
         height: Math.round(h * 100) / 100,
-        isMax: mt > 0 && mt === maxMonth
+        isMax: mt > 0 && mt === maxAmount
       });
     }
 
@@ -299,7 +303,10 @@ Page({
       var name = k === '__shared' ? '🏠 公共花销' : '🐱 未知';
       if (k !== '__shared') {
         var cat = (cats || []).find(function(c) { return c._id === k; });
-        if (cat) name = '🐱 ' + cat.name;
+        if (cat) {
+          var icon = cat.species === 'dog' ? '🐶' : '🐱';
+          name = icon + ' ' + cat.name;
+        }
       }
       return { id: k, name: name, total: petTotals[k], pct: grandTotal > 0 ? Math.round((petTotals[k] / grandTotal) * 100) : 0 };
     });
@@ -310,7 +317,7 @@ Page({
       annualStats: {
         total: grandTotal.toFixed(2),
         avgMonth: (grandTotal / 12).toFixed(2),
-        maxMonthLabel: maxMonth + '月',
+        maxMonthLabel: '¥' + maxAmount.toFixed(2),
         months: months,
         categories: categories,
         cats: pets
@@ -368,6 +375,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '来看看我的宠物开销账单吧 💰', path: '/pages/expense/expense' };
+    return { imageUrl: '/assets/logo.png', title: '来看看我的宠物开销账单吧 💰', path: '/pages/expense/expense' };
   }
 });

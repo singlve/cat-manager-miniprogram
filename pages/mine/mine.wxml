@@ -73,10 +73,12 @@
         <view class="streak-row">
           <text class="streak-text" wx:if="{{checkInStreak > 0}}">🔥 连续{{checkInStreak}}天</text>
           <text class="streak-text" wx:else>开始签到累积积分吧</text>
-          <text class="cumul-text"> · 📅 累计{{totalCheckIns || 0}}天</text>
-          <text class="days-until-text ready lottery-trigger" wx:if="{{canLottery}}" bindtap="openLotteryIfAvailable"> · 🎰 可抽奖 x{{availableDraws}}次</text>
-          <text class="days-until-text" wx:elif="{{streakReached7}}"> · 还差{{daysUntilLottery}}天可再抽奖</text>
-          <text class="days-until-text" wx:else> · 还差{{daysUntilLottery}}天可抽奖🎰</text>
+          <block wx:if="{{totalCheckIns > 0}}">
+            <text class="cumul-text"> · 累计{{totalCheckIns}}天</text>
+            <text class="days-until-text ready lottery-trigger" wx:if="{{canLottery}}" bindtap="openLotteryIfAvailable"> · 🎰 可抽奖 x{{availableDraws}}次</text>
+            <text class="days-until-text" wx:elif="{{streakReached7}}"> · {{daysUntilLottery}}天后可再抽奖</text>
+            <text class="days-until-text" wx:else> · {{daysUntilLottery}}天后可抽奖🎰</text>
+          </block>
         </view>
       </view>
       <view class="checkin-btn {{checkedInToday ? 'checked' : ''}}" bindtap="doCheckIn">
@@ -215,6 +217,16 @@
       </view>
       <text class="menu-arrow">›</text>
     </view>
+    <view class="menu-item" bindtap="goAdminAnnounce" wx:if="{{isAdmin}}">
+      <view class="menu-icon-wrap icon-orange">
+        <text class="menu-icon-text">📢</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">公告管理</text>
+        <text class="menu-desc">发布和管理首页公告</text>
+      </view>
+      <text class="menu-arrow">›</text>
+    </view>
     <view class="menu-item" bindtap="goAdmin" wx:if="{{isAdmin}}">
       <view class="menu-icon-wrap icon-orange">
         <text class="menu-icon-text">🔧</text>
@@ -224,6 +236,17 @@
         <text class="menu-desc">管理积分商城商品</text>
       </view>
       <text class="menu-arrow">›</text>
+    </view>
+    <view class="menu-item" bindtap="goFeedback">
+      <view class="menu-icon-wrap icon-teal">
+        <text class="menu-icon-text">💬</text>
+      </view>
+      <view class="menu-text-wrap">
+        <text class="menu-text">留言板</text>
+        <text class="menu-desc">畅所欲言，反馈建议</text>
+      </view>
+      <text class="menu-arrow">›</text>
+      <view wx:if="{{notifyCount > 0}}" class="notify-badge">{{notifyCount > 99 ? '99+' : notifyCount}}</view>
     </view>
     <view class="menu-item" bindtap="goAdminData" wx:if="{{isAdmin}}">
       <view class="menu-icon-wrap icon-orange">

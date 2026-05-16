@@ -23,12 +23,13 @@ const DEMO_RECORDS = {
 
 Page({
   data: {
-    catId: '', cat: {}, records: [], nowDate: '', isDemo: false,
+    catId: '', cat: {}, records: [], recentRecords: [], healthSummary: [], nowDate: '', isDemo: false,
     weightRecords: [], latestWeight: null,
     showWeightModal: false, deleting: false,
     weightDate: new Date().toISOString().split('T')[0],
     weightTime: '',
-    weightValue: '', weightNote: ''
+    weightValue: '', weightNote: '',
+    showSharePreview: false, shareImagePath: ''
   },
 
   onLoad(options) {
@@ -40,7 +41,8 @@ Page({
     const isDemo = options.id && options.id.startsWith('demo_');
     this.setData({ catId: options.id, nowDate: new Date().toISOString().split('T')[0], isDemo });
     if (isDemo) {
-      this.setData({ cat: DEMO_CATS[options.id] || {}, records: DEMO_RECORDS[options.id] || [], weightRecords: [], latestWeight: null });
+      var demoRecords = DEMO_RECORDS[options.id] || [];
+      this.setData({ cat: DEMO_CATS[options.id] || {}, records: demoRecords, healthSummary: _buildHealthSummary(demoRecords), weightRecords: [], latestWeight: null });
     } else {
       this.loadCat();
       this.loadRecords();
@@ -73,7 +75,7 @@ Page({
       const records = await clouddb.getRecords({ catId: this.data.catId });
       records.sort((a, b) => new Date(b.date) - new Date(a.date));
       const withAgo = records.map(function(r) { return Object.assign({}, r, { _ago: calcAgo(r.date) }); });
-      this.setData({ records: withAgo });
+      this.setData({ records: withAgo, recentRecords: withAgo.slice(0, 4), healthSummary: _buildHealthSummary(records) });
     } catch (e) {
       console.error('[cat-detail] loadRecords error:', e);
     }
@@ -240,8 +242,153 @@ Page({
     });
   },
 
+  // ─── 分享卡 ───
+  async openShareCard() {
+    this.setData({ showSharePreview: true });
+    // 后台生成分享图
+    try {
+      var path = await this._drawShareCard();
+      this.setData({ shareImagePath: path });
+    } catch (e) { console.error('[cat-detail] gen share img fail:', e); }
+  },
+
+  closeSharePreview() { this.setData({ showSharePreview: false }); },
+
+  async saveShareCard() {
+    var path = this.data.shareImagePath;
+    if (!path) {
+      path = await this._drawShareCard();
+      this.setData({ shareImagePath: path });
+    }
+    if (!path) { wx.showToast({ title: '生成失败', icon: 'none' }); return; }
+    try {
+      await wx.saveImageToPhotosAlbum({ filePath: path });
+      this.setData({ showSharePreview: false });
+      wx.showToast({ title: '已保存到相册', icon: 'success' });
+    } catch (e) {
+      this.setData({ showSharePreview: false });
+      if (e.errMsg && e.errMsg.indexOf('auth deny') !== -1) {
+        wx.showModal({ title: '需要授权', content: '请在设置中允许保存到相册', showCancel: false });
+      } else { wx.showToast({ title: '保存失败', icon: 'none' }); }
+    }
+  },
+
+  async _drawShareCard() {
+    var cat = this.data.cat;
+    var healthSummary = this.data.healthSummary || [];
+    var weight = this.data.latestWeight;
+    var W = 375, H = 550, S = 2;
+
+    var query = wx.createSelectorQuery();
+    var node = await new Promise(function(r) {
+      query.select('#shareCanvas').fields({ node: true }).exec(function(res) { r(res[0]); });
+    });
+    if (!node) return '';
+
+    var canvas = node.node;
+    var ctx = canvas.getContext('2d');
+    canvas.width = W * S;
+    canvas.height = H * S;
+    ctx.scale(S, S);
+
+    // 背景
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#4A90D9';
+    ctx.fillRect(0, 0, W, 120);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('宠物健康档案', W / 2, 44);
+
+    ctx.beginPath();
+    ctx.arc(W / 2, 80, 32, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+    ctx.fillStyle = '#4A90D9';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((cat.name || '?').slice(0, 1), W / 2, 80);
+    ctx.textBaseline = 'alphabetic';
+
+    var y = 140;
+    ctx.fillStyle = '#222';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText(cat.name || '未命名', W / 2, y);
+    ctx.fillStyle = '#888';
+    ctx.font = '16px sans-serif';
+    ctx.fillText((cat.breed || '') + (cat.gender ? ' · ' + (cat.gender === 'male' ? '弟弟' : '妹妹') : ''), W / 2, y + 20);
+
+    y += 40;
+    ctx.strokeStyle = '#e8e8e8';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(30, y);
+    ctx.lineTo(W - 30, y);
+    ctx.stroke();
+
+    y += 20;
+    var items = [];
+    if (cat.birthday) items.push({ l: '生日', v: cat.birthday });
+    if (cat.adoptedDate) items.push({ l: '领养', v: cat.adoptedDate });
+    if (weight != null) items.push({ l: '体重', v: weight + ' kg' });
+    if (healthSummary.length) items.push({ l: '健康', v: healthSummary.length + '类' });
+    ctx.textAlign = 'left';
+    for (var i = 0; i < items.length; i++) {
+      var cx = 30 + (i % 2) * 157;
+      var cy = y + Math.floor(i / 2) * 48;
+      ctx.fillStyle = '#999';
+      ctx.font = '14px sans-serif';
+      ctx.fillText(items[i].l, cx, cy);
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(items[i].v, cx, cy + 20);
+    }
+
+    y += Math.ceil(items.length / 2) * 48 + 20;
+    if (healthSummary.length) {
+      ctx.fillStyle = '#4A90D9';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('健康记录', 30, y);
+      y += 20;
+      ctx.fillStyle = '#555';
+      ctx.font = '15px sans-serif';
+      for (var j = 0; j < healthSummary.length; j++) {
+        ctx.fillText(healthSummary[j].label + '    ' + healthSummary[j].date, 30, y);
+        y += 22;
+      }
+    }
+
+    y = Math.max(y + 24, H - 22);
+    ctx.fillStyle = '#bbb';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('宠物健康管家', W / 2, y);
+
+    return await new Promise(function(r) {
+      wx.canvasToTempFilePath({
+        canvas: canvas, x: 0, y: 0, width: W * S, height: H * S,
+        destWidth: W * S, destHeight: H * S, fileType: 'jpg', quality: 0.9,
+        success: function(res) { r(res.tempFilePath); },
+        fail: function() { r(''); }
+      });
+    });
+  },
+
   onShareAppMessage() {
     const name = this.data.cat?.name || '宝贝';
-    return { title: `看看${name}的健康记录 🐱`, path: `/pages/cat-detail/cat-detail?catId=${this.data.cat?._id || ''}` };
+    return { imageUrl: '/assets/logo.png', title: `看看${name}的档案`, path: `/pages/cat-detail/cat-detail?catId=${this.data.cat?._id || ''}` };
   }
 });
+
+function _buildHealthSummary(records) {
+  var map = { bath: '🛁洗澡', deworm: '💊驱虫', vaccine: '💉免疫', checkup: '🩺体检' };
+  var latest = {};
+  (records || []).forEach(function(r) {
+    if (!latest[r.type] || r.date > latest[r.type]) latest[r.type] = r.date;
+  });
+  var result = Object.keys(latest).map(function(k) { return { label: map[k] || k, date: latest[k] }; });
+  result.sort(function(a, b) { return b.date.localeCompare(a.date); });
+  return result;
+}

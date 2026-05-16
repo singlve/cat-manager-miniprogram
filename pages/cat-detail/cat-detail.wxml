@@ -27,6 +27,7 @@
     </view>
     <view class="header-actions">
       <text class="action-btn" bindtap="goEdit">编辑</text>
+      <text class="action-btn" catchtap="openShareCard">分享</text>
       <text class="action-btn delete" bindtap="deleteCat">删除</text>
     </view>
   </view>
@@ -173,6 +174,55 @@
         <view class="wm-btn confirm" bindtap="saveWeightRecord">保存</view>
       </view>
     </view>
+  </view>
+
+  <!-- 分享卡预览 -->
+  <view wx:if="{{showSharePreview}}" class="card-preview-wrap" catchtap="closeSharePreview">
+    <canvas type="2d" id="shareCanvas" class="card-canvas"></canvas>
+    <view class="card-preview" catchtap="stopBubble">
+      <view class="card-top">
+        <text class="card-title">宠物健康档案</text>
+        <view class="card-avatar">
+          <image wx:if="{{cat._displayAvatar}}" class="card-avatar-img" src="{{cat._displayAvatar}}" mode="aspectFill"/>
+          <text wx:else class="card-avatar-text">{{ cat.name ? cat.name.slice(0,1) : '?' }}</text>
+        </view>
+      </view>
+      <text class="card-name">{{cat.name || '未命名'}}</text>
+      <text class="card-breed">{{cat.breed || ''}}{{cat.gender ? ' · ' + (cat.gender === 'male' ? '弟弟' : '妹妹') : ''}}</text>
+      <view class="card-divider"></view>
+      <view class="card-info">
+        <view class="card-info-item" wx:if="{{cat.birthday}}">
+          <text class="card-info-label">生日</text>
+          <text class="card-info-val">{{cat.birthday}}</text>
+        </view>
+        <view class="card-info-item" wx:if="{{cat.adoptedDate}}">
+          <text class="card-info-label">领养</text>
+          <text class="card-info-val">{{cat.adoptedDate}}</text>
+        </view>
+        <view class="card-info-item" wx:if="{{latestWeight != null}}">
+          <text class="card-info-label">体重</text>
+          <text class="card-info-val">{{latestWeight}} kg</text>
+        </view>
+        <view class="card-info-item" wx:if="{{healthSummary.length > 0}}">
+          <text class="card-info-label">健康记录</text>
+          <text class="card-info-val">{{healthSummary.length}}类</text>
+        </view>
+      </view>
+      <view wx:if="{{healthSummary.length > 0}}" class="card-records">
+        <text class="card-section-title">健康记录</text>
+        <view class="card-record" wx:for="{{healthSummary}}" wx:key="label" wx:for-item="r">
+          <text class="card-record-type">{{r.label}}</text>
+          <text>{{r.date}}</text>
+        </view>
+      </view>
+      <text class="card-footer">宠物健康管家 · 记录宠物的每一个瞬间</text>
+      <view class="card-btns">
+        <button class="cb-btn" bindtap="saveShareCard">保存到相册</button>
+        <button class="cb-btn primary" open-type="share">转发给朋友</button>
+      </view>
+      <text class="card-close" bindtap="closeSharePreview">关闭</text>
+    </view>
+
   </view>
 
 </view>

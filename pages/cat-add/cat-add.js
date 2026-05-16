@@ -75,6 +75,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { title: "添加宠物 - 猫咪健康管家 🐱", path: "/pages/cat-add/cat-add" };
+    return { imageUrl: '/assets/logo.png', title: "添加宠物 - 宠物健康管家", path: "/pages/cat-add/cat-add" };
   },
 }));

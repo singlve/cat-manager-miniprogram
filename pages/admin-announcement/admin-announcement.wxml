@@ -1,0 +1,27 @@
+<view class="page">
+  <view wx:if="{{!isAdmin}}" class="empty-state"><text class="empty-icon">🔒</text><text class="empty-text">无权访问</text></view>
+
+  <block wx:else>
+    <!-- 发布 -->
+    <view class="post-box">
+      <textarea class="post-input" placeholder="输入公告内容..." value="{{content}}" bindinput="onContentInput" maxlength="200" auto-height/>
+      <button class="post-btn {{posting ? 'disabled' : ''}}" bindtap="doPost">{{posting ? '发布中...' : '发布公告'}}</button>
+    </view>
+
+    <!-- 列表 -->
+    <view wx:if="{{loading}}" class="loading-box"><text>加载中...</text></view>
+    <view wx:else class="list">
+      <view wx:if="{{list.length === 0}}" class="empty-state"><text class="empty-text">暂无公告</text></view>
+      <view class="card" wx:for="{{list}}" wx:key="_id">
+        <view class="card-top">
+          <view class="status-dot {{item.isActive ? 'active' : ''}}"></view>
+          <text class="card-content">{{item.content}}</text>
+        </view>
+        <view class="card-actions">
+          <text class="act {{item.isActive ? 'danger' : ''}}" catchtap="toggle" data-id="{{item._id}}">{{item.isActive ? '停用' : '启用'}}</text>
+          <text class="act danger" catchtap="doDelete" data-id="{{item._id}}">删除</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

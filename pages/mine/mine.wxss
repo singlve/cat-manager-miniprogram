@@ -155,7 +155,7 @@ page { background: #f0f2f7; }
 }
 
 .days-until-text {
-  font-size: 22rpx; color: #bbb;
+  font-size: 22rpx; color: #999;
 }
 .days-until-text.ready {
   color: #4A90D9; font-weight: 600;
@@ -545,6 +545,7 @@ page { background: #f0f2f7; }
   align-items: center;
   padding: 28rpx 36rpx;
   border-bottom: 2rpx solid #f8f9fc;
+  position: relative;
 }
 .menu-item:last-of-type { border-bottom: none; }
 .menu-item:active { background: #f8f9fc; }
@@ -586,7 +587,14 @@ page { background: #f0f2f7; }
 .menu-arrow {
   font-size: 36rpx;
   color: #ddd;
-  flex-shrink: 0;
+}
+.notify-badge {
+  background: #e74c3c; color: #fff;
+  font-size: 20rpx; min-width: 32rpx; height: 32rpx;
+  line-height: 32rpx; text-align: center;
+  border-radius: 16rpx; padding: 0 8rpx;
+  position: absolute; right: 64rpx; top: 50%;
+  transform: translateY(-50%);
 }
 
 .menu-divider { height: 2rpx; background: #f5f5f5; margin: 0; }

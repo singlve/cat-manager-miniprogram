@@ -443,8 +443,7 @@ function getWeekKey() {
 }
 
 // ════════════════════════════════════════════════════
-// 管理员权限
-// ════════════════════════════════════════════════════
+// 管理员 openid 白名单（需与 cloudfunctions/adminUsers、getAdminRecords 中的 ADMIN_OPENIDS 保持一致）
 var ADMIN_OPENIDS = [
   'oYBpx3ZRljxCk6pODSAyMShkyFJA'  // 主账号 openid
 ];
@@ -481,5 +480,6 @@ module.exports = {
   buildCheckInMonth,
   recalcAllStreak,
   getWeekKey,
-  isAdmin
+  isAdmin,
+  SHARE_IMAGE: '/assets/logo.png'
 };

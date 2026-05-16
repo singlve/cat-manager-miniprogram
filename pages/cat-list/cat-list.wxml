@@ -2,7 +2,15 @@
 <view class="container">
   <include src="../../templates/offline-tip.wxml" />
 
-  <!-- 顶部滚动公告 Banner -->
+  <!-- 管理员公告 -->
+  <view wx:if="{{announcement}}" class="announce-bar" bindtap="onAnnounceTap">
+    <text class="announce-icon">📢</text>
+    <view class="announce-wrap">
+      <text class="announce-text">{{announcement.content}}</text>
+    </view>
+  </view>
+
+  <!-- 功能 Banner -->
   <view wx:if="{{banners.length > 0}}" class="banner-wrap">
     <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#4A90D9">
       <swiper-item wx:for="{{banners}}" wx:key="title">

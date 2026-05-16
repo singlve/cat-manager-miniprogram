@@ -5,6 +5,22 @@
       {
         "type": "folder",
         "value": "/minitest"
+      },
+      {
+        "type": "folder",
+        "value": "/node_modules"
+      },
+      {
+        "type": "folder",
+        "value": "/tests"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "*.md"
       }
     ],
     "include": []

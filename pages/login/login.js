@@ -1,8 +1,7 @@
 // pages/login/login.js
 // 登录页：微信一键登录 + 手机号登录 + 手机号绑定
 const clouddb = require('../../utils/clouddb.js');
-
-const FORCE_MOCK = false;
+const { verifyPassword, hashPassword } = require('../../utils/crypto.js');
 
 // ─── 默认头像（灰色宠物占位符） ───
 const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgcng9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+PHRleHQgeD0iNjAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjU2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+8J+QsTwvdGV4dD48L3N2Zz4=';
@@ -29,7 +28,6 @@ Page({
 
   // ─── 自动登录（已有 openid） ───
   async _autoLogin(openid) {
-    if (FORCE_MOCK) return;
     const user = await clouddb.getUserByOpenid(openid);
     if (user) {
       try { wx.setStorageSync('currentUser', user); } catch (e) {}
@@ -54,23 +52,6 @@ Page({
       success: loginRes => {
 
         if (!loginRes.code) { wx.hideLoading(); wx.showToast({ title: '微信登录失败', icon: 'none' }); return; }
-
-        if (FORCE_MOCK) {
-          setTimeout(() => {
-            wx.hideLoading();
-            const mockUser = {
-              _id: 'wx_user_' + Date.now(),
-              _openid: 'mock_openid_' + Date.now(),
-              nickname: '测试用户',
-              avatar: DEFAULT_AVATAR,
-              loginType: 'wechat'
-            };
-            try { wx.setStorageSync('currentUser', mockUser); } catch (err) {}
-            wx.showToast({ title: '登录成功', icon: 'success' });
-            setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
-          }, 600);
-          return;
-        }
 
         wx.cloud.callFunction({
           name: 'login', data: { code: loginRes.code },
@@ -141,23 +122,6 @@ Page({
 
   // ─── 微信手机号授权登录 ───
   async _doWxPhoneLogin(code) {
-    if (FORCE_MOCK) {
-      setTimeout(() => {
-        wx.hideLoading();
-        const mockUser = {
-          _id: 'wx_user_' + Date.now(),
-          _openid: 'mock_openid_' + Date.now(),
-          nickname: '测试用户',
-          avatar: DEFAULT_AVATAR,
-          loginType: 'wechat',
-          phone: '138****8888'
-        };
-        try { wx.setStorageSync('currentUser', mockUser); } catch (err) {}
-        wx.showToast({ title: '登录成功', icon: 'success' });
-        setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
-      }, 600);
-      return;
-    }
     try {
       const res = await wx.cloud.callFunction({ name: 'getPhoneNumber', data: { code } });
 
@@ -324,14 +288,15 @@ Page({
     const { tempUser, isNewUser } = this.data;
     if (!tempUser) { wx.hideLoading(); return; }
     const updates = { phone };
-    if (password) updates.password = password;
+    var hashedPwd = password ? hashPassword(password) : '';
+    if (hashedPwd) updates.password = hashedPwd;
     updates.loginType = 'wechat_phone';
 
     if (tempUser._id) {
       await clouddb.updateUser(tempUser._id, updates);
     }
     const mergedUser = Object.assign({}, tempUser, { phone: phone, loginType: 'wechat_phone' });
-    if (password) mergedUser.password = password;
+    if (hashedPwd) mergedUser.password = hashedPwd;
     try { wx.setStorageSync('currentUser', mergedUser); } catch (e) {}
 
     wx.hideLoading();
@@ -358,26 +323,11 @@ Page({
     if (!phone || !password) { wx.showToast({ title: '请填写完整', icon: 'none' }); return; }
     if (!/^1[3-9]\d{9}$/.test(phone)) { wx.showToast({ title: '手机号格式错误', icon: 'none' }); return; }
 
-    if (FORCE_MOCK) {
-      wx.showLoading({ title: '登录中...' });
-      setTimeout(() => {
-        wx.hideLoading();
-        if (phone === '13800138000' && password === '123456') {
-          try { wx.setStorageSync('currentUser', { _id: 'phone_user', phone, nickname: '测试用户', loginType: 'phone' }); } catch (err) {}
-          wx.showToast({ title: '登录成功', icon: 'success' });
-          setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
-        } else {
-          wx.showToast({ title: '手机号或密码错误（测试: 13800138000 / 123456）', icon: 'none', duration: 3000 });
-        }
-      }, 600);
-      return;
-    }
-
     wx.showLoading({ title: '登录中...' });
     const user = await clouddb.getUserByPhone(phone);
     wx.hideLoading();
     if (!user) { wx.showToast({ title: '用户不存在，请先注册', icon: 'none' }); return; }
-    if (user.password !== password) { wx.showToast({ title: '密码错误', icon: 'none' }); return; }
+    if (!verifyPassword(password, user.password)) { wx.showToast({ title: '密码错误', icon: 'none' }); return; }
     try { wx.setStorageSync('currentUser', user); } catch (err) {}
     wx.showToast({ title: '登录成功', icon: 'success' });
     setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
@@ -461,6 +411,6 @@ Page({
   goRegister() { wx.navigateTo({ url: '/pages/register/register' }); },
 
   onShareAppMessage() {
-    return { title: '猫咪健康管家 - 记录宝贝的健康日常 🐱', path: '/pages/index/index' };
+    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/index/index' };
   },
 });

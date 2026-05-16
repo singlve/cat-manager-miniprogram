@@ -18,6 +18,9 @@
     "pages/points-mall/points-mall",
     "pages/admin-items/admin-items",
     "pages/admin-data/admin-data",
+    "pages/feedback/feedback",
+    "pages/feedback-post/feedback-post",
+    "pages/admin-announcement/admin-announcement",
     "pages/webview/webview",
     "pages/shipping-address/shipping-address"
   ],
