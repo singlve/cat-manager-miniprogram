@@ -169,7 +169,7 @@
     <view class="stats-card">
       <view class="stat-item" bindtap="goCats">
         <view class="stat-icon-wrap cat-icon">
-          <text class="stat-icon">🐱</text>
+          <text class="stat-icon">🐾</text>
         </view>
         <text class="stat-num">{{catCount || 0}}</text>
         <text class="stat-label">我的宠物</text>
@@ -237,7 +237,7 @@
       </view>
       <text class="menu-arrow">›</text>
     </view>
-    <view class="menu-item" bindtap="goFeedback">
+    <view class="menu-item" bindtap="goFeedback" wx:if="{{showFeedback}}">
       <view class="menu-icon-wrap icon-teal">
         <text class="menu-icon-text">💬</text>
       </view>
@@ -337,35 +337,6 @@
 
   <view class="footer-hint">宠物健康管家 v1.0</view>
 
-  <!-- ─── 绑定手机号底部弹窗 ─── -->
-  <view wx:if="{{showBindPhone}}" class="bindphone-mask" bindtap="closeBindPhone">
-    <view class="bindphone-sheet" catchtap="stopBubble">
-      <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
-      <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">绑定手机号</text>
-      <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">绑定后可使用手机号登录</text>
-
-      <!-- 手动输入 -->
-      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:16rpx;">
-        <input type="number" placeholder="请输入手机号" bindinput="bindPhoneInput" maxlength="11"
-          style="font-size:30rpx;color:#333;width:100%;" />
-      </view>
-
-      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
-        <input password type="text" placeholder="设置密码（至少6位）" bindinput="bindPasswordInput"
-          style="font-size:30rpx;color:#333;width:100%;" />
-      </view>
-
-      <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:28rpx;">
-        <input password type="text" placeholder="确认密码" bindinput="bindConfirmInput"
-          style="font-size:30rpx;color:#333;width:100%;" />
-      </view>
-
-      <view class="sheet-btns">
-        <view class="sheet-btn cancel" bindtap="closeBindPhone">取消</view>
-        <view class="sheet-btn confirm" bindtap="onManualBindPhone">确认绑定</view>
-      </view>
-    </view>
-  </view>
   <!-- ─── 补签确认弹窗 ─── -->
   <view wx:if="{{showMakeUpModal}}" class="bindphone-mask" bindtap="cancelMakeUp">
     <view class="bindphone-sheet" catchtap="stopBubble">

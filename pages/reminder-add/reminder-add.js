@@ -141,12 +141,14 @@ Page({
   },
 
   save() {
+    if (this._saving) return;
     const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, note } = this.data;
     const intervalDays = this._getIntervalDays();
     if (!selectedCatId) { wx.showToast({ title: '请先添加宠物', icon: 'none' }); return; }
     if (!lastDate) { wx.showToast({ title: '请选择上次时间', icon: 'none' }); return; }
 
-    // 请求订阅消息授权（必须在按钮点击手势内直接调用）
+    this._saving = true;
+
     if (SUBSCRIBE_TMPL_ID) {
       wx.requestSubscribeMessage({
         tmplIds: [SUBSCRIBE_TMPL_ID],
@@ -179,6 +181,7 @@ Page({
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
     } finally {
       wx.hideLoading();
+      this._saving = false;
     }
   },
 

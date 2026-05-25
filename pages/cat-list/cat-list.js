@@ -112,7 +112,6 @@ Page({
     if (app.isLoggedIn()) {
       this.loadAll();
     } else {
-      // 未登录时展示 demo 数据
       const demoCats = getDemoCats();
       this._rawCats = demoCats;
       const counts = { all: demoCats.length, cat: demoCats.length, dog: 0 };
@@ -126,7 +125,10 @@ Page({
   },
 
   async loadAll() {
-    this.setData({ loading: true });
+    // 只有在没有任何宠物数据展示时才显示 loading
+    if (this.data.displayCats.length === 0) {
+      this.setData({ loading: true });
+    }
     try {
       const cats = await clouddb.getCats();
 

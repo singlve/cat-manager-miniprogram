@@ -2,6 +2,8 @@
 // 提醒列表页：逾期/即将/未来分组 + 状态筛选
 const clouddb = require('../../utils/clouddb.js');
 
+const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
+
 function calcNextDate(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return null;
   const d = new Date(lastDate);
@@ -189,6 +191,19 @@ Page({
     );
     if (!confirmed) return;
 
+    // 请求订阅授权（下次到期时可再次收到推送；授权与否不影响标记完成）
+    const doMark = () => { this._doMarkComplete(id); };
+    if (SUBSCRIBE_TMPL_ID) {
+      wx.requestSubscribeMessage({
+        tmplIds: [SUBSCRIBE_TMPL_ID],
+        complete: doMark
+      });
+    } else {
+      doMark();
+    }
+  },
+
+  async _doMarkComplete(id) {
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
@@ -199,7 +214,6 @@ Page({
           completedAt: todayStr
         });
       }
-      // 更新本地数据
       const all = this.data.allReminders.map(r => {
         if (r._id !== id) return r;
         const next = calcNextDate(todayStr, r.intervalDays);

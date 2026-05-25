@@ -10,6 +10,11 @@
     </view>
   </scroll-view>
 
+  <!-- 通知胶囊 -->
+  <view wx:if="{{unreadNotifyCount > 0}}" class="notify-capsule" bindtap="openNotifyPanel">
+    <text class="capsule-text">{{unreadNotifyCount}} 条新消息</text>
+  </view>
+
   <!-- 加载中 -->
   <view wx:if="{{loading}}" class="loading-box">
     <text>加载中...</text>
@@ -22,13 +27,13 @@
       <text class="empty-text">还没有留言，来抢沙发吧</text>
     </view>
 
-    <view class="fb-card {{item.adopted ? 'adopted' : ''}}"
-      wx:for="{{filteredFeedbacks}}" wx:key="_id" wx:for-index="idx">
+    <view class="fb-card {{item.adopted ? 'adopted' : ''}} {{item._highlight ? 'highlight' : ''}}"
+      wx:for="{{filteredFeedbacks}}" wx:key="_id" wx:for-index="idx" id="fb-{{idx}}">
 
       <!-- 头部：用户 + 分类 + 时间 -->
       <view class="fb-header">
         <view class="fb-user">
-          <image wx:if="{{item.userAvatar}}" class="fb-avatar-img" src="{{item.userAvatar}}" mode="aspectFill"/>
+          <image wx:if="{{item._avatarUrl}}" class="fb-avatar-img" src="{{item._avatarUrl}}" mode="aspectFill"/>
           <text wx:else class="fb-avatar">{{item.userNickname ? item.userNickname.slice(0,1) : '?'}}</text>
           <view class="fb-user-info">
             <text class="fb-nickname">{{item.userNickname || '匿名用户'}}</text>
@@ -51,8 +56,8 @@
       </view>
 
       <!-- 图片 -->
-      <view wx:if="{{item.images && item.images.length > 0}}" class="fb-images">
-        <image wx:for="{{item.images}}" wx:for-item="img" wx:key="*this"
+      <view wx:if="{{item._imageUrls && item._imageUrls.length > 0}}" class="fb-images">
+        <image wx:for="{{item._imageUrls}}" wx:for-item="img" wx:key="*this"
           src="{{img}}" mode="aspectFill" class="fb-img"
           bindtap="previewImage" data-url="{{img}}" data-idx="{{idx}}"/>
       </view>
@@ -68,6 +73,10 @@
         <view wx:if="{{isAdmin && (item.category === 'bug' || item.category === 'suggestion')}}"
           class="fb-act admin-act" catchtap="toggleAdopted" data-id="{{item._id}}" data-idx="{{idx}}">
           <text>{{item.adopted ? '取消采纳' : '采纳'}}</text>
+        </view>
+        <view wx:if="{{item._openid === currentOpenid || isAdmin}}"
+          class="fb-act delete-act" catchtap="deleteFeedback" data-id="{{item._id}}" data-idx="{{idx}}">
+          <text>🗑 删除</text>
         </view>
       </view>
 
@@ -91,9 +100,9 @@
     </view>
   </view>
 
-  <!-- FAB -->
-  <view class="fab" bindtap="openPost">
-    <text class="fab-text">✏️</text>
+  <!-- 添加按钮 -->
+  <view class="add-section">
+    <button class="add-btn" bindtap="openPost">✏️ 写留言</button>
   </view>
 
   <!-- 评论弹窗 -->
@@ -112,6 +121,29 @@
       <view class="sheet-btns">
         <button class="cancel" bindtap="closeComment">取消</button>
         <button class="confirm {{commenting ? 'disabled' : ''}}" bindtap="doComment">{{commenting ? '发送中...' : '发送'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 通知面板 -->
+  <view wx:if="{{showNotifyPanel}}" class="mask" catchtap="closeNotifyPanel">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">🔔 消息通知</text>
+
+      <view wx:if="{{unreadNotifications.length === 0}}" class="notify-empty">
+        <text>暂无新消息</text>
+      </view>
+
+      <view class="notify-list">
+        <view class="notify-item" wx:for="{{unreadNotifications}}" wx:key="_id"
+          bindtap="goToFeedback" data-fid="{{item.feedbackId}}">
+          <text class="notify-icon">{{item._icon}}</text>
+          <view class="notify-body">
+            <text class="notify-snippet">{{item.snippet}}</text>
+            <text class="notify-time">{{item._time}}</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>

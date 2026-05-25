@@ -271,7 +271,7 @@ Page({
     });
 
     // 月度柱状图数据
-    var maxAmount = Math.max.apply(null, Object.values(monthTotals)) || 1;
+    var maxAmount = Math.max.apply(null, Object.values(monthTotals)) || 0;
     var maxMonth = 0;
     for (var mi = 1; mi <= 12; mi++) {
       if (monthTotals[mi] === maxAmount) { maxMonth = mi; break; }

@@ -20,6 +20,7 @@ Page({
     isOnline: true,
     isLoggedIn: false,
     isAdmin: false,
+    showFeedback: false,
     notifyCount: 0,
     nickname: '加载中...',
     avatar: '',
@@ -84,11 +85,7 @@ Page({
       { icon: '🪙', name: '20积分', color: '#FF8B94', type: 'points', value: 20 },
       { icon: '🎫', name: '2补签卡', color: '#B8A9C9', type: 'card', value: 2 }
     ],
-    // 绑定手机
-    showBindPhone: false,
-    bindPhone: '',
-    bindPassword: '',
-    bindConfirm: ''
+    // 绑定手机（已改为独立页面 pages/bind-phone）
   },
 
   onLoad() {
@@ -103,6 +100,16 @@ Page({
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn(), isAdmin: isAdmin() });
     if (app.isLoggedIn()) { this.loadUserInfo(); this._loadNotifyCount(); }
+    this._checkFeedbackEntry();
+  },
+
+  async _checkFeedbackEntry() {
+    try {
+      var a = await clouddb.getActiveAnnouncement();
+      this.setData({ showFeedback: !!a });
+    } catch (e) {
+      this.setData({ showFeedback: false });
+    }
   },
 
   async loadUserInfo() {
@@ -252,7 +259,7 @@ Page({
   goAdmin()         { wx.navigateTo({ url: '/pages/admin-items/admin-items' }); },
   goAdminAnnounce() { wx.navigateTo({ url: '/pages/admin-announcement/admin-announcement' }); },
   goAdminData()    { wx.navigateTo({ url: '/pages/admin-data/admin-data' }); },
-  goFeedback()    { this._markNotifyRead(); wx.navigateTo({ url: '/pages/feedback/feedback' }); },
+  goFeedback()    { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   goAbout()        { wx.navigateTo({ url: '/pages/about/about' }); },
 
   async _loadNotifyCount() {
@@ -307,6 +314,13 @@ Page({
             filePath
           });
           const fileID = uploadRes.fileID;
+          // UGC 图片安全校验
+          var imgCheck = await clouddb.checkImageSafe(fileID);
+          if (imgCheck.code !== 0) {
+            wx.hideLoading();
+            wx.showToast({ title: '头像包含违规内容，请更换', icon: 'none' });
+            return;
+          }
           this.setData({ editAvatarUrl: fileID, editEmoji: '' });
           wx.hideLoading();
           wx.showToast({ title: '头像已上传', icon: 'success' });
@@ -360,58 +374,13 @@ Page({
 
   // ─── 绑定手机号 ───
   openBindPhone() {
-    this.setData({ showBindPhone: true, bindPhone: '', bindPassword: '', bindConfirm: '' });
+    let needPassword = 1;
+    try {
+      const user = wx.getStorageSync('currentUser') || {};
+      if (user && user.password) needPassword = 0;
+    } catch (e) {}
+    wx.navigateTo({ url: `/pages/bind-phone/bind-phone?mode=mine&needPassword=${needPassword}` });
   },
-
-  bindPhoneInput(e) { this.setData({ bindPhone: e.detail.value.trim() }); },
-  bindPasswordInput(e) { this.setData({ bindPassword: e.detail.value }); },
-  bindConfirmInput(e) { this.setData({ bindConfirm: e.detail.value }); },
-
-  async onManualBindPhone() {
-    const { bindPhone, bindPassword, bindConfirm } = this.data;
-    if (!/^1[3-9]\d{9}$/.test(bindPhone)) { wx.showToast({ title: '请输入正确手机号', icon: 'none' }); return; }
-
-    let currentUser = null;
-    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-    const hasPassword = !!(currentUser && currentUser.password);
-
-    if (!hasPassword) {
-      // 首次绑定，需设置密码
-      if (!bindPassword || bindPassword.length < 6) { wx.showToast({ title: '密码至少6位', icon: 'none' }); return; }
-      if (bindPassword !== bindConfirm) { wx.showToast({ title: '两次密码不一致', icon: 'none' }); return; }
-    }
-
-    // 查重（不能绑定到其他账号）
-    wx.showLoading({ title: '绑定中...' });
-    const existing = await clouddb.getUserByPhone(bindPhone);
-    if (existing && existing._openid !== currentUser._openid) {
-      wx.hideLoading();
-      wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' }); return;
-    }
-
-    const updates = { phone: bindPhone };
-    if (bindPassword) updates.password = bindPassword;
-    if (currentUser._id) await clouddb.updateUser(currentUser._id, updates);
-    currentUser.phone = bindPhone;
-    if (bindPassword) currentUser.password = bindPassword;
-    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-    wx.hideLoading();
-    wx.showToast({ title: '绑定成功', icon: 'success' });
-    this.setData({ showBindPhone: false, phone: bindPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2'), bindPhone: '', bindPassword: '', bindConfirm: '' });
-  },
-
-  async _finishBindPhone({ phone }) {
-    let currentUser = null;
-    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-    if (currentUser._id) await clouddb.updateUser(currentUser._id, { phone });
-    currentUser.phone = phone;
-    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-    wx.hideLoading();
-    wx.showToast({ title: '绑定成功', icon: 'success' });
-    this.setData({ showBindPhone: false, phone: phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') });
-  },
-
-  closeBindPhone() { this.setData({ showBindPhone: false }); },
 
   // ─── 签到积分 ───
   async doCheckIn() {
@@ -888,17 +857,12 @@ Page({
       success: res => {
         if (!res.confirm) return;
         wx.clearStorageSync();
-        getApp().globalData.openid = null;
-        this.setData({
-          isLoggedIn: false,
-          nickname: '',
-          avatar: '',
-          phone: '',
-          catCount: 0,
-          reminderCount: 0,
-          recordCount: 0
-        });
-        wx.showToast({ title: '已退出', icon: 'success' });
+        // 清空 app 全局状态
+        const app = getApp();
+        app.globalData.openid = null;
+        app.globalData.catsCache = { data: null, ts: 0 };
+        // 切到首页展示未登录状态，同时清掉页面栈
+        wx.switchTab({ url: '/pages/cat-list/cat-list' });
       }
     });
   },

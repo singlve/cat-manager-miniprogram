@@ -1,7 +1,7 @@
 // pages/login/login.js
 // 登录页：微信一键登录 + 手机号登录 + 手机号绑定
 const clouddb = require('../../utils/clouddb.js');
-const { verifyPassword, hashPassword } = require('../../utils/crypto.js');
+const { verifyPassword } = require('../../utils/crypto.js');
 
 // ─── 默认头像（灰色宠物占位符） ───
 const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgcng9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+PHRleHQgeD0iNjAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjU2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+8J+QsTwvdGV4dD48L3N2Zz4=';
@@ -9,28 +9,21 @@ const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy
 Page({
   data: {
     phone: '', password: '', showOtherLogin: false,
-    // 微信登录成功后的中间状态（待绑定手机）
-    tempUser: null,
-    showBindPhone: false,
-    showPasswordInput: false, // 是否显示密码设置（首次绑定手机时）
-    bindPhone: '', bindPassword: '', bindConfirm: '', bindPhoneError: '',
-    // 完善资料弹窗
+    // 完善资料弹窗（新用户绑定手机后由 bind-phone 页 redirect 回来触发）
     showProfileSetup: false,
     profileAvatar: '',
-    profileNickname: '',
-    isNewUser: false
+    profileNickname: ''
   },
 
-  onLoad() {
+  onLoad(options) {
+    // 从 bind-phone 页回来时，显示完善资料弹窗
+    if (options && options.action === 'setupProfile') {
+      this.setData({ showProfileSetup: true });
+      return;
+    }
+    // 只在 storage 仍有用户时自动登录（刚退出登录 storage 已清空，不会触发）
     const app = getApp();
-    if (app.globalData && app.globalData.openid) this._autoLogin(app.globalData.openid);
-  },
-
-  // ─── 自动登录（已有 openid） ───
-  async _autoLogin(openid) {
-    const user = await clouddb.getUserByOpenid(openid);
-    if (user) {
-      try { wx.setStorageSync('currentUser', user); } catch (e) {}
+    if (app.isLoggedIn()) {
       wx.switchTab({ url: '/pages/cat-list/cat-list' });
     }
   },
@@ -74,10 +67,12 @@ Page({
               wx.showToast({ title: '登录成功', icon: 'success' });
               setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
             } else if (user) {
-              this.setData({ tempUser: user, showBindPhone: true, showPasswordInput: true });
+              try { wx.setStorageSync('currentUser', user); } catch (err) {}
+              const needPwd = user.password ? 0 : 1;
+              wx.navigateTo({ url: `/pages/bind-phone/bind-phone?mode=login&needPassword=${needPwd}&isNewUser=0` });
             } else {
+              wx.showLoading({ title: '创建账号中...' });
               const newUser = {
-                _openid: openid,
                 nickname: '',
                 avatar: '',
                 loginType: 'wechat',
@@ -87,13 +82,20 @@ Page({
               let id = null;
               try { id = await clouddb.addUser(newUser); } catch (e) { console.error('[login] addUser error:', e); }
 
+              if (!id) {
+                wx.hideLoading();
+                wx.showModal({
+                  title: '创建账号失败',
+                  content: '请确认云数据库 users 集合已创建且权限为「所有用户可读，仅创建者可写」。',
+                  showCancel: false
+                });
+                return;
+              }
+
               newUser._id = id;
               try { wx.setStorageSync('currentUser', newUser); } catch (err) {}
-
-              this.setData({ tempUser: newUser, showBindPhone: true, showPasswordInput: true, isNewUser: true });
-
-              wx.showToast({ title: id ? '登录成功，请绑定手机号' : '请绑定手机号', icon: 'none', duration: 2500 });
-
+              wx.hideLoading();
+              wx.navigateTo({ url: '/pages/bind-phone/bind-phone?mode=login&needPassword=1&isNewUser=1' });
             }
           },
           fail: err => {
@@ -189,7 +191,17 @@ Page({
         loginType: 'wechat_phone',
         createdAt: new Date().toISOString()
       };
-      const id = await clouddb.addUser(newUser);
+      let id = null;
+      try { id = await clouddb.addUser(newUser); } catch (e) { console.error('[login] addUser error:', e); }
+      if (!id) {
+        wx.hideLoading();
+        wx.showModal({
+          title: '创建账号失败',
+          content: '请确认云数据库 users 集合已创建且权限正确。',
+          showCancel: false
+        });
+        return;
+      }
       newUser._id = id;
       try { wx.setStorageSync('currentUser', newUser); } catch (err) {}
       wx.hideLoading();
@@ -198,121 +210,8 @@ Page({
     }
   },
 
-  // ─── 跳过绑定（暂不绑定手机） ───
-  skipBindPhone() {
-    const { tempUser, isNewUser } = this.data;
-    if (!tempUser) return;
-    try { wx.setStorageSync('currentUser', tempUser); } catch (e) {}
-    this.setData({ showBindPhone: false, tempUser: null });
-
-    if (isNewUser) {
-      // 新用户：弹出完善资料
-      wx.showToast({ title: '登录成功', icon: 'success' });
-      setTimeout(() => {
-        this.setData({ showProfileSetup: true, profileAvatar: '', profileNickname: '' });
-      }, 800);
-    } else {
-      wx.showToast({ title: '登录成功', icon: 'success' });
-      setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
-    }
-  },
-
   // ─── 阻止事件冒泡 ───
   stopBubble() {},
-
-  // onGetPhoneNumber 已移除（个人主体小程序无法使用 getPhoneNumber 组件）
-
-  // ─── 手动输入手机号绑定 ───
-  bindPhoneInput(e) {
-    const val = e.detail.value.trim();
-    this.setData({ bindPhone: val, bindPhoneError: '' });
-    // 输满11位后自动校验格式
-    if (val.length === 11) this._validatePhoneInline(val);
-  },
-
-  // 实时校验手机号格式
-  _validatePhoneInline(val) {
-    if (!/^1[3-9]\d{9}$/.test(val)) {
-      this.setData({ bindPhoneError: '手机号格式不正确，请检查后重新输入' });
-      return false;
-    }
-    return true;
-  },
-  bindPasswordInput(e) { this.setData({ bindPassword: e.detail.value }); },
-  bindConfirmInput(e)  { this.setData({ bindConfirm: e.detail.value }); },
-
-  onManualBindPhone() {
-    const { bindPhone, bindPassword, bindConfirm, showPasswordInput, tempUser } = this.data;
-
-    // ── 手机号格式校验 ──
-    if (!bindPhone) {
-      this.setData({ bindPhoneError: '请输入手机号' }); return;
-    }
-    if (!/^1[3-9]\d{9}$/.test(bindPhone)) {
-      this.setData({ bindPhoneError: '手机号格式不正确（11位，以1开头）' }); return;
-    }
-    this.setData({ bindPhoneError: '' });
-
-    if (tempUser && tempUser.phone) {
-      // 已有手机，跳过密码设置直接绑定
-      this._doBindPhoneByPhone(bindPhone);
-      return;
-    }
-    // 密码栏已随弹窗一起显示，直接验证
-    if (!bindPassword || bindPassword.length < 6) { wx.showToast({ title: '请输入密码（至少6位）', icon: 'none' }); return; }
-    if (bindPassword !== bindConfirm) { wx.showToast({ title: '两次密码不一致', icon: 'none' }); return; }
-    this._doBindPhoneByPhone(bindPhone, bindPassword);
-  },
-
-  // _doBindPhone 已移除（个人主体小程序无法使用 getPhoneNumber 组件）
-
-  // 用手动输入手机号绑定
-  async _doBindPhoneByPhone(phone, password) {
-    wx.showLoading({ title: '绑定中...' });
-    try {
-      // 查重（如果不是当前用户的手机）
-      const existing = await clouddb.getUserByPhone(phone);
-      if (existing && existing._openid !== this.data.tempUser._openid) {
-        wx.hideLoading();
-        wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' }); return;
-      }
-      await this._finishBind({ phone, password: password || undefined });
-    } catch (e) {
-      wx.hideLoading();
-      console.error('[login] _doBindPhoneByPhone error:', e);
-      wx.showModal({ title: '绑定失败', content: '错误：' + (e.message || JSON.stringify(e)), showCancel: false });
-    }
-  },
-
-  async _finishBind({ phone, password }) {
-    const { tempUser, isNewUser } = this.data;
-    if (!tempUser) { wx.hideLoading(); return; }
-    const updates = { phone };
-    var hashedPwd = password ? hashPassword(password) : '';
-    if (hashedPwd) updates.password = hashedPwd;
-    updates.loginType = 'wechat_phone';
-
-    if (tempUser._id) {
-      await clouddb.updateUser(tempUser._id, updates);
-    }
-    const mergedUser = Object.assign({}, tempUser, { phone: phone, loginType: 'wechat_phone' });
-    if (hashedPwd) mergedUser.password = hashedPwd;
-    try { wx.setStorageSync('currentUser', mergedUser); } catch (e) {}
-
-    wx.hideLoading();
-    this.setData({ showBindPhone: false, tempUser: null, bindPhone: '', bindPassword: '', bindConfirm: '', showPasswordInput: false, bindPhoneError: '' });
-
-    if (isNewUser) {
-      // 新用户：弹出完善资料
-      wx.showToast({ title: '绑定成功', icon: 'success' });
-      setTimeout(() => {
-        this.setData({ showProfileSetup: true, profileAvatar: '', profileNickname: '' });
-      }, 800);
-    } else {
-      wx.showToast({ title: '绑定成功', icon: 'success' });
-      setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 800);
-    }
-  },
 
   // ─── 手机号密码登录 ───
   phoneInput(e)    { this.setData({ phone: e.detail.value }); },
@@ -356,6 +255,12 @@ Page({
         const cloudPath = `user-avatars/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
         const res = await wx.cloud.uploadFile({ cloudPath, filePath: profileAvatar });
         avatarUrl = res.fileID;
+        // UGC 图片安全校验
+        var imgCheck = await clouddb.checkImageSafe(avatarUrl);
+        if (imgCheck.code !== 0) {
+          wx.showToast({ title: '头像包含违规内容，请更换', icon: 'none' });
+          avatarUrl = DEFAULT_AVATAR;
+        }
       } catch (e) {
         console.error('[login] avatar upload failed:', e);
         wx.showToast({ title: '头像上传失败，已跳过', icon: 'none' });

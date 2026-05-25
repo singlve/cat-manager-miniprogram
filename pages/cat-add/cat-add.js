@@ -53,6 +53,10 @@ Page(Object.assign({}, catFormMethods, {
       var avatar = "";
       if (tempAvatarPath) {
         avatar = await clouddb.uploadAvatar(tempAvatarPath, catId);
+        if (avatar === null) {
+          wx.showToast({ title: "头像包含违规内容，已自动移除", icon: "none" });
+          return;
+        }
       }
 
       var newCat = {

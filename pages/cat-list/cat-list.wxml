@@ -39,13 +39,13 @@
     <text class="guest-browse-hint">你可以先浏览体验，需要时再登录</text>
   </view>
 
-  <!-- 加载状态（仅已登录） -->
-  <view wx:if="{{isLoggedIn && loading}}" class="loading">
+  <!-- 加载状态（已登录、正在加载、且无缓存数据） -->
+  <view wx:if="{{isLoggedIn && loading && cats.length === 0}}" class="loading">
     <text>加载中...</text>
   </view>
 
-  <!-- 空状态（仅已登录且无猫） -->
-  <view wx:elif="{{isLoggedIn && cats.length === 0}}" class="empty">
+  <!-- 空状态（已登录、加载完成、且无猫） -->
+  <view wx:elif="{{isLoggedIn && !loading && cats.length === 0}}" class="empty">
     <view class="empty-illustration">
       <text class="empty-emoji">🐾</text>
     </view>

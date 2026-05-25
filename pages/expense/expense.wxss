@@ -231,17 +231,24 @@ page { background: #f5f6fa; }
 .rk-amt { font-size: 24rpx; color: #888; font-weight: 600; flex-shrink: 0; }
 
 /* ═══════════════ FAB ═══════════════ */
-.fab {
-  position: fixed; bottom: calc(60rpx + env(safe-area-inset-bottom)); right: 40rpx;
-  bottom: calc(60rpx + constant(safe-area-inset-bottom));
-  width: 100rpx; height: 100rpx;
-  background: linear-gradient(135deg, #4A90D9, #60A5FA);
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(74,144,217,0.35);
-  z-index: 50;
+/* ── 添加按钮（与 cat-list 统一风格）── */
+.add-section {
+  position: fixed;
+  bottom: calc(40rpx + env(safe-area-inset-bottom));
+  bottom: calc(40rpx + constant(safe-area-inset-bottom));
+  left: 0; right: 0;
+  display: flex; justify-content: center;
+  padding: 0 40rpx; z-index: 50;
 }
-.fab-text { font-size: 48rpx; color: #fff; font-weight: 300; line-height: 1; margin-top: -4rpx; }
+.add-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  color: #fff; font-size: 34rpx; font-weight: 700;
+  border-radius: 50rpx; padding: 28rpx 0;
+  border: none;
+  box-shadow: 0 12rpx 40rpx rgba(74, 144, 217, 0.45);
+}
+.add-btn::after { border: none; }
 
 /* ═══════════════ 弹窗 ═══════════════ */
 .mask {

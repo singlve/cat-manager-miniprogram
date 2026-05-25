@@ -167,9 +167,9 @@
 
   </block>
 
-  <!-- FAB -->
-  <view class="fab" bindtap="goAdd" aria-label="添加记账">
-    <text class="fab-text">+</text>
+  <!-- 添加按钮 -->
+  <view class="add-section">
+    <button class="add-btn" bindtap="goAdd">+ 记一笔</button>
   </view>
 
   <!-- 删除确认弹窗 -->

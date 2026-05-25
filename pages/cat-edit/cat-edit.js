@@ -70,6 +70,10 @@ Page(Object.assign({}, catFormMethods, {
       var newAvatar = originalAvatar;
       if (tempAvatarPath) {
         newAvatar = await clouddb.uploadAvatar(tempAvatarPath, catId);
+        if (newAvatar === null) {
+          wx.showToast({ title: "头像包含违规内容，已自动移除", icon: "none" });
+          return;
+        }
       }
 
       await clouddb.updateCat(catId, {

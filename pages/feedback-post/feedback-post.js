@@ -71,6 +71,14 @@ Page({
       var cloudPath = 'feedback/' + Date.now() + '_' + idx + '.jpg';
       var res = await wx.cloud.uploadFile({ cloudPath, filePath: tempPath });
       var images = this.data.images;
+      // UGC 图片安全校验
+      var imgCheck = await clouddb.checkImageSafe(res.fileID);
+      if (imgCheck.code !== 0) {
+        images[idx] = { uploading: false, error: true };
+        this.setData({ images: images });
+        wx.showToast({ title: '图片包含违规内容，已自动移除', icon: 'none' });
+        return;
+      }
       images[idx] = { path: res.fileID, fileID: res.fileID, uploading: false };
       this.setData({ images: images });
     } catch (e) {
@@ -109,6 +117,13 @@ Page({
     this.setData({ submitting: true });
 
     try {
+      // UGC 文本安全校验
+      var checkRes = await clouddb.checkTextSafe(content);
+      if (checkRes.code !== 0) {
+        this.setData({ submitting: false });
+        wx.showToast({ title: '内容包含违规信息，请修改', icon: 'none' }); return;
+      }
+
       var imageUrls = this.data.images
         .filter(function(i) { return i.fileID && !i.error; })
         .map(function(i) { return i.fileID; });

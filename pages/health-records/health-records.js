@@ -148,20 +148,23 @@ Page({
   },
 
   async saveEdit() {
+    if (this._saving) return;
     const { editId, editDate, editNote, editType } = this.data;
     if (!editDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
 
-    // 校验：日期不能早于宠物生日
-    const record = this.data.records.find(r => r._id === editId);
-    if (record && record.catId) {
-      const cat = await clouddb.getCatById(record.catId);
-      if (cat && cat.birthday && editDate < cat.birthday) {
-        wx.showToast({ title: '记录日期不能早于宠物生日', icon: 'none' });
-        return;
-      }
-    }
+    this._saving = true;
 
     try {
+      // 校验：日期不能早于宠物生日
+      const record = this.data.records.find(r => r._id === editId);
+      if (record && record.catId) {
+        const cat = await clouddb.getCatById(record.catId);
+        if (cat && cat.birthday && editDate < cat.birthday) {
+          wx.showToast({ title: '记录日期不能早于宠物生日', icon: 'none' });
+          return;
+        }
+      }
+
       await clouddb.updateRecord(editId, { date: editDate, note: editNote, type: editType });
       this.setData({ showEditModal: false });
       this.loadRecords();
@@ -169,6 +172,8 @@ Page({
     } catch (e) {
       console.error('[health-records] saveEdit error:', e);
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      this._saving = false;
     }
   },
 

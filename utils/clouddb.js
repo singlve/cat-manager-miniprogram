@@ -343,6 +343,13 @@ async function uploadAvatar(tempFilePath, catId) {
   const cloudPath = `avatars/${catId}_${Date.now()}.${ext}`;
   try {
     const res = await wx.cloud.uploadFile({ cloudPath, filePath: tempFilePath });
+    // UGC 图片安全校验
+    var imgCheck = await checkImageSafe(res.fileID);
+    if (imgCheck.code !== 0) {
+      // 校验不通过，删除已上传的云文件
+      try { await wx.cloud.deleteFile({ fileList: [res.fileID] }); } catch (e) {}
+      return null;
+    }
     return res.fileID;
   } catch (e) {
     console.error('[clouddb] upload avatar failed:', e);
@@ -865,55 +872,45 @@ async function addFeedback(data) {
   return await _cloudAdd(FEEDBACK_COL, { ...data, createdAt: Date.now() });
 }
 
+// 点赞/取消点赞（走云函数，绕过客户端写权限限制）
 async function toggleFeedbackLike(feedbackId, openid) {
   if (!isCloudReady()) return;
   try {
-    const db = wx.cloud.database();
-    const _ = db.command;
-    const doc = await db.collection(FEEDBACK_COL).doc(feedbackId).get();
-    if (!doc.data) return;
-    const likes = doc.data.likes || [];
-    const idx = likes.indexOf(openid);
-    if (idx === -1) {
-      await db.collection(FEEDBACK_COL).doc(feedbackId).update({
-        data: { likes: _.push([openid]), likeCount: _.inc(1) }
-      });
-    } else {
-      await db.collection(FEEDBACK_COL).doc(feedbackId).update({
-        data: { likes: _.pull(openid), likeCount: _.inc(-1) }
-      });
+    const res = await wx.cloud.callFunction({
+      name: 'adminFeedback',
+      data: { action: 'toggleLike', feedbackId, openid }
+    });
+    if (res.result && res.result.code === 0) {
+      return res.result.liked;
     }
+    console.error('[clouddb] toggleFeedbackLike error:', res.result);
   } catch (e) { console.error('[clouddb] toggleFeedbackLike error:', e); }
 }
 
+// 添加评论（走云函数，绕过客户端写权限限制）
 async function addFeedbackComment(feedbackId, comment) {
   if (!isCloudReady()) throw new Error('云开发不可用');
-  const db = wx.cloud.database();
-  const _ = db.command;
-  comment._id = 'cmt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-  comment.replies = [];
-  await db.collection(FEEDBACK_COL).doc(feedbackId).update({
-    data: { comments: _.push([comment]) }
+  const res = await wx.cloud.callFunction({
+    name: 'adminFeedback',
+    data: { action: 'addComment', feedbackId, comment }
   });
+  if (res.result && res.result.code === 0) {
+    return res.result.commentId;
+  }
+  throw new Error((res.result && res.result.msg) || '评论失败');
 }
 
+// 添加评论回复（走云函数，绕过客户端写权限限制）
 async function addCommentReply(feedbackId, commentIdx, reply) {
   if (!isCloudReady()) throw new Error('云开发不可用');
-  const db = wx.cloud.database();
-  const _ = db.command;
-  // 读取当前评论列表，将回复 push 到对应评论的 replies 数组中
-  const doc = await db.collection(FEEDBACK_COL).doc(feedbackId).get();
-  if (!doc.data) throw new Error('留言不存在');
-  var comments = doc.data.comments || [];
-  if (!comments[commentIdx]) throw new Error('评论不存在');
-
-  reply._id = 'rpl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-  if (!comments[commentIdx].replies) comments[commentIdx].replies = [];
-  comments[commentIdx].replies.push(reply);
-
-  await db.collection(FEEDBACK_COL).doc(feedbackId).update({
-    data: { comments: comments }
+  const res = await wx.cloud.callFunction({
+    name: 'adminFeedback',
+    data: { action: 'addCommentReply', feedbackId, commentIdx, reply }
   });
+  if (res.result && res.result.code === 0) {
+    return res.result.replyId;
+  }
+  throw new Error((res.result && res.result.msg) || '回复失败');
 }
 
 async function toggleFeedbackAdopted(feedbackId) {
@@ -926,6 +923,28 @@ async function toggleFeedbackAdopted(feedbackId) {
     return res.result;
   } catch (e) {
     console.error('[clouddb] toggleFeedbackAdopted error:', e);
+    return { code: -1, msg: e.message };
+  }
+}
+
+// 删除留言：作者直删，管理员走云函数
+async function deleteFeedback(feedbackId, authorOpenid) {
+  if (!isCloudReady()) return { code: -1, msg: '云开发不可用' };
+  try {
+    const openid = _getCurrentOpenid() || '';
+    // 检查是否为作者（作者可直接删自己的文档）
+    if (openid && openid === authorOpenid) {
+      await _cloudDelete(FEEDBACK_COL, feedbackId);
+      return { code: 0 };
+    }
+    // 非作者尝试管理员删除
+    const res = await wx.cloud.callFunction({
+      name: 'adminFeedback',
+      data: { action: 'delete', feedbackId }
+    });
+    return res.result || { code: -1, msg: '删除失败' };
+  } catch (e) {
+    console.error('[clouddb] deleteFeedback error:', e);
     return { code: -1, msg: e.message };
   }
 }
@@ -956,16 +975,47 @@ async function getNotifications(openid) {
   } catch (e) { console.error('[clouddb] getNotifications fail:', e); return []; }
 }
 
+// 标记全部通知已读（走云函数，绕过客户端写权限限制）
 async function markNotificationsRead(openid) {
   if (!isCloudReady() || !openid) return;
   try {
-    var db = wx.cloud.database();
-    // 获取所有未读通知 ID
-    var { data } = await db.collection(NOTIFY_COL).where({ toOpenid: openid, read: false }).get();
-    for (var item of data) {
-      await db.collection(NOTIFY_COL).doc(item._id).update({ data: { read: true } });
-    }
+    await wx.cloud.callFunction({
+      name: 'adminFeedback',
+      data: { action: 'markNotificationsRead', openid }
+    });
   } catch (e) { console.error('[clouddb] markNotificationsRead fail:', e); }
+}
+
+// ════════════════════════════════════════════════════
+// UGC 内容安全校验
+// ════════════════════════════════════════════════════
+
+async function checkTextSafe(content) {
+  if (!isCloudReady() || !content) return { code: 0 };
+  try {
+    const res = await wx.cloud.callFunction({
+      name: 'contentCheck',
+      data: { action: 'msgCheck', content }
+    });
+    return res.result || { code: -1, msg: '检测失败' };
+  } catch (e) {
+    console.error('[clouddb] checkTextSafe error:', e);
+    return { code: -1, msg: e.message };
+  }
+}
+
+async function checkImageSafe(cloudFileId) {
+  if (!isCloudReady() || !cloudFileId) return { code: 0 };
+  try {
+    const res = await wx.cloud.callFunction({
+      name: 'contentCheck',
+      data: { action: 'imgCheck', mediaUrl: cloudFileId }
+    });
+    return res.result || { code: -1, msg: '检测失败' };
+  } catch (e) {
+    console.error('[clouddb] checkImageSafe error:', e);
+    return { code: -1, msg: e.message };
+  }
 }
 
 // ════════════════════════════════════════════════════
@@ -1013,7 +1063,7 @@ module.exports = {
   getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
   searchUsers, adminUpdateUser,
   // feedback
-  getFeedback, addFeedback, toggleFeedbackLike, addFeedbackComment, addCommentReply, toggleFeedbackAdopted,
+  getFeedback, addFeedback, toggleFeedbackLike, addFeedbackComment, addCommentReply, toggleFeedbackAdopted, deleteFeedback,
   // notifications
   addNotification, getUnreadNotifyCount, getNotifications, markNotificationsRead,
   // announcements
@@ -1038,5 +1088,7 @@ module.exports = {
   // avatar frames
   getAvatarFrames, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments
-  getShipments, getShipmentsAdmin, addShipment, updateShipment, deleteShipment
+  getShipments, getShipmentsAdmin, addShipment, updateShipment, deleteShipment,
+  // content check
+  checkTextSafe, checkImageSafe
 };

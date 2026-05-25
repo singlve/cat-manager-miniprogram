@@ -71,6 +71,7 @@ Page({
 
   // 保存
   async doSave() {
+    if (this.data.saving) return;
     var { amount, date, cats, selectedCatIdx, categories, selectedCategoryIdx, note } = this.data;
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
       wx.showToast({ title: '请输入有效金额', icon: 'none' }); return;
@@ -103,6 +104,7 @@ Page({
     } catch (e) {
       console.error('[expense-add] save fail:', e);
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
       this.setData({ saving: false });
     }
   },

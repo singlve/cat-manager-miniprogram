@@ -22,7 +22,8 @@
     "pages/feedback-post/feedback-post",
     "pages/admin-announcement/admin-announcement",
     "pages/webview/webview",
-    "pages/shipping-address/shipping-address"
+    "pages/shipping-address/shipping-address",
+    "pages/bind-phone/bind-phone"
   ],
   "window": {
     "backgroundTextStyle": "light",
