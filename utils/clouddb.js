@@ -1027,11 +1027,10 @@ async function getActiveAnnouncement() {
   try {
     var res = await wx.cloud.callFunction({
       name: 'adminAnnouncement',
-      data: { action: 'list' }
+      data: { action: 'active' }
     });
     if (res.result && res.result.code === 0) {
-      var list = res.result.data || [];
-      return list.find(function(a) { return a.isActive; }) || null;
+      return res.result.data || null;
     }
     return null;
   } catch (e) {

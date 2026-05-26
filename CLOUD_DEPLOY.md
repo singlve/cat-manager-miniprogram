@@ -46,6 +46,12 @@ const envId = 'cat-health-xxxx';
 在「云开发」控制台 → 云函数 → `checkReminders` → 触发器：
 - 添加触发器，Cron 表达式：`0 0 1 * * * *`（每天凌晨 1 点执行）
 - 需要先在「设置 → 消息推送」申请订阅消息模板
+- 模板 ID 需与小程序端 `pages/reminder-add/reminder-add.js` / `pages/reminders/reminders.js` 中的 `SUBSCRIBE_TMPL_ID` 保持一致
+- 云函数环境变量必须配置 `WECHAT_APPSECRET`，用于定时任务获取微信接口 `access_token`
+- 可在云函数环境变量中配置 `WECHAT_APPID`；未配置时使用 `wx1362cb2063c2e367`
+- 可在云函数环境变量中配置 `TEMPLATE_ID`；未配置时会使用代码中的默认模板 ID
+- 可在云函数环境变量中配置 `MINIPROGRAM_STATE`：正式版用 `formal`，体验版用 `trial`，开发版用 `developer`
+- 部署后建议在云开发控制台手动运行一次 `checkReminders`，查看返回的 `sent`、`failed`、`skippedNoOpenid` 等统计
 
 ## 数据迁移
 首次切到云端后，本地 storage 里的数据不会自动上传。

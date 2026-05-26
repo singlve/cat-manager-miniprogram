@@ -12,11 +12,25 @@ const ADMIN_OPENIDS = [
 
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext();
+  const { action } = event;
+
+  // ── 当前启用公告：所有登录用户可读取，用于首页公告和留言板入口 ──
+  if (action === 'active') {
+    try {
+      const { data } = await db.collection(COLL)
+        .where({ isActive: true })
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
+      return { code: 0, data: data[0] || null };
+    } catch (e) {
+      return { code: -1, msg: e.message };
+    }
+  }
+
   if (ADMIN_OPENIDS.indexOf(wxContext.OPENID) === -1) {
     return { code: -1, msg: '无管理员权限' };
   }
-
-  const { action } = event;
 
   // ── 添加 ──
   if (action === 'add') {
