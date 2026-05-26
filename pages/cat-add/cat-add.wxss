@@ -334,13 +334,14 @@
   left: 0;
   right: 0;
   padding: 24rpx 32rpx calc(24rpx + env(safe-area-inset-bottom));
-  background: #fff;
-  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.06);
+  background: transparent;
   z-index: 100;
+  pointer-events: none;
 }
 
 .save-btn {
   width: 100%;
+  max-width: 686rpx;
   background: linear-gradient(135deg, #4A90D9, #6BA3E0);
   color: #fff;
   font-size: 34rpx;
@@ -350,6 +351,7 @@
   border: none;
   box-shadow: 0 8rpx 30rpx rgba(74, 144, 217, 0.35);
   transition: opacity 0.2s, transform 0.15s;
+  pointer-events: auto;
 }
 
 .save-btn::after { border: none; }
