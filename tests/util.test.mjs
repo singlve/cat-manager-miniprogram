@@ -252,7 +252,10 @@ describe('calcAgo', () => {
   });
 
   it('N天前', () => {
-    expect(calcAgo('2026-04-28')).toMatch(/^\d+天前$/);
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    expect(calcAgo(dateStr)).toMatch(/^\d+天前$/);
   });
 
   it('N个月前', () => {

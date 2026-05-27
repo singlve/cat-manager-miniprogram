@@ -191,9 +191,19 @@ Page({
     );
     if (!confirmed) return;
 
-    // 请求订阅授权（下次到期时可再次收到推送；授权与否不影响标记完成）
-    const doMark = () => { this._doMarkComplete(id); };
-    if (SUBSCRIBE_TMPL_ID) {
+    const shouldCreateNext = await new Promise(r =>
+      wx.showModal({
+        title: '生成下次提醒',
+        content: '是否按当前间隔生成下一次提醒？',
+        confirmText: '生成',
+        cancelText: '不生成',
+        success: res => r(res.confirm)
+      })
+    );
+
+    // 只有生成下一次提醒时才请求订阅授权；授权与否不影响完成本次提醒。
+    const doMark = () => { this._doMarkComplete(id, shouldCreateNext); };
+    if (shouldCreateNext && SUBSCRIBE_TMPL_ID) {
       wx.requestSubscribeMessage({
         tmplIds: [SUBSCRIBE_TMPL_ID],
         complete: doMark
@@ -203,18 +213,34 @@ Page({
     }
   },
 
-  async _doMarkComplete(id) {
+  async _doMarkComplete(id, shouldCreateNext) {
     const today = new Date();
     const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
     try {
+      const currentReminder = this.data.allReminders.find(r => r._id === id);
+      if (!currentReminder) return;
+      const nextReminderId = 'rem_' + Date.now();
+
       if (this.data.isLoggedIn && id && !id.startsWith('demo_')) {
         await clouddb.updateReminder(id, {
           lastDate: todayStr,
           completedAt: todayStr
         });
+        if (shouldCreateNext) {
+          await clouddb.addReminder({
+            _id: nextReminderId,
+            catId: currentReminder.catId,
+            catName: currentReminder.catName,
+            type: currentReminder.type,
+            lastDate: todayStr,
+            intervalDays: currentReminder.intervalDays,
+            note: currentReminder.note || '',
+            previousReminderId: id
+          });
+        }
       }
-      const all = this.data.allReminders.map(r => {
+      const completedAll = this.data.allReminders.map(r => {
         if (r._id !== id) return r;
         const next = calcNextDate(todayStr, r.intervalDays);
         return {
@@ -227,9 +253,23 @@ Page({
           completedAt: todayStr
         };
       });
+      const next = calcNextDate(todayStr, currentReminder.intervalDays);
+      const daysUntil = getDaysUntil(next);
+      const nextReminder = {
+        ...currentReminder,
+        _id: nextReminderId,
+        lastDate: todayStr,
+        nextDate: next,
+        daysUntil,
+        isOverdue: false,
+        isUrgent: daysUntil !== null && daysUntil <= 7,
+        completedAt: null,
+        previousReminderId: id
+      };
+      const all = shouldCreateNext && !id.startsWith('demo_') ? [nextReminder, ...completedAll] : completedAll;
       this.setData({ allReminders: all });
       this._applyFilters();
-      wx.showToast({ title: '已标记完成', icon: 'success' });
+      wx.showToast({ title: shouldCreateNext ? '已生成下次提醒' : '已标记完成', icon: 'success' });
     } catch (e) {
       console.error('[reminders] markComplete error:', e);
       wx.showToast({ title: '操作失败', icon: 'none' });

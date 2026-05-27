@@ -130,6 +130,8 @@ exports.main = async (event, context) => {
     const dueReminders = [];
 
     for (const r of reminders) {
+      if (r.completedAt) continue;
+
       if (!r.lastDate || !r.intervalDays) {
         skippedInvalidReminder++;
         continue;

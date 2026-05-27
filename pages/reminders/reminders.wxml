@@ -127,7 +127,8 @@
         <view class="next-date-highlight normal">
           <text class="next-date-highlight-label">距今约</text>
           <text class="next-date-highlight-val">{{item.daysUntil}} 天</text>
-          <text class="next-date-highlight-label">，下次 {{item.nextDate}}</text>
+          <text class="next-date-highlight-label">，下次</text>
+          <text class="next-date-highlight-val">{{item.nextDate}}</text>
         </view>
         <view class="info-row">
           <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>
@@ -245,7 +246,8 @@
         <view class="next-date-highlight normal">
           <text class="next-date-highlight-label">距今约</text>
           <text class="next-date-highlight-val">{{item.daysUntil}} 天</text>
-          <text class="next-date-highlight-label">，下次 {{item.nextDate}}</text>
+          <text class="next-date-highlight-label">，下次</text>
+          <text class="next-date-highlight-val">{{item.nextDate}}</text>
         </view>
         <view class="info-row">
           <text class="info-label">上次</text><text class="info-val">{{item.lastDate}}</text>

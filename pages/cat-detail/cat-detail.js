@@ -1,7 +1,7 @@
 // pages/cat-detail/cat-detail.js
 // 宠物详情页：快速记录 + 健康时间轴
 const clouddb = require('../../utils/clouddb.js');
-const { calcAgo } = require('../../utils/util.js');
+const { calcAgeDetail, calcAgo, calcDaysBetween } = require('../../utils/util.js');
 
 // ─── Demo 数据 ───
 const DEMO_CATS = {
@@ -29,7 +29,7 @@ Page({
     weightDate: new Date().toISOString().split('T')[0],
     weightTime: '',
     weightValue: '', weightNote: '',
-    showSharePreview: false, shareImagePath: ''
+    showSharePreview: false, shareImagePath: '', generatingShare: false
   },
 
   onLoad(options) {
@@ -244,15 +244,22 @@ Page({
 
   // ─── 分享卡 ───
   async openShareCard() {
-    this.setData({ showSharePreview: true });
-    // 后台生成分享图
+    await new Promise(resolve => {
+      this.setData({ showSharePreview: true, generatingShare: true, shareImagePath: '' }, resolve);
+    });
     try {
       var path = await this._drawShareCard();
-      this.setData({ shareImagePath: path });
-    } catch (e) { console.error('[cat-detail] gen share img fail:', e); }
+      this.setData({ shareImagePath: path, generatingShare: false });
+      if (!path) wx.showToast({ title: '生成失败，请重试', icon: 'none' });
+    } catch (e) {
+      console.error('[cat-detail] gen share img fail:', e);
+      this.setData({ generatingShare: false });
+      wx.showToast({ title: '生成失败，请重试', icon: 'none' });
+    }
   },
 
   closeSharePreview() { this.setData({ showSharePreview: false }); },
+  stopBubble() {},
 
   async saveShareCard() {
     var path = this.data.shareImagePath;
@@ -277,7 +284,8 @@ Page({
     var cat = this.data.cat;
     var healthSummary = this.data.healthSummary || [];
     var weight = this.data.latestWeight;
-    var W = 375, H = 550, S = 2;
+    var records = this.data.records || [];
+    var W = 375, H = 667, S = 2;
 
     var query = wx.createSelectorQuery();
     var node = await new Promise(function(r) {
@@ -291,80 +299,138 @@ Page({
     canvas.height = H * S;
     ctx.scale(S, S);
 
-    // 背景
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#4A90D9';
-    ctx.fillRect(0, 0, W, 120);
+    var name = cat.name || '未命名';
+    var genderText = cat.gender === 'male' ? '弟弟' : (cat.gender === 'female' ? '妹妹' : '性别未知');
+    var statusText = cat.status === 'passed_away' ? '已离世' : '在身边';
+    var ageEnd = cat.status === 'passed_away' ? (cat.passedDate || undefined) : undefined;
+    var age = calcAgeDetail(cat.birthday, ageEnd);
+    var ageText = age ? ((age.years ? age.years + '岁' : '') + (age.months ? age.months + '个月' : '') + age.days + '天') : '未知';
+    var companionDays = null;
+    if (cat.status === 'passed_away' && cat.passedDate) companionDays = calcDaysBetween(cat.passedDate);
+    else companionDays = calcDaysBetween(cat.adoptedDate || cat.birthday);
+    var companionText = companionDays === null
+      ? '陪伴天数未知'
+      : (cat.status === 'passed_away' ? '离开 ' + companionDays + ' 天' : '相伴 ' + companionDays + ' 天');
+    var latestRecord = records[0];
 
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 22px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('宠物健康档案', W / 2, 44);
+    _drawPosterBackground(ctx, W, H);
 
-    ctx.beginPath();
-    ctx.arc(W / 2, 80, 32, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
-    ctx.fillStyle = '#4A90D9';
-    ctx.font = 'bold 28px sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillText((cat.name || '?').slice(0, 1), W / 2, 80);
-    ctx.textBaseline = 'alphabetic';
-
-    var y = 140;
-    ctx.fillStyle = '#222';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.fillText(cat.name || '未命名', W / 2, y);
-    ctx.fillStyle = '#888';
-    ctx.font = '16px sans-serif';
-    ctx.fillText((cat.breed || '') + (cat.gender ? ' · ' + (cat.gender === 'male' ? '弟弟' : '妹妹') : ''), W / 2, y + 20);
-
-    y += 40;
-    ctx.strokeStyle = '#e8e8e8';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(30, y);
-    ctx.lineTo(W - 30, y);
-    ctx.stroke();
-
-    y += 20;
-    var items = [];
-    if (cat.birthday) items.push({ l: '生日', v: cat.birthday });
-    if (cat.adoptedDate) items.push({ l: '领养', v: cat.adoptedDate });
-    if (weight != null) items.push({ l: '体重', v: weight + ' kg' });
-    if (healthSummary.length) items.push({ l: '健康', v: healthSummary.length + '类' });
     ctx.textAlign = 'left';
-    for (var i = 0; i < items.length; i++) {
-      var cx = 30 + (i % 2) * 157;
-      var cy = y + Math.floor(i / 2) * 48;
-      ctx.fillStyle = '#999';
-      ctx.font = '14px sans-serif';
-      ctx.fillText(items[i].l, cx, cy);
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 18px sans-serif';
-      ctx.fillText(items[i].v, cx, cy + 20);
-    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText('宠物健康档案', 28, 46);
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.fillText('Pet Health Profile', 28, 70);
 
-    y += Math.ceil(items.length / 2) * 48 + 20;
-    if (healthSummary.length) {
-      ctx.fillStyle = '#4A90D9';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText('健康记录', 30, y);
-      y += 20;
-      ctx.fillStyle = '#555';
-      ctx.font = '15px sans-serif';
-      for (var j = 0; j < healthSummary.length; j++) {
-        ctx.fillText(healthSummary[j].label + '    ' + healthSummary[j].date, 30, y);
-        y += 22;
-      }
-    }
-
-    y = Math.max(y + 24, H - 22);
-    ctx.fillStyle = '#bbb';
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    _roundRect(ctx, 258, 28, 88, 30, 15);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('宠物健康管家', W / 2, y);
+    ctx.fillText(statusText, 302, 49);
+
+    _roundRect(ctx, 24, 100, W - 48, 170, 24);
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(35,54,90,0.12)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+
+    var avatarSrc = cat._displayAvatar || cat.avatar || '';
+    var avatar = avatarSrc ? await _loadCanvasImage(canvas, avatarSrc) : null;
+    if (avatar) {
+      _drawCircleImage(ctx, avatar, 48, 124, 86, 86);
+    } else {
+      ctx.beginPath();
+      ctx.arc(91, 167, 43, 0, Math.PI * 2);
+      ctx.fillStyle = '#edf5ff';
+      ctx.fill();
+      ctx.fillStyle = '#4A90D9';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(name.slice(0, 1), 91, 168);
+      ctx.textBaseline = 'alphabetic';
+    }
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#172033';
+    ctx.font = 'bold 27px sans-serif';
+    _fillTextSingleLine(ctx, name, 150, 150, 170);
+    ctx.fillStyle = '#697386';
+    ctx.font = '15px sans-serif';
+    _fillTextSingleLine(ctx, (cat.breed || '品种未知') + ' · ' + genderText, 150, 175, 170);
+    ctx.fillStyle = cat.status === 'passed_away' ? '#eb2f96' : '#1890ff';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(statusText + ' · ' + companionText, 150, 202);
+
+    var intro = cat.note || '认真记录每一次成长和健康变化。';
+    ctx.fillStyle = '#7c8798';
+    ctx.font = '13px sans-serif';
+    _wrapText(ctx, intro, 48, 238, W - 96, 18, 2);
+
+    var statY = 296;
+    var stats = [
+      { label: '年龄', value: ageText },
+      { label: '生日', value: cat.birthday || '未记录' },
+      { label: '体重', value: weight != null ? weight + ' kg' : '未记录' },
+      { label: '健康记录', value: records.length + ' 条' }
+    ];
+    for (var i = 0; i < stats.length; i++) {
+      var sx = 24 + (i % 2) * 171;
+      var sy = statY + Math.floor(i / 2) * 76;
+      _drawInfoTile(ctx, sx, sy, 156, 60, stats[i].label, stats[i].value);
+    }
+
+    var y = 468;
+    ctx.fillStyle = '#172033';
+    ctx.font = 'bold 17px sans-serif';
+    ctx.fillText('最近健康动态', 28, y);
+    y += 24;
+
+    if (healthSummary.length) {
+      var maxRecords = Math.min(healthSummary.length, 4);
+      for (var j = 0; j < maxRecords; j++) {
+        var item = healthSummary[j];
+        ctx.fillStyle = '#f5f8fc';
+        _roundRect(ctx, 28, y - 14, W - 56, 36, 12);
+        ctx.fill();
+        ctx.fillStyle = '#4A90D9';
+        ctx.font = 'bold 14px sans-serif';
+        _fillTextSingleLine(ctx, item.label, 44, y + 8, 112);
+        ctx.fillStyle = '#5f6b7a';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(item.date.slice(0, 10), W - 44, y + 8);
+        ctx.textAlign = 'left';
+        y += 44;
+      }
+    } else {
+      ctx.fillStyle = '#7c8798';
+      ctx.font = '14px sans-serif';
+      ctx.fillText('还没有健康记录，期待第一条记录。', 28, y + 8);
+      y += 42;
+    }
+
+    if (latestRecord) {
+      ctx.fillStyle = '#7c8798';
+      ctx.font = '13px sans-serif';
+      _fillTextSingleLine(ctx, '最新记录：' + (_recordTypeLabel(latestRecord.type)) + ' · ' + latestRecord.date.slice(0, 10), 28, y + 8, W - 56);
+    }
+
+    ctx.fillStyle = '#e8edf5';
+    _roundRect(ctx, 28, H - 70, W - 56, 42, 16);
+    ctx.fill();
+    ctx.fillStyle = '#5f6b7a';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('宠物健康管家 · 记录宠物的每一个瞬间', W / 2, H - 44);
 
     return await new Promise(function(r) {
       wx.canvasToTempFilePath({
@@ -378,7 +444,11 @@ Page({
 
   onShareAppMessage() {
     const name = this.data.cat?.name || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: `看看${name}的档案`, path: `/pages/cat-detail/cat-detail?catId=${this.data.cat?._id || ''}` };
+    return {
+      imageUrl: this.data.shareImagePath || '/assets/logo.png',
+      title: `看看${name}的健康档案`,
+      path: `/pages/cat-detail/cat-detail?id=${this.data.cat?._id || this.data.catId || ''}`
+    };
   }
 });
 
@@ -391,4 +461,105 @@ function _buildHealthSummary(records) {
   var result = Object.keys(latest).map(function(k) { return { label: map[k] || k, date: latest[k] }; });
   result.sort(function(a, b) { return b.date.localeCompare(a.date); });
   return result;
+}
+
+function _recordTypeLabel(type) {
+  var map = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checkup: '体检', claw: '修剪指甲', other: '其他' };
+  return map[type] || type || '记录';
+}
+
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function _drawPosterBackground(ctx, W, H) {
+  var grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, '#eaf5ff');
+  grad.addColorStop(0.48, '#fff8ef');
+  grad.addColorStop(1, '#f4fbf5');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  var top = ctx.createLinearGradient(0, 0, W, 180);
+  top.addColorStop(0, '#4A90D9');
+  top.addColorStop(1, '#67B3A5');
+  ctx.fillStyle = top;
+  ctx.fillRect(0, 0, W, 190);
+}
+
+function _drawInfoTile(ctx, x, y, w, h, label, value) {
+  ctx.fillStyle = 'rgba(255,255,255,0.92)';
+  _roundRect(ctx, x, y, w, h, 16);
+  ctx.fill();
+  ctx.fillStyle = '#8a95a5';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(label, x + 14, y + 22);
+  ctx.fillStyle = '#172033';
+  ctx.font = 'bold 15px sans-serif';
+  _fillTextSingleLine(ctx, value, x + 14, y + 45, w - 28);
+}
+
+function _fillTextSingleLine(ctx, text, x, y, maxWidth) {
+  text = String(text || '');
+  if (ctx.measureText(text).width <= maxWidth) {
+    ctx.fillText(text, x, y);
+    return;
+  }
+  var ellipsis = '...';
+  while (text.length > 0 && ctx.measureText(text + ellipsis).width > maxWidth) {
+    text = text.slice(0, -1);
+  }
+  ctx.fillText(text + ellipsis, x, y);
+}
+
+function _wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  text = String(text || '');
+  var line = '';
+  var lineCount = 0;
+  for (var i = 0; i < text.length; i++) {
+    var testLine = line + text[i];
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      lineCount++;
+      if (lineCount >= maxLines) {
+        _fillTextSingleLine(ctx, line + text.slice(i), x, y, maxWidth);
+        return;
+      }
+      ctx.fillText(line, x, y);
+      line = text[i];
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  if (line) ctx.fillText(line, x, y);
+}
+
+function _loadCanvasImage(canvas, src) {
+  return new Promise(function(resolve) {
+    var img = canvas.createImage();
+    img.onload = function() { resolve(img); };
+    img.onerror = function() { resolve(null); };
+    img.src = src;
+  });
+}
+
+function _drawCircleImage(ctx, img, x, y, w, h) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x + w / 2, y + h / 2, w / 2, 0, Math.PI * 2);
+  ctx.clip();
+  var scale = Math.max(w / img.width, h / img.height);
+  var sw = w / scale;
+  var sh = h / scale;
+  var sx = (img.width - sw) / 2;
+  var sy = (img.height - sh) / 2;
+  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  ctx.restore();
 }
