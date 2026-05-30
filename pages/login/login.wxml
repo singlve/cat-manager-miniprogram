@@ -1,44 +1,46 @@
 <!-- pages/login/login.wxml -->
-<view style="width:100%;min-height:100vh;background:linear-gradient(180deg, #5B8FDE, #3A7BD5);box-sizing:border-box;">
-  <view style="padding:120rpx 60rpx 60rpx;min-height:100vh;">
+<view class="login-page">
+  <view class="login-shell">
 
     <!-- Logo -->
-    <view style="display:flex;flex-direction:column;align-items:center;">
-      <view style="width:160rpx;height:160rpx;border-radius:40rpx;background:#ffffff;display:flex;align-items:center;justify-content:center;margin-bottom:32rpx;box-shadow:0 8rpx 30rpx rgba(0,0,0,0.1);">
-        <text style="font-size:80rpx;">🐾</text>
-      </view>
-      <text style="font-size:48rpx;font-weight:800;color:#FFFFFF;margin-bottom:12rpx;">宠物记</text>
-      <text style="font-size:28rpx;color:rgba(255,255,255,0.8);margin-bottom:100rpx;">记录宠物成长，守护每一刻</text>
+    <view class="login-brand">
+      <image class="login-hero-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
+      <text class="brand-kicker">PET CARE</text>
+      <text class="brand-title">宠物小管家Plus</text>
+      <text class="brand-subtitle">记录宠物成长，守护每一刻</text>
     </view>
 
     <!-- 微信一键登录 -->
     <button class="wx-login-btn" open-type="getPhoneNumber" bindgetphonenumber="onWxLogin">
-      <view style="display:flex;align-items:center;justify-content:center;">
-        <text style="font-size:38rpx;margin-right:12rpx;">💬</text>
+      <view class="wx-login-content">
         <text>微信一键登录</text>
       </view>
     </button>
 
     <!-- 其他方式 -->
-    <view style="display:flex;align-items:center;justify-content:center;margin-top:48rpx;" bindtap="toggleOtherLogin">
-      <text style="font-size:26rpx;color:rgba(255,255,255,0.7);">其他方式登录</text>
-      <text style="font-size:22rpx;color:rgba(255,255,255,0.5);margin-left:8rpx;transition:transform .2s;transform:rotate({{showOtherLogin ? 180 : 0}}deg);">▼</text>
+    <view class="other-login-toggle" bindtap="toggleOtherLogin">
+      <text>其他方式登录</text>
+      <text class="toggle-arrow {{showOtherLogin ? 'is-open' : ''}}">⌄</text>
     </view>
 
     <!-- 手机号密码登录（折叠区） -->
-    <view wx:if="{{showOtherLogin}}" style="margin-top:32rpx;background-color:rgba(255,255,255,0.1);border-radius:24rpx;padding:40rpx;animation:fadeIn .25s ease;">
-      <view style="display:flex;align-items:center;border:2rpx solid rgba(255,255,255,0.3);border-radius:16rpx;padding:24rpx 28rpx;margin-bottom:20rpx;">
-        <text style="font-size:36rpx;margin-right:20rpx;">📱</text>
-        <input style="flex:1;font-size:32rpx;color:#FFFFFF;" type="number" placeholder="请输入手机号" bindinput="phoneInput" maxlength="11" placeholder-style="color:rgba(255,255,255,0.5);" />
+    <view wx:if="{{showOtherLogin}}" class="phone-login-card">
+      <view class="phone-login-head">
+        <text class="phone-login-title">手机号登录</text>
+        <text class="phone-login-desc">使用已注册手机号和密码进入</text>
       </view>
-      <view style="display:flex;align-items:center;border:2rpx solid rgba(255,255,255,0.3);border-radius:16rpx;padding:24rpx 28rpx;margin-bottom:28rpx;">
-        <text style="font-size:36rpx;margin-right:20rpx;">🔒</text>
-        <input style="flex:1;font-size:32rpx;color:#FFFFFF;" type="password" placeholder="请输入密码" bindinput="passwordInput" placeholder-style="color:rgba(255,255,255,0.5);" />
+      <view class="login-field">
+        <text class="login-field-label">手机号</text>
+        <input class="login-input" type="number" placeholder="请输入手机号" bindinput="phoneInput" maxlength="11" placeholder-style="color:#A5AFBC;" />
       </view>
-      <view style="width:100%;background-color:rgba(255,255,255,0.2);color:#FFFFFF;font-size:32rpx;font-weight:600;border-radius:16rpx;padding:26rpx 0;text-align:center;" bindtap="login">手机号登录</view>
-      <view style="display:flex;justify-content:center;margin-top:24rpx;font-size:26rpx;color:rgba(255,255,255,0.6);">
+      <view class="login-field">
+        <text class="login-field-label">密码</text>
+        <input class="login-input" type="password" placeholder="请输入密码" bindinput="passwordInput" placeholder-style="color:#A5AFBC;" />
+      </view>
+      <view class="phone-login-btn" bindtap="login">手机号登录</view>
+      <view class="register-row">
         <text>还没有账号？</text>
-        <view bindtap="goRegister"><text style="color:#FFFFFF;font-weight:600;"> 立即注册</text></view>
+        <view bindtap="goRegister"><text class="register-link">立即注册</text></view>
       </view>
     </view>
 
@@ -60,7 +62,7 @@
           <image src="{{profileAvatar || '/images/default-avatar.svg'}}" mode="aspectFill" class="avatar-preview" />
         </button>
       </view>
-      <text style="font-size:26rpx;color:#4A90D9;margin-top:16rpx;">点击选择头像</text>
+      <text style="font-size:26rpx;color:#5BA7D8;margin-top:16rpx;">点击选择头像</text>
     </view>
 
     <!-- 昵称输入 -->
@@ -69,7 +71,7 @@
         style="font-size:30rpx;color:#333;width:100%;" />
     </view>
 
-    <view style="width:100%;background:#4A90D9;color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="saveProfile">完成</view>
+    <view style="width:100%;background:linear-gradient(135deg,#5BA7D8,#6BC6B3);color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="saveProfile">完成</view>
     <view style="text-align:center;margin-top:20rpx;">
       <text style="font-size:26rpx;color:#999;" bindtap="skipProfileSetup">稍后再说 ›</text>
     </view>

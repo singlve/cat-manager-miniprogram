@@ -1,0 +1,69 @@
+<!-- pages/services/services.wxml -->
+<view class="page services-page">
+  <include src="../../templates/offline-tip.wxml" />
+
+  <view class="ui-compact-hero services-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFill" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">SERVICE</text>
+      <text class="ui-compact-title">服务中心</text>
+      <text class="ui-compact-desc">把工具、互动和管理入口集中起来，日常操作更清爽。</text>
+    </view>
+  </view>
+
+  <view wx:if="{{!isLoggedIn}}" class="service-login-card">
+    <image class="service-login-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFit" />
+    <text class="service-login-title">登录后使用服务中心</text>
+    <text class="service-login-desc">记账、收货地址、留言互动和管理工具都会在这里展示。</text>
+    <button class="service-login-btn" bindtap="goLogin">登录 / 注册</button>
+  </view>
+
+  <block wx:else>
+    <view class="desktop-grid">
+      <view class="desktop-app" bindtap="goExpense">
+        <view class="desktop-icon icon-teal">
+          <image class="desktop-icon-img" src="/assets/icons/ui/expense.png" mode="aspectFit" />
+        </view>
+        <text class="desktop-title">记账本</text>
+      </view>
+
+      <view class="desktop-app" bindtap="goShippingAddress">
+        <view class="desktop-icon icon-purple">
+          <image class="desktop-icon-img" src="/assets/icons/ui/address.png" mode="aspectFit" />
+        </view>
+        <text class="desktop-title">收货地址</text>
+      </view>
+
+      <view wx:if="{{showFeedback}}" class="desktop-app" bindtap="goFeedback">
+        <view class="desktop-icon icon-teal">
+          <image class="desktop-icon-img" src="/assets/icons/ui/feedback.png" mode="aspectFit" />
+          <view wx:if="{{notifyCount > 0}}" class="notify-badge">{{notifyCount > 99 ? '99+' : notifyCount}}</view>
+        </view>
+        <text class="desktop-title">留言板</text>
+      </view>
+
+      <block wx:if="{{isAdmin}}">
+        <view class="desktop-app" bindtap="goAdminAnnounce">
+          <view class="desktop-icon icon-orange">
+            <image class="desktop-icon-img" src="/assets/icons/ui/announce.png" mode="aspectFit" />
+          </view>
+          <text class="desktop-title">公告管理</text>
+        </view>
+
+        <view class="desktop-app" bindtap="goAdmin">
+          <view class="desktop-icon icon-orange">
+            <image class="desktop-icon-img" src="/assets/icons/ui/admin.png" mode="aspectFit" />
+          </view>
+          <text class="desktop-title">商品管理</text>
+        </view>
+
+        <view class="desktop-app" bindtap="goAdminData">
+          <view class="desktop-icon icon-orange">
+            <image class="desktop-icon-img" src="/assets/icons/ui/data.png" mode="aspectFit" />
+          </view>
+          <text class="desktop-title">数据管理</text>
+        </view>
+      </block>
+    </view>
+  </block>
+</view>

@@ -1,7 +1,16 @@
 <view class="page">
-  <view wx:if="{{!isAdmin}}" class="empty-state"><text class="empty-icon">🔒</text><text class="empty-text">无权访问</text></view>
+  <view wx:if="{{!isAdmin}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">无权访问</text></view>
 
   <block wx:else>
+    <view class="ui-compact-hero ui-admin-hero">
+      <image class="ui-compact-hero-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFit" />
+      <view class="ui-compact-hero-body">
+        <text class="ui-compact-kicker">ADMIN</text>
+        <text class="ui-compact-title">公告管理</text>
+        <text class="ui-compact-desc">发布、启用和撤回公告，前台展示会跟随当前有效公告同步。</text>
+      </view>
+    </view>
+
     <!-- 发布 -->
     <view class="post-box">
       <textarea class="post-input" placeholder="输入公告内容..." value="{{content}}" bindinput="onContentInput" maxlength="200" auto-height/>
@@ -11,7 +20,7 @@
     <!-- 列表 -->
     <view wx:if="{{loading}}" class="loading-box"><text>加载中...</text></view>
     <view wx:else class="list">
-      <view wx:if="{{list.length === 0}}" class="empty-state"><text class="empty-text">暂无公告</text></view>
+      <view wx:if="{{list.length === 0}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">暂无公告</text></view>
       <view class="card" wx:for="{{list}}" wx:key="_id">
         <view class="card-top">
           <view class="status-dot {{item.isActive ? 'active' : ''}}"></view>

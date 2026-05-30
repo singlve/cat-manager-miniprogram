@@ -24,7 +24,7 @@ page { background: #f5f6fa; }
   flex-shrink: 0;
   width: 120rpx; height: 72rpx; line-height: 72rpx;
   text-align: center;
-  background: #4A90D9; color: #fff;
+  background: #5BA7D8; color: #fff;
   border-radius: 8rpx; font-size: 28rpx;
   padding: 0; margin: 0;
 }
@@ -54,7 +54,7 @@ page { background: #f5f6fa; }
   display: flex; flex-direction: column; align-items: center;
   min-width: 100rpx;
 }
-.stat-val  { font-size: 28rpx; font-weight: 600; color: #4A90D9; }
+.stat-val  { font-size: 28rpx; font-weight: 600; color: #5BA7D8; }
 .stat-label { font-size: 22rpx; color: #aaa; }
 
 /* ── empty / error ── */
@@ -122,7 +122,7 @@ page { background: #f5f6fa; }
   padding: 0; margin: 0;
 }
 .sheet-btns .cancel  { background: #f0f2f7; color: #666; }
-.sheet-btns .confirm { background: #4A90D9; color: #fff; }
+.sheet-btns .confirm { background: #5BA7D8; color: #fff; }
 .sheet-btns .confirm.disabled { opacity: .4; }
 .sheet-btns .cancel::after,
 .sheet-btns .confirm::after { border: none; }

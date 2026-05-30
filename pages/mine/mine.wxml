@@ -4,10 +4,15 @@
 
   <!-- 未登录状态 -->
   <view wx:if="{{!isLoggedIn}}" class="not-logged-in">
+    <view class="ui-hero-card mine-hero">
+      <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest-transparent.png" mode="aspectFit" />
+      <text class="ui-hero-title">欢迎回到宠物小窝</text>
+      <text class="ui-hero-subtitle">登录后同步宠物档案、签到积分和提醒事项。</text>
+    </view>
     <view class="profile-card" bindtap="goLogin">
       <view class="profile-bg">
         <view class="avatar-wrap">
-          <text class="avatar-emoji" style="font-size:72rpx;">😺</text>
+          <image class="ui-icon-xl" src="/assets/icons/ui/pet.png" mode="aspectFit" />
         </view>
         <view class="profile-info">
           <text class="nickname">点击登录</text>
@@ -17,28 +22,33 @@
     </view>
     <view class="login-features">
       <view class="login-feature-item">
-        <text class="login-feature-icon">🐱</text>
+        <image class="login-feature-icon ui-icon-md" src="/assets/icons/ui/pet.png" mode="aspectFit" />
         <text class="login-feature-text">管理宠物档案</text>
       </view>
       <view class="login-feature-item">
-        <text class="login-feature-icon">📋</text>
+        <image class="login-feature-icon ui-icon-md" src="/assets/icons/ui/record.png" mode="aspectFit" />
         <text class="login-feature-text">记录健康数据</text>
       </view>
       <view class="login-feature-item">
-        <text class="login-feature-icon">🔔</text>
+        <image class="login-feature-icon ui-icon-md" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
         <text class="login-feature-text">设置智能提醒</text>
       </view>
       <view class="login-feature-item">
-        <text class="login-feature-icon">☁️</text>
+        <image class="login-feature-icon ui-icon-md" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
         <text class="login-feature-text">数据云端同步</text>
       </view>
     </view>
     <button class="login-main-btn" bindtap="goLogin">登录 / 注册</button>
-    <view class="footer-hint">宠物健康管家 v1.0</view>
+    <view class="footer-hint">宠物小管家Plus v1.0</view>
   </view>
 
   <!-- 已登录状态 -->
   <view wx:else>
+  <view class="ui-hero-card mine-hero">
+    <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest-transparent.png" mode="aspectFit" />
+    <text class="ui-hero-title">你的照护中心</text>
+    <text class="ui-hero-subtitle">签到、积分和账号资料都在这里。</text>
+  </view>
 
   <!-- 头像卡片 -->
   <view class="profile-card" bindtap="openEditProfile">
@@ -65,7 +75,7 @@
             <text class="points-unit">积分</text>
           </view>
           <view class="makeup-badge-inline" bindtap="openShareTask">
-            <text class="makeup-badge-icon">🎫</text>
+            <image class="makeup-badge-icon ui-icon-sm" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
             <text class="makeup-badge-num">{{makeUpCards || 0}}</text>
             <text class="makeup-badge-arrow">›</text>
           </view>
@@ -75,9 +85,9 @@
           <text class="streak-text" wx:else>开始签到累积积分吧</text>
           <block wx:if="{{totalCheckIns > 0}}">
             <text class="cumul-text"> · 累计{{totalCheckIns}}天</text>
-            <text class="days-until-text ready lottery-trigger" wx:if="{{canLottery}}" bindtap="openLotteryIfAvailable"> · 🎰 可抽奖 x{{availableDraws}}次</text>
+            <text class="days-until-text ready lottery-trigger" wx:if="{{canLottery}}" bindtap="openLotteryIfAvailable"> · 可抽奖 x{{availableDraws}}次</text>
             <text class="days-until-text" wx:elif="{{streakReached7}}"> · {{daysUntilLottery}}天后可再抽奖</text>
-            <text class="days-until-text" wx:else> · {{daysUntilLottery}}天后可抽奖🎰</text>
+            <text class="days-until-text" wx:else> · {{daysUntilLottery}}天后可抽奖</text>
           </block>
         </view>
       </view>
@@ -95,17 +105,17 @@
         data-date="{{item.dateStr}}"
         data-label="{{item.date}}"
         data-canmakeup="{{item.canMakeUp}}"
-        data-isjackpot="{{item.isToday && canLottery}}"
-        data-hasdrawn="{{item.isToday && hasDrawnBefore && !canLottery}}"
+        data-isjackpot="{{item.isDrawDay && !item.drawUsed}}"
+        data-hasdrawn="{{item.isDrawDay && item.drawUsed}}"
         data-drawmilestone="{{item.drawMilestone}}"
         data-canmakeup="{{item.canMakeUp}}">
         <text class="cal-weekday">{{item.dayName}}</text>
-        <view class="cal-circle {{item.isToday && canLottery ? 'gift-circle' : (item.isToday && hasDrawnBefore && !canLottery ? 'gift-circle-grey' : '')}}">
-          <block wx:if="{{item.isToday && canLottery}}">
-            <text class="gift-emoji bounce-anim">🎁</text>
+        <view class="cal-circle {{item.isDrawDay && !item.drawUsed ? 'gift-circle' : (item.isDrawDay && item.drawUsed ? 'gift-circle-grey' : '')}}">
+          <block wx:if="{{item.isDrawDay && !item.drawUsed}}">
+            <image class="gift-emoji bounce-anim ui-icon-sm" src="/assets/icons/ui/gift.png" mode="aspectFit" />
           </block>
-          <block wx:elif="{{item.isToday && hasDrawnBefore && !canLottery}}">
-            <text class="gift-emoji grey">🎁</text>
+          <block wx:elif="{{item.isDrawDay && item.drawUsed}}">
+            <image class="gift-emoji grey ui-icon-sm" src="/assets/icons/ui/gift.png" mode="aspectFit" />
           </block>
           <block wx:elif="{{item.checked}}">
             <text class="cal-check {{item.isMadeUp ? 'madeup' : ''}}">✓</text>
@@ -142,8 +152,8 @@
             data-drawmilestone="{{d.drawMilestone}}"
             data-canmakeup="{{d.canMakeUp}}">
             <text class="month-day-num">{{d.date}}</text>
-            <view wx:if="{{d.isDrawDay && !d.drawUsed}}" class="month-day-gift">🎁</view>
-            <view wx:elif="{{d.isDrawDay && d.drawUsed}}" class="month-day-gift grey">🎁</view>
+            <view wx:if="{{d.isDrawDay && !d.drawUsed}}" class="month-day-gift"><image class="ui-icon-sm" src="/assets/icons/ui/gift.png" mode="aspectFit" /></view>
+            <view wx:elif="{{d.isDrawDay && d.drawUsed}}" class="month-day-gift grey"><image class="ui-icon-sm" src="/assets/icons/ui/gift.png" mode="aspectFit" /></view>
             <view wx:elif="{{d.checked}}" class="month-day-check {{d.isMadeUp ? 'madeup' : ''}}">✓</view>
           </view>
           <view wx:else class="month-day empty"></view>
@@ -153,117 +163,25 @@
 
     <view class="points-footer">
       <view class="points-entry" bindtap="goPointsMall">
-        <text class="points-entry-text">🎁 积分商城</text>
+        <image class="ui-inline-icon" src="/assets/icons/ui/gift.png" mode="aspectFit" />
+        <text class="points-entry-text">积分商城</text>
         <text class="points-entry-arrow">›</text>
       </view>
       <view class="points-divider"></view>
       <view class="points-entry" bindtap="goInventory">
-        <text class="points-entry-text">🎒 我的背包</text>
+        <image class="ui-inline-icon" src="/assets/icons/ui/backpack.png" mode="aspectFit" />
+        <text class="points-entry-text">我的背包</text>
         <text class="points-entry-arrow">›</text>
-      </view>
-    </view>
-  </view>
-
-  <!-- 数据统计区 -->
-  <view class="stats-section">
-    <view class="stats-card">
-      <view class="stat-item" bindtap="goCats">
-        <view class="stat-icon-wrap cat-icon">
-          <text class="stat-icon">🐾</text>
-        </view>
-        <text class="stat-num">{{catCount || 0}}</text>
-        <text class="stat-label">我的宠物</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item" bindtap="goReminders">
-        <view class="stat-icon-wrap reminder-icon">
-          <text class="stat-icon">🔔</text>
-        </view>
-        <text class="stat-num">{{reminderCount || 0}}</text>
-        <text class="stat-label">提醒数</text>
-      </view>
-      <view class="stat-divider"></view>
-      <view class="stat-item" bindtap="goRecords">
-        <view class="stat-icon-wrap record-icon">
-          <text class="stat-icon">📋</text>
-        </view>
-        <text class="stat-num">{{recordCount || 0}}</text>
-        <text class="stat-label">健康记录</text>
       </view>
     </view>
   </view>
 
   <!-- 功能菜单 -->
   <view class="menu-card">
-    <view class="menu-group-label">功能</view>
-    <!-- 我的宠物/提醒管理/健康记录：复习入口已隐含（底栏 Tab + 详情页），此处注释 -->
-    <view class="menu-item" bindtap="goExpense">
-      <view class="menu-icon-wrap icon-teal">
-        <text class="menu-icon-text">💰</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">记账本</text>
-        <text class="menu-desc">记录宠物日常开销</text>
-      </view>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-item" bindtap="goShippingAddress">
-      <view class="menu-icon-wrap icon-purple">
-        <text class="menu-icon-text">📍</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">收货地址</text>
-        <text class="menu-desc">管理收货地址，用于邮寄实物奖品</text>
-      </view>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-item" bindtap="goAdminAnnounce" wx:if="{{isAdmin}}">
-      <view class="menu-icon-wrap icon-orange">
-        <text class="menu-icon-text">📢</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">公告管理</text>
-        <text class="menu-desc">发布和管理首页公告</text>
-      </view>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-item" bindtap="goAdmin" wx:if="{{isAdmin}}">
-      <view class="menu-icon-wrap icon-orange">
-        <text class="menu-icon-text">🔧</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">商品管理</text>
-        <text class="menu-desc">管理积分商城商品</text>
-      </view>
-      <text class="menu-arrow">›</text>
-    </view>
-    <view class="menu-item" bindtap="goFeedback" wx:if="{{showFeedback}}">
-      <view class="menu-icon-wrap icon-teal">
-        <text class="menu-icon-text">💬</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">留言板</text>
-        <text class="menu-desc">畅所欲言，反馈建议</text>
-      </view>
-      <text class="menu-arrow">›</text>
-      <view wx:if="{{notifyCount > 0}}" class="notify-badge">{{notifyCount > 99 ? '99+' : notifyCount}}</view>
-    </view>
-    <view class="menu-item" bindtap="goAdminData" wx:if="{{isAdmin}}">
-      <view class="menu-icon-wrap icon-orange">
-        <text class="menu-icon-text">🗄️</text>
-      </view>
-      <view class="menu-text-wrap">
-        <text class="menu-text">数据管理</text>
-        <text class="menu-desc">搜索和编辑用户数据</text>
-      </view>
-      <text class="menu-arrow">›</text>
-    </view>
-
-    <view class="menu-divider"></view>
     <view class="menu-group-label">账号</view>
     <view class="menu-item" bindtap="openBindPhone">
       <view class="menu-icon-wrap icon-orange">
-        <text class="menu-icon-text">📱</text>
+        <image class="ui-icon" src="/assets/icons/ui/phone.png" mode="aspectFit" />
       </view>
       <view class="menu-text-wrap">
         <text class="menu-text">绑定手机号</text>
@@ -277,7 +195,7 @@
     <view class="menu-group-label">关于</view>
     <view class="menu-item" bindtap="goAbout">
       <view class="menu-icon-wrap icon-purple">
-        <text class="menu-icon-text">ℹ️</text>
+        <image class="ui-icon" src="/assets/icons/ui/about.png" mode="aspectFit" />
       </view>
       <view class="menu-text-wrap">
         <text class="menu-text">关于小程序</text>
@@ -290,8 +208,8 @@
   <!-- 🛠 开发者调试按钮（已隐藏）
   <view wx:if="{{isAdmin}}" class="dev-reset-bar">
     <button class="dev-reset-btn" bindtap="devResetCheckIn">🛠 重置签到 + 20补签卡</button>
-    <button class="dev-reset-btn" bindtap="devAddPoints" style="background:#e8f4ff;color:#2a80e8;border-color:#a8d3ff;">💰 增加500积分</button>
-    <button class="dev-reset-btn" bindtap="devClearBackpack" style="background:#fff0f0;color:#e74c3c;border-color:#f5c6cb;">🗑 清除背包和兑换记录</button>
+    <button class="dev-reset-btn" bindtap="devAddPoints" style="background:#e8f4ff;color:#2a80e8;border-color:#a8d3ff;">增加500积分</button>
+    <button class="dev-reset-btn" bindtap="devClearBackpack" style="background:#fff0f0;color:#e74c3c;border-color:#f5c6cb;">清除背包和兑换记录</button>
   </view> -->
 
   <!-- 退出登录 -->
@@ -335,7 +253,7 @@
     </view>
   </view>
 
-  <view class="footer-hint">宠物健康管家 v1.0</view>
+  <view class="footer-hint">宠物小管家Plus v1.0</view>
 
   <!-- ─── 补签确认弹窗 ─── -->
   <view wx:if="{{showMakeUpModal}}" class="bindphone-mask" bindtap="cancelMakeUp">
@@ -345,7 +263,8 @@
       <text style="font-size:28rpx;color:#666;display:block;text-align:center;margin-bottom:20rpx;">使用 <text style="color:#e74c3c;font-weight:700;">{{nextMakeUpCost}}</text> 张补签卡补签 {{makeUpTargetLabel}} 日？</text>
       <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:32rpx;">
         <text style="font-size:26rpx;color:#999;">剩余补签卡：</text>
-        <text style="font-size:30rpx;color:#4A90D9;font-weight:700;">🎫 {{makeUpCards}} 张</text>
+        <image class="ui-icon-sm" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+        <text style="font-size:30rpx;color:#5BA7D8;font-weight:700;">{{makeUpCards}} 张</text>
       </view>
       <view class="sheet-btns">
         <view class="sheet-btn cancel" bindtap="cancelMakeUp">取消</view>
@@ -358,7 +277,7 @@
   <view wx:if="{{showLottery}}" class="bindphone-mask" bindtap="closeLottery">
     <view class="bindphone-sheet" catchtap="stopBubble">
       <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
-      <text style="font-size:34rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:8rpx;">🎰 幸运大转盘</text>
+      <text style="font-size:34rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:8rpx;">幸运大转盘</text>
       <text style="font-size:22rpx;color:#999;display:block;text-align:center;margin-bottom:28rpx;">每连续7天可抽一次，越签越多！</text>
 
       <view class="wheel-container">
@@ -380,7 +299,7 @@
       </view>
 
       <view class="lottery-result" wx:if="{{lotteryResult}}" style="color:{{lotteryResultColor}};">
-        <text class="lottery-result-label">🎉 {{lotteryResult}}</text>
+        <text class="lottery-result-label">{{lotteryResult}}</text>
       </view>
     </view>
   </view>
@@ -390,11 +309,11 @@
     <view class="bindphone-sheet share-task-sheet" catchtap="stopBubble">
       <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 32rpx;"></view>
       <view style="display:flex;align-items:center;justify-content:center;gap:16rpx;margin-bottom:16rpx;">
-        <text style="font-size:44rpx;">🎫</text>
+        <image class="ui-icon-md" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
         <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;">补签卡</text>
       </view>
       <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:36rpx;">
-        <text style="font-size:52rpx;font-weight:700;color:#4A90D9;">{{makeUpCards}}</text>
+        <text style="font-size:52rpx;font-weight:700;color:#5BA7D8;">{{makeUpCards}}</text>
         <text style="font-size:28rpx;color:#666;">张可用</text>
       </view>
       <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;line-height:1.6;">每分享小程序到微信群或朋友圈

@@ -61,7 +61,7 @@
 
 .addr-act-btn {
   font-size: 24rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   padding: 4rpx 0;
 }
 
@@ -89,7 +89,7 @@
   height: 88rpx;
   line-height: 88rpx;
   text-align: center;
-  background: #4A90D9;
+  background: #5BA7D8;
   color: #fff;
   font-size: 30rpx;
   font-weight: 600;
@@ -192,7 +192,7 @@
 }
 
 .e-btn.confirm {
-  background: #4A90D9;
+  background: #5BA7D8;
   color: #fff;
 }
 

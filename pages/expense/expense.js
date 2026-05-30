@@ -28,6 +28,7 @@ Page({
     catFilter: 'all',
     catFilterIdx: 0,
     catFilterOptions: [{ id: 'all', name: '猫咪' }],
+    showCatFilterModal: false,
     // ── 年度 ──
     yearExpenses: [],         // 全年的原始记录缓存
     annualStats: { total: 0, avgMonth: 0, months: [], categories: [], cats: [] },
@@ -168,11 +169,12 @@ Page({
     var parts = this.data.currentMonth.split('-');
     var y = parseInt(parts[0], 10);
     var m = parseInt(parts[1], 10);
+    var prevYear = this.data.currentYear;
     if (m === 1) { y--; m = 12; } else { m--; }
     var cm = y + '-' + String(m).padStart(2, '0');
     this.setData({ currentMonth: cm, currentYear: y });
     // 年份变了需要重新拉数据
-    if (y !== this.data.currentYear) {
+    if (y !== prevYear) {
       this.loadYearData();
     } else {
       this.applyMonthFilter();
@@ -336,6 +338,27 @@ Page({
   // ════════════════════════════════════════════════════
   // 筛选 & 交互
   // ════════════════════════════════════════════════════
+  openCatFilterModal() {
+    if ((this.data.catFilterOptions || []).length <= 1) return;
+    this.setData({ showCatFilterModal: true });
+  },
+
+  closeCatFilterModal() {
+    this.setData({ showCatFilterModal: false });
+  },
+
+  selectCatFilter(e) {
+    var idx = Number(e.currentTarget.dataset.idx);
+    if (isNaN(idx)) idx = 0;
+    var opt = this.data.catFilterOptions[idx];
+    this.setData({
+      catFilter: opt ? opt.id : 'all',
+      catFilterIdx: idx,
+      showCatFilterModal: false
+    });
+    this.computeGroupedExpenses();
+  },
+
   onCatFilterChange(e) {
     var idx = Number(e.detail.value);
     var opt = this.data.catFilterOptions[idx];

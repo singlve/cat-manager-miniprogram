@@ -31,9 +31,9 @@
   flex-shrink: 0;
 }
 .cat-tab.active {
-  background: #4A90D9;
+  background: #5BA7D8;
   color: #fff;
-  border-color: #4A90D9;
+  border-color: #5BA7D8;
 }
 
 /* ─── 类型筛选标签 ─── */
@@ -47,7 +47,7 @@
 .empty-emoji { font-size: 96rpx; }
 .empty-text { font-size: 32rpx; color: #333; font-weight: 700; margin-bottom: 12rpx; }
 .empty-hint { font-size: 26rpx; color: #999; margin-bottom: 48rpx; text-align: center; max-width: 420rpx; line-height: 1.6; }
-.empty-cta { background: linear-gradient(135deg, #4A90D9, #6BA3E0); color: #fff; font-size: 28rpx; font-weight: 600; border-radius: 48rpx; padding: 24rpx 60rpx; box-shadow: 0 8rpx 30rpx rgba(74,144,217,0.35); }
+.empty-cta { background: linear-gradient(135deg, #5BA7D8, #6BC6B3); color: #fff; font-size: 28rpx; font-weight: 600; border-radius: 48rpx; padding: 24rpx 60rpx; box-shadow: 0 8rpx 30rpx rgba(74,144,217,0.35); }
 
 /* ─── 记录列表 ─── */
 .record-list { display: flex; flex-direction: column; gap: 20rpx; }
@@ -65,7 +65,7 @@
   gap: 8rpx;
   margin-bottom: 6rpx;
   font-size: 24rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   font-weight: 600;
 }
 .cat-avatar-sm {
@@ -85,7 +85,7 @@
 .record-date { font-size: 24rpx; color: #999; display: block; }
 .record-note { font-size: 24rpx; color: #666; display: block; margin-top: 6rpx; }
 .record-right { display: flex; flex-direction: column; gap: 12rpx; align-items: center; padding: 4rpx 8rpx; flex-shrink: 0; }
-.edit-record { font-size: 24rpx; color: #4A90D9; padding: 6rpx 16rpx; border-radius: 20rpx; background: #e8f0ff; }
+.edit-record { font-size: 24rpx; color: #5BA7D8; padding: 6rpx 16rpx; border-radius: 20rpx; background: #e8f0ff; }
 .delete-record { font-size: 24rpx; color: #ff4d4f; padding: 6rpx 16rpx; border-radius: 20rpx; background: #fff1f0; }
 
 /* ─── 编辑弹窗 ─── */
@@ -113,7 +113,7 @@
 .modal-btns { display: flex; justify-content: center; gap: 24rpx; margin-top: 16rpx; }
 .modal-btn { font-size: 28rpx; padding: 18rpx 48rpx; border-radius: 40rpx; text-align: center; }
 .modal-btn.cancel { color: #999; background: #f0f0f0; }
-.modal-btn.confirm { color: #fff; background: #4A90D9; }
+.modal-btn.confirm { color: #fff; background: #5BA7D8; }
 .btn-hover { opacity: 0.7; }
 .list-footer { padding: 24rpx; text-align: center; }
 .list-footer-text { font-size: 24rpx; color: #999; }

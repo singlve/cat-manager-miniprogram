@@ -223,21 +223,30 @@ Page({
     wx.showModal({
       title: '确认删除',
       content: '确定要删除这只宠物吗？相关记录也会一并删除',
-      success: async res => {
+      success: res => {
         if (!res.confirm) return;
-        this.setData({ deleting: true });
-        wx.showLoading({ title: '删除中...' });
-        try {
-          await clouddb.deleteCat(this.data.catId);
-          wx.showToast({ title: '已删除', icon: 'success' });
-          setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
-        } catch (e) {
-          console.error('[cat-detail] deleteCat error:', e);
-          wx.showToast({ title: '删除失败，请重试', icon: 'none' });
-        } finally {
-          wx.hideLoading();
-          this.setData({ deleting: false });
-        }
+        wx.showModal({
+          title: '再次确认删除',
+          content: '删除后无法恢复。请再次确认是否删除这只宠物及相关记录。',
+          confirmText: '确认删除',
+          confirmColor: '#F36B6B',
+          success: async secondRes => {
+            if (!secondRes.confirm) return;
+            this.setData({ deleting: true });
+            wx.showLoading({ title: '删除中...' });
+            try {
+              await clouddb.deleteCat(this.data.catId);
+              wx.showToast({ title: '已删除', icon: 'success' });
+              setTimeout(() => wx.switchTab({ url: '/pages/cat-list/cat-list' }), 1000);
+            } catch (e) {
+              console.error('[cat-detail] deleteCat error:', e);
+              wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+            } finally {
+              wx.hideLoading();
+              this.setData({ deleting: false });
+            }
+          }
+        });
       }
     });
   },
@@ -351,7 +360,7 @@ Page({
       ctx.arc(91, 167, 43, 0, Math.PI * 2);
       ctx.fillStyle = '#edf5ff';
       ctx.fill();
-      ctx.fillStyle = '#4A90D9';
+      ctx.fillStyle = '#5BA7D8';
       ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -401,7 +410,7 @@ Page({
         ctx.fillStyle = '#f5f8fc';
         _roundRect(ctx, 28, y - 14, W - 56, 36, 12);
         ctx.fill();
-        ctx.fillStyle = '#4A90D9';
+        ctx.fillStyle = '#5BA7D8';
         ctx.font = 'bold 14px sans-serif';
         _fillTextSingleLine(ctx, item.label, 44, y + 8, 112);
         ctx.fillStyle = '#5f6b7a';
@@ -430,7 +439,7 @@ Page({
     ctx.fillStyle = '#5f6b7a';
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('宠物健康管家 · 记录宠物的每一个瞬间', W / 2, H - 44);
+    ctx.fillText('宠物小管家Plus · 记录宠物的每一个瞬间', W / 2, H - 44);
 
     return await new Promise(function(r) {
       wx.canvasToTempFilePath({
@@ -453,7 +462,7 @@ Page({
 });
 
 function _buildHealthSummary(records) {
-  var map = { bath: '🛁洗澡', deworm: '💊驱虫', vaccine: '💉免疫', checkup: '🩺体检' };
+  var map = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checkup: '体检' };
   var latest = {};
   (records || []).forEach(function(r) {
     if (!latest[r.type] || r.date > latest[r.type]) latest[r.type] = r.date;
@@ -487,7 +496,7 @@ function _drawPosterBackground(ctx, W, H) {
   ctx.fillRect(0, 0, W, H);
 
   var top = ctx.createLinearGradient(0, 0, W, 180);
-  top.addColorStop(0, '#4A90D9');
+  top.addColorStop(0, '#5BA7D8');
   top.addColorStop(1, '#67B3A5');
   ctx.fillStyle = top;
   ctx.fillRect(0, 0, W, 190);

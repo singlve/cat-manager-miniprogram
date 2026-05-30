@@ -13,7 +13,7 @@
   width: 160rpx;
   height: 160rpx;
   border-radius: 40rpx;
-  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,7 +85,7 @@
 
 .back-btn {
   width: 100%;
-  background: linear-gradient(135deg, #4A90D9, #6BA3E0);
+  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
   color: #fff;
   font-size: 32rpx;
   font-weight: 600;

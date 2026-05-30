@@ -602,6 +602,22 @@ async function deleteRedeemRecord(id) {
   return _storage().deleteRedeemRecord(id);
 }
 
+async function deleteRedeemRecordsAdmin(ids) {
+  var targetIds = Array.isArray(ids) ? ids : (ids ? [ids] : []);
+  if (targetIds.length === 0) return { code: 0, deleted: 0 };
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'getAdminRecords',
+      data: { action: 'delete', collection: REDEEM_RECORD_COL, ids: targetIds }
+    });
+    var result = res.result || {};
+    if (result.code === 0) return result;
+    throw new Error(result.msg || '删除兑换记录失败');
+  }
+  targetIds.forEach(function(id) { _storage().deleteRedeemRecord(id); });
+  return { code: 0, deleted: targetIds.length };
+}
+
 // ════════════════════════════════════════════════════
 // 用户背包
 // ════════════════════════════════════════════════════
@@ -732,6 +748,21 @@ async function deleteShipment(id) {
     } catch (e) { console.error('[clouddb] deleteShipment fail', e); }
   }
   return _storage().deleteShipment ? _storage().deleteShipment(id) : false;
+}
+
+async function deleteShipmentAdmin(id) {
+  if (!id) return { code: 0, deleted: 0 };
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'getAdminRecords',
+      data: { action: 'delete', collection: SHIPMENT_COL, id: id }
+    });
+    var result = res.result || {};
+    if (result.code === 0) return result;
+    throw new Error(result.msg || '删除发货单失败');
+  }
+  if (_storage().deleteShipment) _storage().deleteShipment(id);
+  return { code: 0, deleted: 1 };
 }
 
 
@@ -1078,7 +1109,7 @@ module.exports = {
   // redeem items
   getRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem,
   // redeem records
-  getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord,
+  getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord, deleteRedeemRecordsAdmin,
   // inventory
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
@@ -1087,7 +1118,7 @@ module.exports = {
   // avatar frames
   getAvatarFrames, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments
-  getShipments, getShipmentsAdmin, addShipment, updateShipment, deleteShipment,
+  getShipments, getShipmentsAdmin, addShipment, updateShipment, deleteShipment, deleteShipmentAdmin,
   // content check
   checkTextSafe, checkImageSafe
 };

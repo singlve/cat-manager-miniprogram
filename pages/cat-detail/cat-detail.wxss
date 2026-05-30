@@ -9,93 +9,167 @@
 .cat-header {
   background: #fff;
   border-radius: 24rpx;
-  padding: 36rpx;
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.06);
+  padding: 32rpx;
+  box-shadow: 0 16rpx 42rpx rgba(43, 103, 139, 0.08);
   margin-bottom: 24rpx;
   display: flex;
-  gap: 28rpx;
-  position: relative;
+  flex-direction: column;
+  gap: 24rpx;
+  border: 1rpx solid rgba(91, 167, 216, 0.12);
 }
 
-.avatar-wrap { flex-shrink: 0; }
+.profile-main {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  min-width: 0;
+}
+
+.avatar-wrap {
+  width: 148rpx;
+  height: 148rpx;
+  flex-shrink: 0;
+}
 
 .avatar {
-  width: 140rpx;
-  height: 140rpx;
+  width: 148rpx;
+  height: 148rpx;
   border-radius: 50%;
-  border: 5rpx solid #e8f0ff;
+  border: 6rpx solid #eef8f6;
+  box-sizing: border-box;
+  box-shadow: 0 10rpx 26rpx rgba(91, 167, 216, 0.16);
 }
 
 .avatar-placeholder {
-  width: 140rpx;
-  height: 140rpx;
+  width: 148rpx;
+  height: 148rpx;
   border-radius: 50%;
-  background: #f0f4ff;
+  background: linear-gradient(145deg, #eef9f7 0%, #fff8ed 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1rpx solid rgba(107, 198, 179, 0.18);
+  box-shadow: 0 10rpx 26rpx rgba(91, 167, 216, 0.12);
 }
 
 .emoji { font-size: 64rpx; }
 
-.cat-meta { flex: 1; }
+.cat-meta {
+  flex: 1;
+  min-width: 0;
+}
 
 .name-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12rpx;
-  margin-bottom: 8rpx;
+  margin-bottom: 16rpx;
+  min-width: 0;
 }
 
-.cat-name { font-size: 40rpx; font-weight: 800; color: #1a1a1a; }
+.cat-name {
+  max-width: 330rpx;
+  font-size: 40rpx;
+  font-weight: 800;
+  color: #243044;
+  line-height: 1.22;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.gender-tag {
+.gender-tag,
+.breed-tag {
   font-size: 22rpx;
-  background: #e8f0ff;
-  color: #4A90D9;
-  padding: 4rpx 14rpx;
+  background: #EAF4FB;
+  color: #5BA7D8;
+  padding: 5rpx 16rpx;
   border-radius: 20rpx;
+  flex-shrink: 0;
+  font-weight: 700;
 }
 
-.breed { font-size: 26rpx; color: #666; display: block; margin-bottom: 10rpx; }
+.breed-tag {
+  max-width: 220rpx;
+  background: #EAF7F5;
+  color: #2F9A83;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-.info-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-bottom: 8rpx; }
+.info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-bottom: 10rpx;
+}
 
 .tag {
-  font-size: 22rpx;
-  background: #f5f6fa;
-  color: #666;
-  padding: 4rpx 14rpx;
+  max-width: 100%;
+  font-size: 23rpx;
+  background: #F7F9FB;
+  color: #6E7A8A;
+  padding: 6rpx 16rpx;
   border-radius: 20rpx;
+  line-height: 1.35;
+  box-sizing: border-box;
+  border: 1rpx solid #E8EEF4;
 }
 
 .tag-neutered {
-  background: #f0f9eb;
-  color: #52c41a;
+  background: #EAF7F5;
+  color: #2F9A83;
+  border-color: rgba(107, 198, 179, 0.28);
 }
 
 .tag-passed {
-  background: #fff0f6;
-  color: #eb2f96;
+  background: #FFF0F0;
+  color: #F36B6B;
+  border-color: rgba(243, 107, 107, 0.25);
 }
 
 .tag-withme {
-  background: #e6f7ff;
-  color: #1890ff;
+  background: #EAF4FB;
+  color: #2E8CC1;
+  border-color: rgba(91, 167, 216, 0.25);
 }
 
-.note { font-size: 24rpx; color: #999; margin-top: 6rpx; display: block; }
+.note {
+  font-size: 24rpx;
+  color: #A5AFBC;
+  margin-top: 8rpx;
+  line-height: 1.5;
+  display: block;
+}
 
 .header-actions {
-  position: absolute;
-  top: 28rpx;
-  right: 28rpx;
   display: flex;
-  gap: 8rpx;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14rpx;
+  padding-top: 22rpx;
+  border-top: 1rpx solid #E8EEF4;
 }
 
-.action-btn { font-size: 24rpx; color: #4A90D9; padding: 6rpx 12rpx; }
-.action-btn.delete { color: #ff4d4f; }
+.action-btn {
+  min-width: 92rpx;
+  font-size: 25rpx;
+  color: #3E9DCD;
+  padding: 12rpx 22rpx;
+  border-radius: 999rpx;
+  text-align: center;
+  background: #F1F8FC;
+  line-height: 1.2;
+  box-sizing: border-box;
+  font-weight: 700;
+}
+
+.action-btn.delete {
+  color: #F36B6B;
+  background: #FFF0F0;
+}
 
 /* ─── 通用卡片区块 ─── */
 .section {
@@ -114,7 +188,7 @@
 }
 
 .section-title { font-size: 32rpx; font-weight: 700; color: #1a1a1a; }
-.view-more { font-size: 26rpx; color: #4A90D9; }
+.view-more { font-size: 26rpx; color: #5BA7D8; }
 
 /* ─── 快速记录按钮 ─── */
 .quick-actions {
@@ -280,7 +354,7 @@
 
 .modal-type-hint {
   font-size: 30rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   margin-bottom: 32rpx;
 }
 
@@ -314,7 +388,7 @@
 
 .modal-btn.confirm {
   color: #fff;
-  background: #4A90D9;
+  background: #5BA7D8;
 }
 
 .btn-hover {
@@ -485,7 +559,7 @@
 }
 .share-preview-close {
   font-size: 26rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   padding: 8rpx 0 8rpx 24rpx;
 }
 .share-generating {
@@ -517,11 +591,11 @@
   font-size: 28rpx; background: #f0f2f7; color: #333;
   padding: 0; margin: 0;
 }
-.cb-btn.primary { background: #4A90D9; color: #fff; }
+.cb-btn.primary { background: #5BA7D8; color: #fff; }
 .cb-btn::after { border: none; }
 .share-actions { display: flex; gap: 20rpx; padding: 16rpx 0 40rpx; justify-content: center; }
 .sa-btn { width: 240rpx; height: 80rpx; line-height: 80rpx; text-align: center; border-radius: 50rpx; font-size: 28rpx; background: rgba(255,255,255,.9); color: #333; padding: 0; margin: 0; }
-.sa-btn.primary { background: #4A90D9; color: #fff; }
+.sa-btn.primary { background: #5BA7D8; color: #fff; }
 .sa-btn::after { border: none; }
 .card-img { width: 100%; display: block; }
 .card-canvas { position: absolute; top: 0; left: 0; width: 1px; height: 1px; opacity: 0; }

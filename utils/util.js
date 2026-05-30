@@ -382,9 +382,9 @@ function buildCheckInMonth(lastCheckInDate, checkInStreak, makeUpDates, drawnMil
     var isDrawDay = false;
     var drawMilestone = 0;
     var drawUsed = false;
-    if (checked && !isMadeUp && lastCheck) {
+    if (checked && !isMadeUp && streakStartDate) {
       // 计算当天在连签序列中的位置（1-based）
-      var daysIntoStreak = Math.round((lastCheck.getTime() - dayDate.getTime()) / 86400000) + 1;
+      var daysIntoStreak = Math.round((dayDate.getTime() - streakStartDate.getTime()) / 86400000) + 1;
       if (daysIntoStreak > 0 && daysIntoStreak % 7 === 0) {
         isDrawDay = true;
         drawMilestone = daysIntoStreak;

@@ -312,6 +312,56 @@ Page({
     }
   },
 
+  async deleteInventoryGroup(e) {
+    var item = e.currentTarget.dataset.item;
+    if (!item || !item.rawItems || item.rawItems.length === 0) return;
+
+    var first = await this._confirmDeleteTwice({
+      title: '删除背包商品',
+      content: '将从背包删除「' + item.name + '」共 ' + item.rawItems.length + ' 件。此操作只移除背包展示，不会返还积分。',
+      secondTitle: '再次确认删除',
+      secondContent: '删除后不可恢复。若待确认商品需要返还积分，请使用“取消”操作。确认继续删除吗？'
+    });
+    if (!first) return;
+
+    this.setData({ loading: true });
+    try {
+      for (var i = 0; i < item.rawItems.length; i++) {
+        await clouddb.deleteInventoryItem(item.rawItems[i]._id);
+      }
+      wx.showToast({ title: '已删除', icon: 'success' });
+      await this.loadAll();
+    } catch (err) {
+      console.error('[inventory] deleteInventoryGroup fail:', err);
+      this.setData({ loading: false });
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+    }
+  },
+
+  async _confirmDeleteTwice(options) {
+    var first = await new Promise(function(r) {
+      wx.showModal({
+        title: options.title || '确认删除',
+        content: options.content || '删除后不可恢复',
+        confirmText: '继续',
+        confirmColor: '#F36B6B',
+        success: r
+      });
+    });
+    if (!first.confirm) return false;
+
+    var second = await new Promise(function(r) {
+      wx.showModal({
+        title: options.secondTitle || '再次确认',
+        content: options.secondContent || '请再次确认是否删除',
+        confirmText: '删除',
+        confirmColor: '#F36B6B',
+        success: r
+      });
+    });
+    return !!second.confirm;
+  },
+
   setQty(e) {
     var qty = parseInt(e.currentTarget.dataset.qty) || 1;
     if (qty < 1) qty = 1;
@@ -375,6 +425,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 我的背包 🎒', path: '/pages/inventory/inventory' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 我的背包', path: '/pages/inventory/inventory' };
   },
 });

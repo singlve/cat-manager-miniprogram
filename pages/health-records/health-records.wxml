@@ -2,7 +2,8 @@
 <view class="container">
   <include src="../../templates/offline-tip.wxml" />
   <view class="page-header">
-    <text class="page-title">📋 健康记录</text>
+    <image class="ui-icon-sm" src="/assets/icons/ui/record.png" mode="aspectFit" />
+    <text class="page-title">健康记录</text>
   </view>
 
   <!-- 宠物筛选标签 -->
@@ -35,9 +36,7 @@
 
   <!-- 空状态 -->
   <view wx:if="{{filteredRecords.length === 0}}" class="empty">
-    <view class="empty-illustration">
-      <text class="empty-emoji">📋</text>
-    </view>
+    <image class="ui-empty-img" src="/assets/illustrations/pet-profile-clean.png" mode="aspectFill" />
     <text class="empty-text">暂无健康记录</text>
     <text class="empty-hint">在宠物详情页点击快速记录按钮为宠物添加第一条记录</text>
     <view class="empty-cta" hover-class="btn-hover" bindtap="goBack">去添加记录 ›</view>
@@ -48,14 +47,14 @@
     <view wx:for="{{filteredRecords}}" wx:key="_id" class="record-card">
       <view class="record-left">
         <view class="record-icon {{item.type}}">
-          {{item.type === 'bath' ? '🛁' : item.type === 'deworm' ? '💊' : item.type === 'vaccine' ? '💉' : '🩺'}}
+          <image class="ui-icon-sm" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : '/assets/icons/ui/checkup.png'}}" mode="aspectFit" />
         </view>
       </view>
       <view class="record-center">
         <!-- 筛选全部宠物时显示宠物名 -->
         <view wx:if="{{currentCat === 'all'}}" class="record-cat-name">
           <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill" lazy-load></image>
-          <text wx:else class="cat-avatar-placeholder">🐱</text>
+          <image wx:else class="cat-avatar-placeholder ui-icon-sm" src="/assets/icons/ui/cat.png" mode="aspectFit" />
           <text>{{item._catName}}</text>
         </view>
         <text class="record-type">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : '体检'}}</text>
@@ -83,11 +82,11 @@
       <!-- 类型选择 -->
       <view class="edit-field">
         <text class="edit-label">类型</text>
-        <picker mode="selector" range="['🛁 洗澡','💊 驱虫','💉 免疫','🩺 体检']"
+        <picker mode="selector" range="['洗澡','驱虫','免疫','体检']"
           value="{{editType === 'bath' ? 0 : editType === 'deworm' ? 1 : editType === 'vaccine' ? 2 : 3}}"
           bindchange="onEditTypeChange">
           <view class="edit-value">
-            {{editType === 'bath' ? '🛁 洗澡' : editType === 'deworm' ? '💊 驱虫' : editType === 'vaccine' ? '💉 免疫' : '🩺 体检'}} ▾
+            {{editType === 'bath' ? '洗澡' : editType === 'deworm' ? '驱虫' : editType === 'vaccine' ? '免疫' : '体检'}} ▾
           </view>
         </picker>
       </view>

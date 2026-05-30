@@ -36,18 +36,18 @@ page { background: #f5f6fa; }
   border: 2rpx solid transparent; transition: all .2s;
 }
 .cat-item.active {
-  background: rgba(74,144,217,.08); border-color: #4A90D9;
+  background: rgba(74,144,217,.08); border-color: #5BA7D8;
 }
 .cat-icon { font-size: 40rpx; }
 .cat-name { font-size: 24rpx; color: #888; margin-top: 8rpx; }
-.cat-item.active .cat-name { color: #4A90D9; font-weight: 600; }
+.cat-item.active .cat-name { color: #5BA7D8; font-weight: 600; }
 
 /* ── 金额 ── */
 .amount-box {
   display: flex; align-items: center;
   background: #f8f9fc; border-radius: 16rpx; padding: 16rpx 28rpx;
 }
-.amount-yuan { font-size: 44rpx; color: #4A90D9; font-weight: 700; flex-shrink: 0; }
+.amount-yuan { font-size: 44rpx; color: #5BA7D8; font-weight: 700; flex-shrink: 0; }
 .amount-input {
   flex: 1; font-size: 44rpx; font-weight: 700; color: #333;
   padding-left: 8rpx; min-height: 60rpx;
@@ -63,7 +63,8 @@ page { background: #f5f6fa; }
 /* ── 保存 ── */
 .save-section { padding: 28rpx 24rpx; }
 .save-btn {
-  background: linear-gradient(135deg, #4A90D9, #60A5FA);
+  background-color: #5BA7D8;
+  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3);
   border-radius: 44rpx; padding: 28rpx 0; text-align: center;
 }
 .save-btn text { font-size: 32rpx; color: #fff; font-weight: 700; }

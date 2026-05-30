@@ -29,12 +29,12 @@
 }
 .search-type-label {
   font-size: 24rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   font-weight: 600;
 }
 .search-type-arrow {
   font-size: 20rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   margin-left: 4rpx;
 }
 .search-input-wrap {
@@ -102,7 +102,7 @@
 }
 
 .tab-item.active {
-  color: #4A90D9;
+  color: #5BA7D8;
   font-weight: 600;
 }
 
@@ -114,7 +114,7 @@
   transform: translateX(-50%);
   width: 48rpx;
   height: 4rpx;
-  background: #4A90D9;
+  background: #5BA7D8;
   border-radius: 2rpx;
 }
 
@@ -124,7 +124,7 @@
   height: 80rpx;
   line-height: 80rpx;
   text-align: center;
-  background: #4A90D9;
+  background: #5BA7D8;
   color: #fff;
   font-size: 28rpx;
   border-radius: 12rpx;
@@ -183,12 +183,19 @@
 
 .act-btn {
   font-size: 24rpx;
-  color: #4A90D9;
+  color: #5BA7D8;
   padding: 4rpx 8rpx;
 }
 
-.act-btn.primary { background: #4A90D9; color: #fff; padding: 8rpx 20rpx; border-radius: 24rpx; }
+.act-btn.primary { background: #5BA7D8; color: #fff; padding: 8rpx 20rpx; border-radius: 24rpx; }
 .act-btn.disabled { color: #ccc; }
+.act-btn.danger {
+  color: #F36B6B;
+  background: #FFF5F5;
+  border: 1rpx solid rgba(243,107,107,.24);
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+}
 
 /* ── 发货地址预览 ── */
 .ship-addr-preview {
@@ -207,7 +214,7 @@
 }
 
 
-.act-btn.primary { background: #4A90D9; color: #fff; padding: 8rpx 20rpx; border-radius: 24rpx; }
+.act-btn.primary { background: #5BA7D8; color: #fff; padding: 8rpx 20rpx; border-radius: 24rpx; }
 .act-btn.disabled { color: #ccc; }
 
 /* ── 兑换记录卡片 ── */
@@ -239,7 +246,7 @@
 
 .record-status.status-in_backpack { color: #999; background: #f0f0f0; }
 .record-status.status-pending { color: #FF9800; background: #FFF3E0; }
-.record-status.status-shipped { color: #4A90D9; background: #E3F2FD; }
+.record-status.status-shipped { color: #5BA7D8; background: #E3F2FD; }
 .record-status.status-received { color: #4CAF50; background: #E8F5E9; }
 .record-status.status-cancelled { color: #999; background: #f5f5f5; }
 
@@ -256,10 +263,11 @@
   line-height: 1.6;
 }
 
-.tracking-no { color: #4A90D9; }
+.tracking-no { color: #5BA7D8; }
 
 .record-actions {
   display: flex;
+  justify-content: flex-end;
   gap: 16rpx;
   margin-top: 16rpx;
   padding-top: 16rpx;
@@ -385,7 +393,7 @@
 }
 
 .s-btn.confirm {
-  background: #4A90D9;
+  background: #5BA7D8;
   color: #fff;
 }
 
@@ -421,7 +429,7 @@
 /* ── 兑换记录（合并展示） ── */
 .record-left { display: flex; align-items: center; gap: 12rpx; }
 .record-count-badge {
-  font-size: 22rpx; font-weight: 700; color: #4A90D9;
+  font-size: 22rpx; font-weight: 700; color: #5BA7D8;
   background: #EEF4FB; padding: 2rpx 14rpx; border-radius: 16rpx;
 }
 .record-type-tag {
@@ -447,10 +455,26 @@
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 14rpx;
 }
+.ship-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  flex-shrink: 0;
+  margin-left: 16rpx;
+}
 .ship-item-name { font-size: 30rpx; font-weight: 600; color: #1a1a1a; }
 .ship-qty {
   font-size: 24rpx; font-weight: 700; color: #FF9800;
   background: #FFF3E0; padding: 2rpx 14rpx; border-radius: 16rpx;
+}
+.ship-delete-link {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #F36B6B;
+  background: #FFF5F5;
+  border: 1rpx solid rgba(243,107,107,.22);
+  padding: 3rpx 14rpx;
+  border-radius: 999rpx;
 }
 
 .ship-body { border-top: 1rpx solid #f0f0f0; padding-top: 14rpx; }
@@ -465,7 +489,7 @@
   white-space: nowrap;
 }
 .ship-tracking-no {
-  font-size: 24rpx; color: #4A90D9;
+  font-size: 24rpx; color: #5BA7D8;
 }
 
 .ship-actions {

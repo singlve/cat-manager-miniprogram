@@ -78,12 +78,12 @@ Page({
     lotteryResultColor: '',
     wheelLabels: [],
     lotteryPrizes: [
-      { icon: '🪙', name: '5积分', color: '#FF6B6B', type: 'points', value: 5 },
-      { icon: '🎫', name: '1补签卡', color: '#4ECDC4', type: 'card', value: 1 },
-      { icon: '🪙', name: '10积分', color: '#FFE66D', type: 'points', value: 10 },
-      { icon: '😅', name: '谢谢参与', color: '#A8E6CF', type: 'none', value: 0 },
-      { icon: '🪙', name: '20积分', color: '#FF8B94', type: 'points', value: 20 },
-      { icon: '🎫', name: '2补签卡', color: '#B8A9C9', type: 'card', value: 2 }
+      { icon: '', name: '5积分', color: '#FF6B6B', type: 'points', value: 5 },
+      { icon: '', name: '1补签卡', color: '#4ECDC4', type: 'card', value: 1 },
+      { icon: '', name: '10积分', color: '#FFE66D', type: 'points', value: 10 },
+      { icon: '', name: '谢谢参与', color: '#A8E6CF', type: 'none', value: 0 },
+      { icon: '', name: '20积分', color: '#FF8B94', type: 'points', value: 20 },
+      { icon: '', name: '2补签卡', color: '#B8A9C9', type: 'card', value: 2 }
     ],
     // 绑定手机（已改为独立页面 pages/bind-phone）
   },
@@ -657,12 +657,12 @@ Page({
 
   onShareAppMessage: function() {
     this._awardShareCard('group');
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
   },
 
   onShareTimeline: function() {
     this._awardShareCard('timeline');
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宠物的每一个瞬间' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宠物的每一个瞬间' };
   },
 
   async _awardShareCard(type) {
@@ -714,7 +714,7 @@ Page({
       lastTimelineShareDate: type === 'timeline' ? today : self.data.lastTimelineShareDate
     });
 
-    wx.showToast({ title: '+1补签卡 🎫', icon: 'success' });
+    wx.showToast({ title: '+1补签卡', icon: 'success' });
   },
 
   openLottery() {
@@ -773,10 +773,10 @@ Page({
     currentUser.lotteryUsed = drawnMilestones.length;
     currentUser._lastDrawDate = today;
 
-    var resultColor = '#4A90D9';
+    var resultColor = '#5BA7D8';
     if (prize.type === 'points') {
       currentUser.totalPoints = (currentUser.totalPoints || 0) + prize.value;
-      resultColor = '#4A90D9';
+      resultColor = '#5BA7D8';
     } else if (prize.type === 'card') {
       currentUser.makeUpCards = (currentUser.makeUpCards || 0) + prize.value;
       resultColor = '#5CB85C';
@@ -810,7 +810,7 @@ Page({
 
     self.setData({
       spinning: false,
-      lotteryResult: '恭喜获得 ' + prize.icon + ' ' + prize.name + '！',
+      lotteryResult: '恭喜获得 ' + prize.name + '！',
       lotteryResultColor: resultColor,
       canLottery: newAvailableDraws > 0,
       availableDraws: newAvailableDraws,

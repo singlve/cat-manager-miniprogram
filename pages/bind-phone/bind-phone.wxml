@@ -1,6 +1,9 @@
 <!-- pages/bind-phone/bind-phone.wxml -->
 <view class="page">
   <view class="card">
+    <view class="bind-hero-icon">
+      <image class="bind-hero-img" src="/assets/icons/ui/phone.png" mode="aspectFit" />
+    </view>
     <view class="card-title">绑定手机号</view>
     <view class="card-desc">绑定后可使用手机号登录小程序</view>
 

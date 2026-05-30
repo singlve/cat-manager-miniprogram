@@ -4,14 +4,14 @@ const clouddb = require('../../utils/clouddb.js');
 const { isAdmin } = require('../../utils/util.js');
 
 const CATEGORIES = [
-  { key: 'all',        label: '全部',  icon: '📋' },
-  { key: 'mine',       label: '我的',  icon: '👤' },
-  { key: 'liked',      label: '喜欢',  icon: '❤️' },
-  { key: 'adopted',    label: '采纳',  icon: '✅' },
-  { key: 'suggestion', label: '建议',  icon: '💡' },
-  { key: 'bug',        label: 'Bug',   icon: '🐛' },
-  { key: 'experience', label: '体验',  icon: '💬' },
-  { key: 'other',      label: '其他',  icon: '📌' }
+  { key: 'all',        label: '全部',  iconPath: '/assets/icons/ui/record.png' },
+  { key: 'mine',       label: '我的',  iconPath: '/assets/icons/ui/user.png' },
+  { key: 'liked',      label: '喜欢',  iconPath: '/assets/icons/ui/heart.png' },
+  { key: 'adopted',    label: '采纳',  iconPath: '/assets/icons/ui/done.png' },
+  { key: 'suggestion', label: '建议',  iconPath: '/assets/icons/ui/edit.png' },
+  { key: 'bug',        label: 'Bug',   iconPath: '/assets/icons/ui/warning.png' },
+  { key: 'experience', label: '体验',  iconPath: '/assets/icons/ui/feedback.png' },
+  { key: 'other',      label: '其他',  iconPath: '/assets/icons/ui/other.png' }
 ];
 Page({
   data: {
@@ -130,7 +130,7 @@ Page({
       var unread = list.filter(function(n) { return !n.read; });
       list.forEach(function(n) {
         n._time = formatTime(n.createdAt);
-        n._icon = n.type === 'like' ? '❤️' : n.type === 'comment' ? '💬' : '✅';
+        n._iconPath = n.type === 'like' ? '/assets/icons/ui/heart.png' : n.type === 'comment' ? '/assets/icons/ui/comment.png' : '/assets/icons/ui/done.png';
       });
       // 最新一条通知的头像（cloud:// 需走云函数换临时链接）
       var latestAvatar = '';
@@ -399,7 +399,7 @@ Page({
     if (type === 'like') {
       snippet = this._myNickname() + ' 赞了你的留言';
     } else if (type === 'adopted') {
-      snippet = '你的留言被管理员采纳了 ✅';
+      snippet = '你的留言被管理员采纳了';
     } else {
       snippet = this._myNickname() + ' 评论了你的留言';
     }
@@ -443,7 +443,7 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 留言板', path: '/pages/feedback/feedback' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 留言板', path: '/pages/feedback/feedback' };
   }
 });
 

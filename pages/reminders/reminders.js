@@ -57,11 +57,16 @@ Page({
     catTabs: [],
     catFilter: 'all',
     statusFilter: 'active', // 'active'|'overdue'|'completed'|'all'
-    allReminders: []
+    allReminders: [],
+    addFabX: 0,
+    addFabY: 0,
+    addFabMovingX: 0,
+    addFabMovingY: 0
   },
 
   onShow() {
     this.setData({ isOnline: getApp().globalData.isOnline });
+    this._initAddFabPosition();
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn() });
     if (app.isLoggedIn()) {
@@ -76,6 +81,36 @@ Page({
       });
       this._applyFilters();
     }
+  },
+
+  _initAddFabPosition() {
+    if (this._addFabInited) return;
+    try {
+      const info = wx.getSystemInfoSync();
+      this._windowWidth = info.windowWidth || 375;
+      this._windowHeight = info.windowHeight || 667;
+      this.setData({
+        addFabX: Math.max(this._windowWidth - 74, 0),
+        addFabY: Math.max(this._windowHeight - 210, 120),
+        addFabMovingX: Math.max(this._windowWidth - 74, 0),
+        addFabMovingY: Math.max(this._windowHeight - 210, 120)
+      });
+      this._addFabInited = true;
+    } catch (e) {}
+  },
+
+  onAddFabMove(e) {
+    if (!e.detail || e.detail.source !== 'touch') return;
+    this._addFabMovingX = e.detail.x;
+    this._addFabMovingY = e.detail.y;
+  },
+
+  onAddFabRelease() {
+    const windowWidth = this._windowWidth || 375;
+    const x = this._addFabMovingX || this.data.addFabX || 0;
+    const y = this._addFabMovingY || this.data.addFabY || 0;
+    const snappedX = x > windowWidth / 2 ? Math.max(windowWidth - 74, 0) : 16;
+    this.setData({ addFabX: snappedX, addFabY: y });
   },
 
   async loadData() {
@@ -314,6 +349,6 @@ Page({
 
   onShareAppMessage() {
     const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物健康管家', path: '/pages/reminders/reminders?catId=' + (this.data.catId || '') };
+    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/reminders/reminders?catId=' + (this.data.catId || '') };
   },
 });

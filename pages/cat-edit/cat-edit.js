@@ -82,7 +82,7 @@ Page(Object.assign({}, catFormMethods, {
         status: status, passedDate: status === "passed_away" ? passedDate : ""
       });
 
-      wx.showToast({ title: "保存成功 🎉", icon: "success" });
+      wx.showToast({ title: "保存成功", icon: "success" });
       setTimeout(function() { wx.navigateBack(); }, 1200);
     } catch (e) {
       console.error("[cat-edit] saveCat error:", e);
@@ -94,6 +94,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: "编辑宠物信息 - 宠物健康管家 ✏️", path: "/pages/cat-edit/cat-edit" };
+    return { imageUrl: '/assets/logo.png', title: "编辑宠物信息 - 宠物小管家Plus", path: "/pages/cat-edit/cat-edit" };
   },
 }));

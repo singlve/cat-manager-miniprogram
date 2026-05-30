@@ -2,10 +2,11 @@
 <view class="page">
   <include src="../../templates/offline-tip.wxml" />
 
-  <!-- 顶部标题 -->
-  <view class="page-header">
-    <text class="page-title">我的背包</text>
-    <text class="page-sub">已兑换的商品</text>
+  <!-- 顶部说明 -->
+  <view class="ui-hero-card inventory-hero">
+    <image class="ui-hero-img" src="/assets/illustrations/rewards-hero-pets-transparent.png" mode="aspectFit" />
+    <text class="ui-hero-title">我的背包</text>
+    <text class="ui-hero-subtitle">查看已兑换的商品、确认发货和追踪物流。</text>
   </view>
 
   <!-- 筛选 Tab -->
@@ -22,7 +23,7 @@
 
   <!-- 空状态 -->
   <view wx:elif="{{filteredItems.length === 0}}" class="empty-tip">
-    <text class="empty-icon">🎒</text>
+    <image class="ui-empty-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFill" />
     <text class="empty-text">{{emptyText}}</text>
     <text class="empty-hint">去商城看看吧</text>
     <view class="empty-btn" bindtap="goMall">去逛逛</view>
@@ -35,12 +36,17 @@
       <!-- 主行：图片 + 信息 + 数量角标 -->
       <view class="card-main">
         <image wx:if="{{item.image}}" class="item-img" src="{{item.image}}" mode="aspectFill" lazy-load/>
-        <view wx:else class="item-img placeholder">{{item.itemType === 'virtual' ? '🎫' : '📦'}}</view>
+        <view wx:else class="item-img placeholder">
+          <image class="ui-icon-lg" src="{{item.itemType === 'virtual' ? '/assets/icons/ui/ticket.png' : '/assets/icons/ui/package.png'}}" mode="aspectFit" />
+        </view>
 
         <view class="item-body">
           <view class="item-name-row">
             <text class="item-name">{{item.name}}</text>
-            <text class="qty-badge">×{{item.totalQty}}</text>
+            <view class="item-name-actions">
+              <text class="qty-badge">×{{item.totalQty}}</text>
+              <text class="delete-chip" catchtap="deleteInventoryGroup" data-item="{{item}}">删除</text>
+            </view>
           </view>
           <text class="item-points">{{item.points}} 积分/件</text>
 
@@ -58,7 +64,7 @@
       <view wx:if="{{item.uniqueTrackings.length > 0}}" class="ship-block">
         <view wx:for="{{item.uniqueTrackings}}" wx:for-item="t" wx:for-index="ti" wx:key="ti" class="ship-row">
           <view class="ship-left">
-            <text class="ship-icon">🚚</text>
+            <image class="ship-icon ui-icon-sm" src="/assets/icons/ui/delivery.png" mode="aspectFit" />
             <view class="ship-info">
               <text class="ship-carrier">{{t.carrier || '快递'}}<text wx:if="{{t.count > 1}}" class="ship-count">（{{t.count}}件一起发货）</text></text>
               <text class="ship-no">{{t.trackingNo || '暂无单号'}}</text>
@@ -133,7 +139,7 @@
   <view wx:if="{{showTracking}}" class="mask" bindtap="closeTracking">
     <view class="sheet track-sheet" catchtap="stopBubble">
       <view class="sheet-bar"></view>
-      <text class="sheet-title">📦 物流详情</text>
+      <text class="sheet-title">物流详情</text>
 
       <view class="track-header">
         <text class="track-carrier">{{currentTrackingCarrier || '快递'}}</text>
@@ -150,7 +156,7 @@
         <!-- 当前状态 -->
         <view class="track-state">
           <text class="track-state-label">当前状态：</text>
-          <text class="track-state-value">{{trackingResult.state === '1' ? '已签收 ✅' : trackingResult.state === '0' ? '运输中 🚚' : trackingResult.state === '4' ? '派件中 📦' : trackingResult.state === '2' ? '疑难件 ⚠️' : trackingResult.state === '3' ? '已退回 ↩️' : '未知'}}</text>
+          <text class="track-state-value">{{trackingResult.state === '1' ? '已签收' : trackingResult.state === '0' ? '运输中' : trackingResult.state === '4' ? '派件中' : trackingResult.state === '2' ? '疑难件' : trackingResult.state === '3' ? '已退回' : '未知'}}</text>
         </view>
 
         <!-- 轨迹时间线 -->

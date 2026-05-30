@@ -6,12 +6,12 @@ const clouddb = require('../../utils/clouddb.js');
 const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
 
 const TYPE_OPTIONS = [
-  { key: 'bath',    label: '洗澡',     icon: '🛁' },
-  { key: 'deworm',  label: '驱虫',     icon: '💊' },
-  { key: 'vaccine', label: '免疫',     icon: '💉' },
-  { key: 'checkup', label: '体检',     icon: '🩺' },
-  { key: 'claw',    label: '修剪指甲', icon: '✂️' },
-  { key: 'other',   label: '其他',     icon: '📌' }
+  { key: 'bath',    label: '洗澡',     iconPath: '/assets/icons/ui/bath.png' },
+  { key: 'deworm',  label: '驱虫',     iconPath: '/assets/icons/ui/deworm.png' },
+  { key: 'vaccine', label: '免疫',     iconPath: '/assets/icons/ui/vaccine.png' },
+  { key: 'checkup', label: '体检',     iconPath: '/assets/icons/ui/checkup.png' },
+  { key: 'claw',    label: '修剪指甲', iconPath: '/assets/icons/ui/claw.png' },
+  { key: 'other',   label: '其他',     iconPath: '/assets/icons/ui/other.png' }
 ];
 
 const PRESET_INTERVALS = [7, 14, 30, 60, 90, 180];
@@ -23,6 +23,7 @@ Page({
     cats: [],
     selectedCatId: '',
     selectedCatName: '',
+    selectedCatIndex: -1,
     type: 'bath',
     typeLabel: '洗澡',
     typeOptions: TYPE_OPTIONS,
@@ -32,7 +33,8 @@ Page({
     presetIntervals: PRESET_INTERVALS,
     note: '',
     nextPreviewDate: '',
-    noCatsAvailable: false
+    noCatsAvailable: false,
+    showCatPickerModal: false
   },
 
   async onLoad(options) {
@@ -44,8 +46,14 @@ Page({
     } else {
       const cats = this.data.cats;
       if (cats.length > 0) {
-        this.setData({ selectedCatId: cats[0]._id, selectedCatName: cats[0].name });
-        await this.loadLastDate(cats[0]._id, 'bath');
+        const defaultIndex = options.catId ? Math.max(0, cats.findIndex(c => c._id === options.catId)) : 0;
+        const defaultCat = cats[defaultIndex];
+        this.setData({
+          selectedCatId: defaultCat._id,
+          selectedCatName: defaultCat.name,
+          selectedCatIndex: defaultIndex
+        });
+        await this.loadLastDate(defaultCat._id, 'bath');
       }
     }
     this.updateNextPreview();
@@ -62,11 +70,13 @@ Page({
     const reminders = await clouddb.getReminders();
     const reminder = reminders.find(r => r._id === id);
     if (!reminder) return;
-    const cat = this.data.cats.find(c => c._id === reminder.catId);
+    const catIndex = this.data.cats.findIndex(c => c._id === reminder.catId);
+    const cat = catIndex >= 0 ? this.data.cats[catIndex] : null;
     const typeOption = TYPE_OPTIONS.find(t => t.key === reminder.type);
     this.setData({
       selectedCatId: reminder.catId,
       selectedCatName: cat ? cat.name : (reminder.catName || ''),
+      selectedCatIndex: catIndex,
       type: reminder.type,
       typeLabel: typeOption ? typeOption.label : '洗澡',
       lastDate: reminder.lastDate,
@@ -78,9 +88,33 @@ Page({
 
   // ─── 切换宠物时：自动查找该宠物最近一次「当前类型」的健康记录时间 ───
   async catChange(e) {
-    const cat = this.data.cats[parseInt(e.detail.value)];
+    const index = parseInt(e.detail.value);
+    const cat = this.data.cats[index];
     if (!cat) return;
-    this.setData({ selectedCatId: cat._id, selectedCatName: cat.name });
+    this.setData({ selectedCatId: cat._id, selectedCatName: cat.name, selectedCatIndex: index });
+    await this.loadLastDate(cat._id, this.data.type);
+    this.updateNextPreview();
+  },
+
+  openCatPickerModal() {
+    if (!this.data.cats.length) return;
+    this.setData({ showCatPickerModal: true });
+  },
+
+  closeCatPickerModal() {
+    this.setData({ showCatPickerModal: false });
+  },
+
+  async selectCatFromModal(e) {
+    const index = parseInt(e.currentTarget.dataset.index);
+    const cat = this.data.cats[index];
+    if (!cat) return;
+    this.setData({
+      selectedCatId: cat._id,
+      selectedCatName: cat.name,
+      selectedCatIndex: index,
+      showCatPickerModal: false
+    });
     await this.loadLastDate(cat._id, this.data.type);
     this.updateNextPreview();
   },
@@ -186,6 +220,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/index/index' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

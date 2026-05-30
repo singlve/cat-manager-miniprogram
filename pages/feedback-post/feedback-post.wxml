@@ -1,5 +1,14 @@
 <!-- pages/feedback-post/feedback-post.wxml -->
 <view class="page">
+  <view class="ui-compact-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">FEEDBACK</text>
+      <text class="ui-compact-title">发布留言</text>
+      <text class="ui-compact-desc">写下建议、问题或体验反馈，图片会帮助管理员更快定位。</text>
+    </view>
+  </view>
+
   <!-- 分类 -->
   <view class="section">
     <text class="section-label">分类</text>

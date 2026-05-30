@@ -279,7 +279,7 @@ Page({
 
         // ── 折线 ──
         ctx.beginPath();
-        ctx.strokeStyle = '#4A90D9';
+        ctx.strokeStyle = '#5BA7D8';
         ctx.lineWidth = 2.5;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -293,7 +293,7 @@ Page({
         for (let i = 0; i < sorted.length; i++) {
           const x = xAt(i), y = yAt(sorted[i].weight);
           ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
-          ctx.beginPath(); ctx.fillStyle = '#4A90D9'; ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.fillStyle = '#5BA7D8'; ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
         }
       });
   },
@@ -413,6 +413,6 @@ Page({
 
   onShareAppMessage() {
     const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物健康管家', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
+    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
   },
 });

@@ -1,10 +1,19 @@
 <!-- pages/admin-data/admin-data.wxml -->
 <view wx:if="{{!isAdmin}}" class="empty-state">
-  <text class="empty-icon">🔒</text>
+  <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
   <text class="empty-text">无权访问此页面</text>
 </view>
 
 <block wx:else>
+  <view class="ui-compact-hero ui-admin-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">ADMIN</text>
+      <text class="ui-compact-title">数据管理</text>
+      <text class="ui-compact-desc">按昵称或手机号定位用户，集中处理签到、积分和补签数据。</text>
+    </view>
+  </view>
+
   <!-- 搜索栏 -->
   <view class="search-bar">
     <picker mode="selector" range="{{searchLabels}}" bindchange="onSearchTypeChange" class="search-type">
@@ -22,7 +31,7 @@
   <!-- 结果列表 -->
   <view class="user-list" wx:if="{{searched}}">
     <view wx:if="{{errorMsg}}" class="empty-state">
-      <text class="empty-icon">📭</text>
+      <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
       <text class="empty-text">{{errorMsg}}</text>
     </view>
 
@@ -53,7 +62,7 @@
   </view>
 
   <view wx:if="{{!searched && !loading}}" class="empty-state">
-    <text class="empty-icon">🔍</text>
+    <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
     <text class="empty-text">输入昵称或手机号搜索用户</text>
   </view>
 

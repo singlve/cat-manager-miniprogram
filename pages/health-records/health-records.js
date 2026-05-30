@@ -14,10 +14,10 @@ Page({
     currentFilter: 'all',
     filterOptions: [
       { key: 'all',     label: '全部' },
-      { key: 'bath',    label: '🛁 洗澡' },
-      { key: 'deworm',  label: '💊 驱虫' },
-      { key: 'vaccine', label: '💉 免疫' },
-      { key: 'checkup', label: '🩺 体检' }
+      { key: 'bath',    label: '洗澡' },
+      { key: 'deworm',  label: '驱虫' },
+      { key: 'vaccine', label: '免疫' },
+      { key: 'checkup', label: '体检' }
     ],
     // 分页
     recordsPage: 1,
@@ -200,6 +200,6 @@ Page({
 
   onShareAppMessage() {
     const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物健康管家', path: '/pages/health-records/health-records?catId=' + (this.data.catId || '') };
+    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/health-records/health-records?catId=' + (this.data.catId || '') };
   },
 });

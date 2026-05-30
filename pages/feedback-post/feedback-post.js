@@ -2,10 +2,10 @@
 const clouddb = require('../../utils/clouddb.js');
 
 const POST_CATEGORIES = [
-  { key: 'suggestion', label: '💡 建议' },
-  { key: 'bug',        label: '🐛 Bug'  },
-  { key: 'experience', label: '💬 体验' },
-  { key: 'other',      label: '📌 其他' }
+  { key: 'suggestion', label: '建议' },
+  { key: 'bug',        label: 'Bug'  },
+  { key: 'experience', label: '体验' },
+  { key: 'other',      label: '其他' }
 ];
 
 Page({
@@ -152,6 +152,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 留言板', path: '/pages/feedback/feedback' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 留言板', path: '/pages/feedback/feedback' };
   }
 });

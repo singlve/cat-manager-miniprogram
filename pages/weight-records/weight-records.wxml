@@ -4,7 +4,8 @@
 
   <!-- 页面头部 -->
   <view class="page-header">
-    <text class="page-title">⚖️ 体重记录</text>
+    <image class="ui-icon-sm" src="/assets/icons/ui/weight.png" mode="aspectFit" />
+    <text class="page-title">体重记录</text>
     <text class="add-btn" catchtap="openQuickAdd" wx:if="{{currentCat !== 'all' && filteredRecords.length > 0 && !isCurrentCatPassed}}">+ 录入体重</text>
   </view>
 
@@ -57,9 +58,7 @@
 
   <!-- 空状态 -->
   <view wx:if="{{filteredRecords.length === 0}}" class="empty">
-    <view class="empty-illustration">
-      <text class="empty-emoji">⚖️</text>
-    </view>
+    <image class="ui-empty-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFill" />
     <text class="empty-text">暂无体重记录</text>
     <text class="empty-hint" wx:if="{{currentCat === 'all'}}">选择上方宠物后，点击「录入体重」添加记录</text>
     <text class="empty-hint" wx:else>还没有这只猫的体重记录</text>
@@ -97,7 +96,7 @@
       <!-- 全部宠物视图下显示宠物名+头像 -->
       <view wx:if="{{currentCat === 'all'}}" class="record-cat-row">
         <image wx:if="{{item._catAvatar}}" class="cat-avatar-sm" src="{{item._catAvatar}}" mode="aspectFill" lazy-load></image>
-        <text wx:else class="cat-avatar-placeholder">🐱</text>
+        <image wx:else class="cat-avatar-placeholder ui-icon-sm" src="/assets/icons/ui/cat.png" mode="aspectFit" />
         <text class="cat-name-label">{{item._catName}}</text>
       </view>
 
@@ -188,7 +187,7 @@
   <!-- ─── 编辑体重弹窗 ─── -->
   <view wx:if="{{showEditModal && !showAddModal}}" class="modal-mask">
     <view class="modal-dialog" catchtap="">
-      <text class="modal-title">✏️ 编辑体重</text>
+      <text class="modal-title">编辑体重</text>
 
       <!-- 日期 -->
       <view class="edit-field" catchtap="">

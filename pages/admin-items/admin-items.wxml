@@ -3,10 +3,20 @@
 
   <!-- 非管理员提示 -->
   <view wx:if="{{!isAdmin}}" class="empty-tip">
+    <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
     <text>无权访问此页面</text>
   </view>
 
   <block wx:else>
+    <view class="ui-compact-hero ui-admin-hero">
+      <image class="ui-compact-hero-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFit" />
+      <view class="ui-compact-hero-body">
+        <text class="ui-compact-kicker">ADMIN</text>
+        <text class="ui-compact-title">商品与发货管理</text>
+        <text class="ui-compact-desc">用更紧凑的工具视图管理商品、兑换记录和发货状态。</text>
+      </view>
+    </view>
+
     <!-- Tab 切换（三 Tab） -->
     <view class="tab-bar">
       <view class="tab-item {{activeTab==='items' ? 'active' : ''}}" bindtap="switchTab" data-tab="items">商品管理</view>
@@ -20,16 +30,16 @@
     <!-- ═══ 商品管理 Tab ═══ -->
     <block wx:elif="{{activeTab === 'items'}}">
       <view class="add-btn" bindtap="openAddItem">+ 添加商品</view>
-      <view wx:if="{{items.length === 0}}" class="empty-tip">暂无商品</view>
+      <view wx:if="{{items.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text>暂无商品</text></view>
       <view class="item-row" wx:for="{{items}}" wx:key="_id">
         <image wx:if="{{item.image}}" class="item-thumb" src="{{item.image}}" mode="aspectFill" lazy-load/>
-        <view wx:else class="item-thumb item-thumb-placeholder">🎁</view>
+        <view wx:else class="item-thumb item-thumb-placeholder"><image class="ui-icon-lg" src="/assets/icons/ui/gift.png" mode="aspectFit" /></view>
         <view class="item-info">
           <text class="item-name">{{item.name}}</text>
           <text class="item-meta">{{item.type === 'virtual' ? '虚拟' : '实物'}} | {{item.points}}积分 | 库存:{{item.stock}}</text>
         </view>
         <view class="item-actions">
-          <switch checked="{{item.enabled !== false}}" color="#4A90D9" bindchange="toggleItemEnabled" data-item="{{item}}"/>
+          <switch checked="{{item.enabled !== false}}" color="#5BA7D8" bindchange="toggleItemEnabled" data-item="{{item}}"/>
           <text class="act-btn" bindtap="openEditItem" data-item="{{item}}">编辑</text>
           <text class="act-btn danger" bindtap="deleteItem" data-id="{{item._id}}">删除</text>
         </view>
@@ -47,7 +57,7 @@
           </view>
         </picker>
         <view class="search-input-wrap">
-          <text class="search-input-icon">🔍</text>
+          <image class="search-input-icon ui-icon-sm" src="/assets/icons/ui/search.png" mode="aspectFit" />
           <input class="search-input" type="text" placeholder="请输入{{searchTypes[searchTypeIdx]}}搜索..." value="{{searchKeyword}}" bindinput="onSearchInput" confirm-type="search" placeholder-class="search-placeholder" />
           <text wx:if="{{searchKeyword}}" class="search-clear" catchtap="onSearchClear">✕</text>
         </view>
@@ -71,13 +81,16 @@
             <text class="record-meta">消耗积分：{{item.totalPoints}} 分</text>
             <text class="record-meta">首次兑换：{{item.firstAtFormatted || ''}}</text>
           </view>
+          <view class="record-actions">
+            <text class="act-btn danger" catchtap="deleteRedeemRecordGroup" data-record="{{item}}">删除记录</text>
+          </view>
         </view>
       </view>
     </block>
 
     <!-- ═══ 发货管理 Tab ═══ -->
     <block wx:elif="{{activeTab==='shipments'}}">
-      <view wx:if="{{shipments.length === 0}}" class="empty-tip">暂无待处理发货单</view>
+      <view wx:if="{{shipments.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text>暂无待处理发货单</text></view>
       <view wx:else>
         <!-- 待发货 -->
         <block wx:if="{{shipments.length > 0}}">
@@ -86,7 +99,10 @@
                 wx:if="{{item.status === 'pending'}}">
             <view class="ship-header">
               <text class="ship-item-name">{{item.itemName}}</text>
-              <text class="ship-qty">×{{item.qty}}</text>
+              <view class="ship-header-actions">
+                <text class="ship-qty">×{{item.qty}}</text>
+                <text class="ship-delete-link" catchtap="deleteShipmentCard" data-shipment="{{item}}">删除</text>
+              </view>
             </view>
             <view class="ship-body">
               <text class="ship-meta">用户：{{item.userNickname || '未知'}}</text>
@@ -95,7 +111,7 @@
               <text class="ship-meta">创建时间：{{item.createdAtFormatted}}</text>
             </view>
             <view class="ship-actions">
-              <text class="act-btn primary" catchtap="openShipModal" data-shipment="{{item}}">📦 发货</text>
+              <text class="act-btn primary" catchtap="openShipModal" data-shipment="{{item}}">发货</text>
             </view>
           </view>
         </block>
@@ -106,7 +122,10 @@
               wx:if="{{item.status === 'shipped'}}">
           <view class="ship-header">
             <text class="ship-item-name">{{item.itemName}}</text>
-            <text class="ship-qty">×{{item.qty}}</text>
+            <view class="ship-header-actions">
+              <text class="ship-qty">×{{item.qty}}</text>
+              <text class="ship-delete-link" catchtap="deleteShipmentCard" data-shipment="{{item}}">删除</text>
+            </view>
           </view>
           <view class="ship-body">
             <text class="ship-meta">收货人：{{item.shippingAddress.name}} {{item.shippingAddress.phone}}</text>
@@ -117,7 +136,7 @@
             <text class="ship-meta">发货时间：{{item.shippedAtFormatted}}</text>
           </view>
           <view class="ship-actions">
-            <text class="act-btn" catchtap="openShipModal" data-shipment="{{item}}">✏️ 修改快递</text>
+            <text class="act-btn" catchtap="openShipModal" data-shipment="{{item}}">修改快递</text>
           </view>
         </view>
       </view>
@@ -177,7 +196,7 @@
 
         <view class="form-group">
           <text class="form-label">启用</text>
-          <switch checked="{{form.enabled}}" color="#4A90D9" bindchange="onFormSwitch"/>
+          <switch checked="{{form.enabled}}" color="#5BA7D8" bindchange="onFormSwitch"/>
         </view>
 
         <view class="sheet-btns">

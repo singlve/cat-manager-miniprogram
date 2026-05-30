@@ -67,7 +67,7 @@ Page(Object.assign({}, catFormMethods, {
       };
       await clouddb.addCat(newCat);
 
-      wx.showToast({ title: "添加成功 🎉", icon: "success" });
+      wx.showToast({ title: "添加成功", icon: "success" });
       setTimeout(function() { wx.switchTab({ url: "/pages/cat-list/cat-list" }); }, 1200);
     } catch (e) {
       console.error("[cat-add] saveCat error:", e);
@@ -79,6 +79,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: "添加宠物 - 宠物健康管家", path: "/pages/cat-add/cat-add" };
+    return { imageUrl: '/assets/logo.png', title: "添加宠物 - 宠物小管家Plus", path: "/pages/cat-add/cat-add" };
   },
 }));

@@ -2,9 +2,21 @@
 <view class="container">
   <include src="../../templates/offline-tip.wxml" />
 
+  <view class="home-hero">
+    <view class="home-hero-art">
+      <image class="home-hero-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
+      <view class="home-hero-fade fade-top"></view>
+      <view class="home-hero-fade fade-bottom"></view>
+    </view>
+    <view class="home-hero-copy">
+      <text class="home-hero-title">今天也在好好照顾它们</text>
+      <text class="home-hero-subtitle">记录档案、健康动态和提醒事项，把每一次陪伴都收进小小日常。</text>
+    </view>
+  </view>
+
   <!-- 管理员公告 -->
   <view wx:if="{{announcement}}" class="announce-bar" bindtap="onAnnounceTap">
-    <text class="announce-icon">📢</text>
+    <image class="announce-icon ui-icon-sm" src="/assets/icons/ui/announce.png" mode="aspectFit" />
     <view class="announce-wrap">
       <text class="announce-text">{{announcement.content}}</text>
     </view>
@@ -12,14 +24,16 @@
 
   <!-- 功能 Banner -->
   <view wx:if="{{banners.length > 0}}" class="banner-wrap">
-    <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(255,255,255,0.4)" indicator-active-color="#4A90D9">
+    <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(91,167,216,0.18)" indicator-active-color="#5BA7D8">
       <swiper-item wx:for="{{banners}}" wx:key="title">
-        <view class="banner-card" style="background: {{item.bg}}">
-          <view class="banner-emoji">{{item.emoji}}</view>
+        <view class="banner-card">
+          <view class="banner-icon-wrap">
+            <image class="banner-emoji banner-icon-img" src="{{item.iconPath}}" mode="aspectFit" />
+          </view>
           <view class="banner-body">
             <view class="banner-header">
-              <text class="banner-title" style="color: {{item.color}}">{{item.title}}</text>
-              <text wx:if="{{item.tag}}" class="banner-tag" style="background: {{item.color}}; color: #fff">{{item.tag}}</text>
+              <text class="banner-title">{{item.title}}</text>
+              <text wx:if="{{item.tag}}" class="banner-tag">{{item.tag}}</text>
             </view>
             <text class="banner-desc">{{item.desc}}</text>
           </view>
@@ -31,9 +45,9 @@
   <!-- 未登录提示（独立显示，不影响列表） -->
   <view wx:if="{{!isLoggedIn}}" class="guest-banner">
     <view class="guest-illustration">
-      <text class="guest-emoji">🐾</text>
+      <image class="ui-icon-xl" src="/assets/icons/ui/pet.png" mode="aspectFit" />
     </view>
-    <text class="guest-title">欢迎使用宠物健康管家</text>
+    <text class="guest-title">欢迎使用宠物小管家Plus</text>
     <text class="guest-desc">登录后可以添加宠物、记录健康数据、设置提醒</text>
     <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
     <text class="guest-browse-hint">你可以先浏览体验，需要时再登录</text>
@@ -46,9 +60,7 @@
 
   <!-- 空状态（已登录、加载完成、且无猫） -->
   <view wx:elif="{{isLoggedIn && !loading && cats.length === 0}}" class="empty">
-    <view class="empty-illustration">
-      <text class="empty-emoji">🐾</text>
-    </view>
+    <image class="empty-all-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
     <text class="empty-text">还没有添加宠物</text>
     <text class="empty-hint">添加你的第一只宠物，开始记录它的健康成长</text>
     <button class="empty-cta" bindtap="addCat">+ 添加宠物</button>
@@ -62,12 +74,10 @@
         <text class="filter-count">{{speciesCounts.all}}</text>
       </view>
       <view class="filter-tab {{filterSpecies === 'cat' ? 'active' : ''}}" bindtap="onFilterSpecies" data-species="cat">
-        <text class="filter-icon">🐱</text>
         <text class="filter-label">猫</text>
         <text class="filter-count">{{speciesCounts.cat}}</text>
       </view>
       <view class="filter-tab {{filterSpecies === 'dog' ? 'active' : ''}}" bindtap="onFilterSpecies" data-species="dog">
-        <text class="filter-icon">🐶</text>
         <text class="filter-label">狗</text>
         <text class="filter-count">{{speciesCounts.dog}}</text>
       </view>
@@ -80,9 +90,9 @@
 
   <!-- 筛选后空状态 -->
   <view wx:if="{{cats.length > 0 && displayCats.length === 0 && !loading}}" class="empty-filter">
-    <text class="empty-filter-emoji">{{filterSpecies === 'dog' ? '🐶' : '🐱'}}</text>
+    <image class="empty-filter-img" src="{{filterSpecies === 'dog' ? '/assets/illustrations/empty-dog-transparent.png' : '/assets/illustrations/empty-cat-transparent.png'}}" mode="aspectFit" />
     <text class="empty-filter-text">还没有添加{{filterSpecies === 'dog' ? '狗狗' : '猫咪'}}</text>
-    <button class="empty-filter-btn" bindtap="addCat">+ 添加{{filterSpecies === 'dog' ? '狗狗' : '宠物'}}</button>
+    <button class="empty-filter-btn" bindtap="addCat">+ 添加{{filterSpecies === 'dog' ? '狗狗' : '猫咪'}}</button>
   </view>
 
   <!-- 宠物列表 -->
@@ -98,7 +108,7 @@
       <view class="cat-avatar-wrap">
         <image wx:if="{{item.avatar}}" src="{{item._displayAvatar || item.avatar}}" mode="aspectFill" class="cat-avatar" lazy-load />
         <view wx:else class="cat-avatar-placeholder">
-          <text class="avatar-emoji">{{item.species === 'dog' ? '🐶' : '🐱'}}</text>
+          <image class="ui-icon-lg" src="{{item.species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png'}}" mode="aspectFit" />
         </view>
         <!-- 性别角标 -->
         <view class="gender-badge gender-{{item.gender}}">
@@ -112,7 +122,7 @@
           <text class="cat-breed-tag">{{item.breed || '品种未知'}}</text>
         </view>
         <view class="cat-birthday-row" wx:if="{{item.birthday}}">
-          <text class="cat-birthday">{{item._birthdayText || '🎂 ' + item.birthday}}</text>
+          <text class="cat-birthday">{{item._birthdayText || item.birthday}}</text>
           <text wx:if="{{item._birthdayHint}}" class="birthday-hint-inline">{{item._birthdayHint}}</text>
         </view>
         <view class="cat-age-row" wx:if="{{item.birthday}}">
@@ -126,25 +136,86 @@
       </view>
       <!-- 右侧快捷操作（仅已登录） -->
       <view wx:if="{{isLoggedIn}}" class="card-actions" catchtap="onQuickRecord" data-id="{{item._id}}" data-name="{{item.name}}">
-        <text class="quick-add-icon">📝</text>
+        <image class="quick-add-icon ui-icon-sm" src="/assets/icons/ui/edit.png" mode="aspectFit" />
         <text class="quick-add-text">速记</text>
       </view>
     </view>
   </view>
 
-  <!-- 底部按钮：已登录 -->
-  <view wx:if="{{isLoggedIn && cats.length > 0}}" class="add-section">
-    <button class="add-btn" bindtap="addCat">+ 添加宠物</button>
-  </view>
+  <!-- 列表态悬浮添加按钮：已登录 -->
+  <movable-area wx:if="{{isLoggedIn && cats.length > 0 && displayCats.length > 0}}" class="add-fab-area">
+    <movable-view
+      class="add-fab"
+      direction="all"
+      inertia
+      x="{{addFabX}}"
+      y="{{addFabY}}"
+      bindchange="onAddFabMove"
+      bindtouchend="onAddFabRelease"
+      bindtap="addCat"
+    >
+      <text class="add-fab-plus">+</text>
+    </movable-view>
+  </movable-area>
   <!-- 底部按钮：未登录但有 demo 数据 -->
-  <view wx:elif="{{!isLoggedIn && cats.length > 0}}" class="add-section">
+  <view wx:elif="{{!isLoggedIn && cats.length > 0 && displayCats.length > 0}}" class="add-section">
     <button class="add-btn" bindtap="goLogin">登录开始使用 →</button>
+  </view>
+
+  <!-- 排序弹窗 -->
+  <view wx:if="{{showSortModal}}" class="sort-modal-mask" catchtap="closeSortModal">
+    <view class="sort-modal" catchtap="stopBubble">
+      <view class="sort-modal-head">
+        <text class="sort-modal-title">选择排序方式</text>
+        <text class="sort-modal-subtitle">让宠物列表按你习惯的顺序展示</text>
+      </view>
+      <view class="sort-option-list">
+        <view
+          wx:for="{{sortOptions}}"
+          wx:key="value"
+          class="sort-option {{sortBy === item.value ? 'active' : ''}}"
+          bindtap="onSelectSort"
+          data-sort="{{item.value}}"
+        >
+          <text class="sort-option-label">{{item.label}}</text>
+          <text wx:if="{{sortBy === item.value}}" class="sort-option-check">✓</text>
+        </view>
+      </view>
+      <view class="sort-modal-cancel" bindtap="closeSortModal">取消</view>
+    </view>
+  </view>
+
+  <!-- 速记类型弹窗 -->
+  <view wx:if="{{showQuickTypeModal}}" class="quick-type-modal-mask sort-modal-mask" catchtap="closeQuickTypeModal">
+    <view class="quick-type-modal sort-modal" catchtap="stopBubble">
+      <view class="sort-modal-head">
+        <text class="sort-modal-title">选择速记类型</text>
+        <text class="sort-modal-subtitle">为 {{quickCatName}} 添加一条健康记录</text>
+      </view>
+      <view class="sort-option-list">
+        <view
+          wx:for="{{quickTypeOptions}}"
+          wx:key="value"
+          class="sort-option"
+          bindtap="onSelectQuickType"
+          data-type="{{item.value}}"
+          data-name="{{item.label}}"
+        >
+          <text class="sort-option-label">{{item.label}}</text>
+          <text class="quick-type-arrow">›</text>
+        </view>
+      </view>
+      <view class="sort-modal-cancel" bindtap="closeQuickTypeModal">取消</view>
+    </view>
   </view>
 
   <!-- 速记弹窗 -->
   <view wx:if="{{showQuickModal}}" class="quick-modal-mask" catchtap="closeQuickModal">
     <view class="quick-modal" catchtap="stopBubble">
-      <text class="quick-modal-title">📝 快速记录 - {{quickTypeName}}</text>
+      <view class="quick-modal-head">
+        <text class="quick-modal-title">快速记录 - {{quickTypeName}}</text>
+        <text class="quick-modal-subtitle">选择记录日期，保存到当前宠物档案</text>
+      </view>
       <view class="quick-modal-body">
         <text class="quick-modal-label">日期</text>
         <picker mode="date" value="{{quickDate}}" bindchange="onQuickDateChange">

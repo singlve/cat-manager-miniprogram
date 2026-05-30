@@ -115,10 +115,11 @@ Page({
     (records || []).forEach(function(r) {
       var key = r.itemId || r._id;
       if (!groups[key]) {
-        groups[key] = { key: key, itemId: key, itemName: r.itemName || '商品', itemType: r.itemType || 'physical', count: 0, totalPoints: 0, userNickname: r.userNickname || '', openid: r.openid || '', firstAt: r.redeemedAt || '' };
+        groups[key] = { key: key, itemId: key, itemName: r.itemName || '商品', itemType: r.itemType || 'physical', count: 0, totalPoints: 0, userNickname: r.userNickname || '', openid: r.openid || '', firstAt: r.redeemedAt || '', recordIds: [] };
       }
       groups[key].count++;
       groups[key].totalPoints += (r.pointsSpent || 0);
+      if (r._id) groups[key].recordIds.push(r._id);
     });
     return Object.values(groups);
   },
@@ -315,6 +316,78 @@ Page({
     }
   },
 
+  async deleteRedeemRecordGroup(e) {
+    var record = e.currentTarget.dataset.record;
+    if (!record || !record.recordIds || record.recordIds.length === 0) return;
+
+    var ok = await this._confirmDeleteTwice({
+      title: '删除兑换记录',
+      content: '将删除「' + record.itemName + '」相关兑换记录 ' + record.recordIds.length + ' 条。',
+      secondTitle: '再次确认删除',
+      secondContent: '删除后不可恢复，只会删除兑换记录，不会自动回滚用户背包、库存或发货单。确认删除吗？'
+    });
+    if (!ok) return;
+
+    this.setData({ loading: true });
+    try {
+      await clouddb.deleteRedeemRecordsAdmin(record.recordIds);
+      wx.showToast({ title: '已删除', icon: 'success' });
+      await this.loadAll();
+    } catch (err) {
+      console.error('[admin] deleteRedeemRecordGroup fail:', err);
+      this.setData({ loading: false });
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+    }
+  },
+
+  async deleteShipmentCard(e) {
+    var shipment = e.currentTarget.dataset.shipment;
+    if (!shipment || !shipment._id) return;
+
+    var ok = await this._confirmDeleteTwice({
+      title: '删除发货单',
+      content: '将删除「' + (shipment.itemName || '商品') + '」发货单，数量 ×' + (shipment.qty || 1) + '。',
+      secondTitle: '再次确认删除',
+      secondContent: '删除后不可恢复，只会删除发货单，不会自动回滚兑换记录或用户背包状态。确认删除吗？'
+    });
+    if (!ok) return;
+
+    this.setData({ loading: true });
+    try {
+      await clouddb.deleteShipmentAdmin(shipment._id);
+      wx.showToast({ title: '已删除', icon: 'success' });
+      await this.loadAll();
+    } catch (err) {
+      console.error('[admin] deleteShipmentCard fail:', err);
+      this.setData({ loading: false });
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+    }
+  },
+
+  async _confirmDeleteTwice(options) {
+    var first = await new Promise(function(r) {
+      wx.showModal({
+        title: options.title || '确认删除',
+        content: options.content || '删除后不可恢复',
+        confirmText: '继续',
+        confirmColor: '#F36B6B',
+        success: r
+      });
+    });
+    if (!first.confirm) return false;
+
+    var second = await new Promise(function(r) {
+      wx.showModal({
+        title: options.secondTitle || '再次确认',
+        content: options.secondContent || '请再次确认是否删除',
+        confirmText: '删除',
+        confirmColor: '#F36B6B',
+        success: r
+      });
+    });
+    return !!second.confirm;
+  },
+
   // ════════════════════════════════════════
   // 表单输入 & 保存（不变）
   // ════════════════════════════════════════
@@ -388,6 +461,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/index/index' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

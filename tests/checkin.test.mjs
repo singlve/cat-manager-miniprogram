@@ -55,6 +55,24 @@ describe('签到和奖励规则', () => {
     expect(tomorrow.canMakeUp).toBe(false);
   });
 
+  it('周历和月历使用同一个连签里程碑日期', () => {
+    vi.setSystemTime(new Date(2026, 4, 29, 12, 0, 0)); // 2026-05-29 Friday
+
+    const week = buildCheckInWeek('2026-05-29', 9, [], [7]);
+    const monthDays = buildCheckInMonth('2026-05-29', 9, [], [7]).flat().filter(day => !day.empty);
+    const weekMilestone = week.find(day => day.dateStr === '2026-05-27');
+    const monthMilestone = monthDays.find(day => day.dateStr === '2026-05-27');
+    const oldWrongMonthDay = monthDays.find(day => day.dateStr === '2026-05-23');
+
+    expect(weekMilestone.isDrawDay).toBe(true);
+    expect(weekMilestone.drawMilestone).toBe(7);
+    expect(weekMilestone.drawUsed).toBe(true);
+    expect(monthMilestone.isDrawDay).toBe(true);
+    expect(monthMilestone.drawMilestone).toBe(7);
+    expect(monthMilestone.drawUsed).toBe(true);
+    expect(oldWrongMonthDay.isDrawDay).toBe(false);
+  });
+
   it('每连续 7 天获得 1 次抽奖机会', () => {
     expect(getLotteryDrawsForStreak(0)).toBe(0);
     expect(getLotteryDrawsForStreak(6)).toBe(0);

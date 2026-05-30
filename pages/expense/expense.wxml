@@ -4,9 +4,13 @@
   <!-- ═══════════════ 顶部导航栏：年份 + 视图切换 ═══════════════ -->
   <view class="nav-bar">
     <view class="nav-year-row">
-      <text class="nav-arrow" bindtap="onPrevYear" aria-label="上一年">◀</text>
+      <view class="nav-arrow" bindtap="onPrevYear" aria-label="上一年">
+        <view class="arrow-mark arrow-left"></view>
+      </view>
       <text class="nav-year-text">{{currentYear}}年</text>
-      <text class="nav-arrow {{currentYear >= maxYear ? 'disabled' : ''}}" bindtap="onNextYear" aria-label="下一年">▶</text>
+      <view class="nav-arrow {{currentYear >= maxYear ? 'disabled' : ''}}" bindtap="onNextYear" aria-label="下一年">
+        <view class="arrow-mark arrow-right"></view>
+      </view>
     </view>
     <view class="view-toggle">
       <view class="tog-btn {{viewMode === 'month' ? 'active' : ''}}" bindtap="onSwitchView" data-mode="month">月度</view>
@@ -27,21 +31,23 @@
     <!-- 月度统计卡片 -->
     <view class="month-card">
       <view class="mc-header">
-        <text class="mc-arrow" bindtap="onPrevMonth" aria-label="上一月">〈</text>
+        <view class="mc-arrow" bindtap="onPrevMonth" aria-label="上一月">
+          <view class="arrow-mark arrow-left"></view>
+        </view>
         <text class="mc-label">{{currentMonthLabel}}支出</text>
-        <text class="mc-arrow" bindtap="onNextMonth" aria-label="下一月">〉</text>
+        <view class="mc-arrow" bindtap="onNextMonth" aria-label="下一月">
+          <view class="arrow-mark arrow-right"></view>
+        </view>
       </view>
       <text class="mc-total">¥{{stats.total}}</text>
     </view>
 
-    <!-- 猫咪筛选 -->
+    <!-- 宠物筛选 -->
     <view wx:if="{{catFilterOptions.length > 1}}" class="filter-row">
-      <picker mode="selector" range="{{catFilterOptions}}" range-key="name" bindchange="onCatFilterChange" value="{{catFilterIdx}}">
-        <view class="filter-pick">
-          <text>{{catFilterOptions[catFilterIdx || 0] ? catFilterOptions[catFilterIdx || 0].name : '全部猫咪'}}</text>
-          <text class="filter-arrow">▼</text>
-        </view>
-      </picker>
+      <view class="filter-pick" bindtap="openCatFilterModal">
+        <text class="filter-current">{{catFilterOptions[catFilterIdx || 0] ? catFilterOptions[catFilterIdx || 0].name : '全部宠物'}}</text>
+        <view class="filter-arrow-mark"></view>
+      </view>
     </view>
 
     <!-- 空状态 -->
@@ -170,6 +176,28 @@
   <!-- 添加按钮 -->
   <view class="add-section">
     <button class="add-btn" bindtap="goAdd">+ 记一笔</button>
+  </view>
+
+  <!-- 宠物筛选自定义弹层 -->
+  <view wx:if="{{showCatFilterModal}}" class="cat-filter-modal-mask" bindtap="closeCatFilterModal">
+    <view class="cat-filter-modal" catchtap="stopBubble">
+      <view class="cat-filter-modal-head">
+        <text class="cat-filter-modal-title">选择筛选范围</text>
+        <text class="cat-filter-modal-subtitle">查看指定宠物或公共花销</text>
+      </view>
+      <view class="cat-filter-option-list">
+        <view
+          wx:for="{{catFilterOptions}}"
+          wx:key="id"
+          class="cat-filter-option {{catFilterIdx === index ? 'active' : ''}}"
+          catchtap="selectCatFilter"
+          data-idx="{{index}}"
+        >
+          <text class="cat-filter-option-text">{{item.name}}</text>
+          <text wx:if="{{catFilterIdx === index}}" class="cat-filter-check">✓</text>
+        </view>
+      </view>
+    </view>
   </view>
 
   <!-- 删除确认弹窗 -->

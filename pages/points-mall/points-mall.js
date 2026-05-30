@@ -211,6 +211,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 积分商城 🎁', path: '/pages/points-mall/points-mall' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 积分商城', path: '/pages/points-mall/points-mall' };
   },
 });

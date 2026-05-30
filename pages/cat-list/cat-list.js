@@ -27,11 +27,11 @@ function getDemoCats() {
     let companionText = '';
     if (isPassed && cat.passedDate) {
       const d = calcDaysBetween(cat.passedDate);
-      if (d !== null) companionText = '🌈 宝贝已离开' + d + '天';
+      if (d !== null) companionText = '宝贝已离开' + d + '天';
     } else {
       const startDate = cat.adoptedDate || cat.birthday;
       const cDays = calcDaysBetween(startDate);
-      if (cDays !== null) companionText = '🏠 与你相伴' + cDays + '天';
+      if (cDays !== null) companionText = '与你相伴' + cDays + '天';
     }
     let ageText = '';
     if (age) {
@@ -57,55 +57,60 @@ Page({
     cats: [], displayCats: [], loading: false, isLoggedIn: false,
     filterSpecies: 'all', sortBy: 'default',
     speciesCounts: { all: 0, cat: 0, dog: 0 },
+    addFabX: 0, addFabY: 0, addFabMovingX: 0, addFabMovingY: 0,
     quickCatId: '', quickCatName: '', quickType: '', quickTypeName: '',
-    showQuickModal: false, quickDate: new Date().toISOString().split('T')[0],
+    showQuickTypeModal: false, showQuickModal: false, quickDate: new Date().toISOString().split('T')[0],
+    quickTypeOptions: [
+      { value: 'bath', label: '洗澡' },
+      { value: 'deworm', label: '驱虫' },
+      { value: 'vaccine', label: '免疫' },
+      { value: 'checkup', label: '体检' }
+    ],
+    showSortModal: false,
+    sortOptions: [
+      { value: 'default', label: '默认排序' },
+      { value: 'name', label: '按名字 A-Z' },
+      { value: 'recent', label: '最近添加优先' },
+      { value: 'passedLast', label: '已离世放最后' }
+    ],
     announcement: null,
     banners: [
       {
-        emoji: '⚖️',
-        title: '体重记录功能上线',
-        desc: '支持精确到时分秒的体重记录，折线图追踪变化趋势',
-        bg: 'linear-gradient(135deg, #e8f5e9, #c8e6c9)',
-        color: '#2e7d32',
-        tag: 'NEW'
+        iconPath: '/assets/icons/ui/pet.png',
+        title: '建立专属宠物档案',
+        desc: '记录猫猫狗狗的生日、品种、状态和陪伴时光',
+        tag: '档案'
       },
       {
-        emoji: '🐾',
-        title: '支持狗狗记录',
-        desc: '养狗狗的宝宝有福啦',
-        bg: 'linear-gradient(135deg, #f3e5f5, #e1bee7)',
-        color: '#6a1b9a',
-        tag: '更新'
+        iconPath: '/assets/icons/ui/edit.png',
+        title: '快速记录健康日常',
+        desc: '洗澡、驱虫、免疫、体检都能一键速记',
+        tag: '健康'
       },
       {
-        emoji: '🌈',
-        title: '宠物状态管理',
-        desc: '支持记录宠物在身边/已离世状态，珍藏每一段陪伴时光',
-        bg: 'linear-gradient(135deg, #fff3e0, #ffe0b2)',
-        color: '#e65100',
-        tag: '功能'
+        iconPath: '/assets/icons/ui/weight.png',
+        title: '体重趋势清晰可见',
+        desc: '按时间记录体重变化，照护变化更容易发现',
+        tag: '体重'
       },
       {
-        emoji: '✍️',
-        title: '签到功能上线',
-        desc: '签到/抽奖得积分兑换爱宠用品',
-        bg: 'linear-gradient(135deg, #fff3f9, #ffe0b2)',
-        color: '#e65199',
-        tag: '功能'
+        iconPath: '/assets/icons/ui/reminder.png',
+        title: '重要事项准时提醒',
+        desc: '设置疫苗、驱虫、洗护等提醒，减少遗忘',
+        tag: '提醒'
       },
       {
-        emoji: '📒',
-        title: '记账功能上线',
-        desc: '记录你想记录的任何花销',
-        bg: 'linear-gradient(135deg, #fff1e1, #ffe2c2)',
-        color: '#e62100',
-        tag: '功能'
+        iconPath: '/assets/icons/ui/expense.png',
+        title: '记账积分都能管理',
+        desc: '记录宠物花销，签到攒积分兑换小奖励',
+        tag: '日常'
       }
     ]
   },
 
   onShow() {
     this.setData({ isOnline: getApp().globalData.isOnline });
+    this._initAddFabPosition();
     this._loadAnnouncement();
     const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn() });
@@ -155,11 +160,11 @@ Page({
         let companionText = '';
         if (isPassed && cat.passedDate) {
           const departedDays = calcDaysBetween(cat.passedDate);
-          if (departedDays !== null) companionText = '🌈 宝贝已离开' + departedDays + '天';
+          if (departedDays !== null) companionText = '宝贝已离开' + departedDays + '天';
         } else {
           const startDate = cat.adoptedDate || cat.birthday;
           const cDays = calcDaysBetween(startDate);
-          if (cDays !== null) companionText = '🏠 与你相伴' + cDays + '天';
+          if (cDays !== null) companionText = '与你相伴' + cDays + '天';
         }
 
         // 年龄文本
@@ -209,31 +214,61 @@ Page({
     wx.navigateTo({ url: '/pages/cat-add/cat-add' });
   },
 
+  _initAddFabPosition() {
+    if (this._addFabInited) return;
+    try {
+      const info = wx.getSystemInfoSync();
+      this._windowWidth = info.windowWidth || 375;
+      this._windowHeight = info.windowHeight || 667;
+      this.setData({
+        addFabX: Math.max(this._windowWidth - 74, 0),
+        addFabY: Math.max(this._windowHeight - 210, 120),
+        addFabMovingX: Math.max(this._windowWidth - 74, 0),
+        addFabMovingY: Math.max(this._windowHeight - 210, 120)
+      });
+      this._addFabInited = true;
+    } catch (e) {}
+  },
+
+  onAddFabMove(e) {
+    if (!e.detail || e.detail.source !== 'touch') return;
+    this._addFabMovingX = e.detail.x;
+    this._addFabMovingY = e.detail.y;
+  },
+
+  onAddFabRelease() {
+    const windowWidth = this._windowWidth || 375;
+    const x = this._addFabMovingX || this.data.addFabX || 0;
+    const y = this._addFabMovingY || this.data.addFabY || 0;
+    const snappedX = x > windowWidth / 2 ? Math.max(windowWidth - 74, 0) : 16;
+    this.setData({ addFabX: snappedX, addFabY: y });
+  },
+
   goCatDetail(e) {
     // 不拦截：demo 猫可点击查看详情
     wx.navigateTo({ url: `/pages/cat-detail/cat-detail?id=${e.currentTarget.dataset.id}` });
   },
 
-  // ─── 速记：ActionSheet 选类型 → 弹窗选日期 → 直接保存 ───
+  // ─── 速记：选类型 → 弹窗选日期 → 直接保存 ───
   onQuickRecord(e) {
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     const { id, name } = e.currentTarget.dataset;
-    this.setData({ quickCatId: id, quickCatName: name });
-    wx.showActionSheet({
-      itemList: ['洗澡', '驱虫', '免疫', '体检'],
-      success: (res) => {
-        const types = ['bath', 'deworm', 'vaccine', 'checkup'];
-        const names = ['洗澡', '驱虫', '免疫', '体检'];
-        if (res.tapIndex < 4) {
-          this.setData({
-            quickType: types[res.tapIndex],
-            quickTypeName: names[res.tapIndex],
-            quickDate: new Date().toISOString().split('T')[0],
-            showQuickModal: true
-          });
-        }
-      }
+    this.setData({
+      quickCatId: id,
+      quickCatName: name,
+      showQuickTypeModal: true
+    });
+  },
+  closeQuickTypeModal() { this.setData({ showQuickTypeModal: false }); },
+  onSelectQuickType(e) {
+    const { type, name } = e.currentTarget.dataset;
+    this.setData({
+      quickType: type,
+      quickTypeName: name,
+      quickDate: new Date().toISOString().split('T')[0],
+      showQuickTypeModal: false,
+      showQuickModal: true
     });
   },
   onQuickDateChange(e) { this.setData({ quickDate: e.detail.value }); },
@@ -296,14 +331,17 @@ Page({
   },
 
   onShowSort() {
-    wx.showActionSheet({
-      itemList: ['默认排序', '按名字 A-Z', '最近添加优先', '已离世放最后'],
-      success: (res) => {
-        const map = { 0: 'default', 1: 'name', 2: 'recent', 3: 'passedLast' };
-        this.setData({ sortBy: map[res.tapIndex] });
-        this._updateDisplay();
-      }
-    });
+    this.setData({ showSortModal: true });
+  },
+
+  closeSortModal() {
+    this.setData({ showSortModal: false });
+  },
+
+  onSelectSort(e) {
+    const sortBy = e.currentTarget.dataset.sort;
+    this.setData({ sortBy, showSortModal: false });
+    this._updateDisplay();
   },
 
   _updateDisplay() {
@@ -359,6 +397,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物健康管家 - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

@@ -1,11 +1,20 @@
 <!-- pages/feedback/feedback.wxml -->
 <view class="page">
+  <view class="ui-compact-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">COMMUNITY</text>
+      <text class="ui-compact-title">互动服务</text>
+      <text class="ui-compact-desc">把建议、问题和体验反馈集中到这里，方便一起把小程序变好。</text>
+    </view>
+  </view>
+
   <!-- 分类筛选 -->
   <scroll-view scroll-x class="filter-bar">
     <view class="filter-item {{filter === item.key ? 'active' : ''}}"
       wx:for="{{categories}}" wx:key="key"
       bindtap="setFilter" data-filter="{{item.key}}">
-      <text>{{item.icon}}</text>
+      <image class="ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
       <text>{{item.label}}</text>
     </view>
   </scroll-view>
@@ -23,7 +32,7 @@
   <!-- 留言列表 -->
   <view wx:else class="feedback-list">
     <view wx:if="{{filteredFeedbacks.length === 0}}" class="empty-state">
-      <text class="empty-icon">💬</text>
+      <image class="ui-empty-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFill" />
       <text class="empty-text">还没有留言，来抢沙发吧</text>
     </view>
 
@@ -47,7 +56,8 @@
 
       <!-- 采纳标记 -->
       <view wx:if="{{item.adopted}}" class="adopted-badge">
-        <text>✅ 管理员已采纳</text>
+        <image class="ui-icon-sm" src="/assets/icons/ui/done.png" mode="aspectFit" />
+        <text>管理员已采纳</text>
       </view>
 
       <!-- 内容 -->
@@ -65,10 +75,12 @@
       <!-- 底部操作栏 -->
       <view class="fb-actions">
         <view class="fb-act {{item._liked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item._id}}" data-idx="{{idx}}">
-          <text>{{item._liked ? '❤️' : '🤍'}} {{item.likeCount || 0}}</text>
+          <image class="ui-icon-sm" src="{{item._liked ? '/assets/icons/ui/heart.png' : '/assets/icons/ui/done.png'}}" mode="aspectFit" />
+          <text>{{item.likeCount || 0}}</text>
         </view>
         <view class="fb-act" catchtap="openComment" data-idx="{{idx}}" hover-class="fb-act-hover">
-          <text>💬 评论{{item._commentCount > 0 ? ' ' + item._commentCount : ''}}</text>
+          <image class="ui-icon-sm" src="/assets/icons/ui/comment.png" mode="aspectFit" />
+          <text>评论{{item._commentCount > 0 ? ' ' + item._commentCount : ''}}</text>
         </view>
         <view wx:if="{{isAdmin && (item.category === 'bug' || item.category === 'suggestion')}}"
           class="fb-act admin-act" catchtap="toggleAdopted" data-id="{{item._id}}" data-idx="{{idx}}">
@@ -76,7 +88,8 @@
         </view>
         <view wx:if="{{item._openid === currentOpenid || isAdmin}}"
           class="fb-act delete-act" catchtap="deleteFeedback" data-id="{{item._id}}" data-idx="{{idx}}">
-          <text>🗑 删除</text>
+          <image class="ui-icon-sm" src="/assets/icons/ui/delete.png" mode="aspectFit" />
+          <text>删除</text>
         </view>
       </view>
 
@@ -102,7 +115,7 @@
 
   <!-- 添加按钮 -->
   <view class="add-section">
-    <button class="add-btn" bindtap="openPost">✏️ 写留言</button>
+    <button class="add-btn" bindtap="openPost">写留言</button>
   </view>
 
   <!-- 评论弹窗 -->
@@ -129,7 +142,7 @@
   <view wx:if="{{showNotifyPanel}}" class="mask" catchtap="closeNotifyPanel">
     <view class="sheet" catchtap="stopBubble">
       <view class="sheet-bar"></view>
-      <text class="sheet-title">🔔 消息通知</text>
+      <text class="sheet-title">消息通知</text>
 
       <view wx:if="{{unreadNotifications.length === 0}}" class="notify-empty">
         <text>暂无新消息</text>
@@ -138,7 +151,7 @@
       <view class="notify-list">
         <view class="notify-item" wx:for="{{unreadNotifications}}" wx:key="_id"
           bindtap="goToFeedback" data-fid="{{item.feedbackId}}">
-          <text class="notify-icon">{{item._icon}}</text>
+          <image class="notify-icon ui-icon-sm" src="{{item._iconPath}}" mode="aspectFit" />
           <view class="notify-body">
             <text class="notify-snippet">{{item.snippet}}</text>
             <text class="notify-time">{{item._time}}</text>

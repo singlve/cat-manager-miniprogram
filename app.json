@@ -10,6 +10,7 @@
     "pages/weight-records/weight-records",
     "pages/reminders/reminders",
     "pages/reminder-add/reminder-add",
+    "pages/services/services",
     "pages/mine/mine",
     "pages/about/about",
     "pages/inventory/inventory",
@@ -27,14 +28,14 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#4A90D9",
-    "navigationBarTitleText": "宠物健康管家",
+    "navigationBarBackgroundColor": "#5BA7D8",
+    "navigationBarTitleText": "宠物小管家Plus",
     "navigationBarTextStyle": "white"
   },
   "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#4A90D9",
-    "backgroundColor": "#ffffff",
+    "color": "#A5AFBC",
+    "selectedColor": "#5BA7D8",
+    "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
       {
@@ -48,6 +49,12 @@
         "text": "提醒",
         "iconPath": "assets/icons/remind.png",
         "selectedIconPath": "assets/icons/remind-active.png"
+      },
+      {
+        "pagePath": "pages/services/services",
+        "text": "服务",
+        "iconPath": "assets/icons/service.png",
+        "selectedIconPath": "assets/icons/service-active.png"
       },
       {
         "pagePath": "pages/mine/mine",
@@ -64,9 +71,6 @@
       "desc": "用于添加宠物位置信息"
     }
   },
-  "requiredBackgroundModes": [
-    "audio"
-  ],
   "usingComponents": {},
   "lazyCodeLoading": "requiredComponents"
 }

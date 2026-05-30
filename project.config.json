@@ -1,5 +1,5 @@
 {
-  "description": "宠物健康管家小程序",
+  "description": "宠物小管家Plus小程序",
   "packOptions": {
     "ignore": [
       {
@@ -15,8 +15,68 @@
         "value": "/tests"
       },
       {
+        "type": "folder",
+        "value": "/tmp"
+      },
+      {
         "type": "file",
         "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "package.json"
+      },
+      {
+        "type": "file",
+        "value": ".DS_Store"
+      },
+      {
+        "type": "file",
+        "value": "pages/.DS_Store"
+      },
+      {
+        "type": "file",
+        "value": "cloudfunctions/.DS_Store"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/ui-illustration-pack.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/home-hero.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/profile-mascot.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/admin-dashboard.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/feedback-chat.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/empty-reminder.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/empty-pet.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/illustrations/empty-pet-transparent.png"
+      },
+      {
+        "type": "file",
+        "value": "/assets/empty-cat.png"
+      },
+      {
+        "type": "folder",
+        "value": "/images"
       },
       {
         "type": "file",

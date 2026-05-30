@@ -3,6 +3,6 @@ Page({
   goBack() { wx.navigateBack(); },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '关于宠物健康管家 ℹ️', path: '/pages/about/about' };
+    return { imageUrl: '/assets/logo.png', title: '关于宠物小管家Plus', path: '/pages/about/about' };
   },
 });

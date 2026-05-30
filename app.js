@@ -1,5 +1,5 @@
 // app.js
-// 宠物健康管家 - 应用入口
+// 宠物小管家Plus - 应用入口
 App({
   globalData: {
     userInfo: null,

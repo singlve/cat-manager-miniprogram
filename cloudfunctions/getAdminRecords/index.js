@@ -23,7 +23,7 @@ exports.main = async (event, context) => {
     return { code: -1, msg: '无管理员权限' };
   }
 
-  const { collection, orderBy, orderDesc, limit: reqLimit } = event;
+  const { action, collection, orderBy, orderDesc, limit: reqLimit } = event;
   if (!collection) {
     return { code: -1, msg: '缺少 collection 参数' };
   }
@@ -31,6 +31,30 @@ exports.main = async (event, context) => {
   // 集合白名单校验
   if (ALLOWED_COLLECTIONS.indexOf(collection) === -1) {
     return { code: -1, msg: '不允许查询该集合: ' + collection };
+  }
+
+  if (action === 'delete') {
+    const ids = Array.isArray(event.ids) ? event.ids : (event.id ? [event.id] : []);
+    if (ids.length === 0) {
+      return { code: -1, msg: '缺少 id 参数' };
+    }
+
+    let deleted = 0;
+    const failed = [];
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i];
+      try {
+        await db.collection(collection).doc(id).remove();
+        deleted++;
+      } catch (e) {
+        console.error('[getAdminRecords] delete error:', collection, id, e);
+        failed.push({ id, msg: e.message || '删除失败' });
+      }
+    }
+    if (failed.length > 0) {
+      return { code: -1, msg: '部分记录删除失败', deleted, failed };
+    }
+    return { code: 0, deleted };
   }
 
   // 微信云函数单次查询上限 100 条，自动分页拉取
