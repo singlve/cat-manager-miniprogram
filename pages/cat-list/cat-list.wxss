@@ -366,8 +366,11 @@ page { background: #96CBE8; }
 /* ─── 头像 ─── */
 .cat-avatar-wrap {
   position: relative;
+  width: 120rpx;
+  height: 120rpx;
   margin-right: 24rpx;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .cat-avatar {
@@ -375,6 +378,8 @@ page { background: #96CBE8; }
   height: 120rpx;
   border-radius: 50%;
   border: 4rpx solid #EAF4FB;
+  box-sizing: border-box;
+  display: block;
 }
 
 .cat-avatar-placeholder {
@@ -386,16 +391,18 @@ page { background: #96CBE8; }
   align-items: center;
   justify-content: center;
   border: 4rpx solid #EAF4FB;
+  box-sizing: border-box;
 }
 .avatar-emoji { font-size: 56rpx; }
 
 /* 性别角标 */
 .gender-badge {
   position: absolute;
-  bottom: -2rpx;
-  right: -2rpx;
-  width: 36rpx;
-  height: 36rpx;
+  left: 84rpx;
+  top: 84rpx;
+  width: 40rpx;
+  height: 40rpx;
+  line-height: 40rpx;
   border-radius: 50%;
   font-size: 20rpx;
   font-weight: 700;
@@ -403,6 +410,8 @@ page { background: #96CBE8; }
   align-items: center;
   justify-content: center;
   border: 3rpx solid #fff;
+  box-sizing: border-box;
+  z-index: 2;
 }
 .gender-male { background: #5BA7D8; color: #fff; }
 .gender-female { background: #6BC6B3; color: #fff; }

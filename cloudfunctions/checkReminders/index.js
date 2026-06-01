@@ -24,6 +24,10 @@ function limitThingValue(value) {
   return value.length > 20 ? value.slice(0, 20) : value;
 }
 
+function formatDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 let tokenCache = { token: '', expiresAt: 0 };
 
 function requestJson(method, url, body) {
@@ -111,8 +115,11 @@ exports.main = async (event, context) => {
   let skippedNoTemplate = 0;
   let skippedNoOpenid = 0;
   let skippedInvalidReminder = 0;
+  let skippedCatUnavailable = 0;
+  let skippedAlreadyNotified = 0;
   const failedDetails = [];
   const previewDetails = [];
+  const todayKey = formatDateKey(today);
 
   try {
     // 分页查询所有提醒
@@ -131,6 +138,10 @@ exports.main = async (event, context) => {
 
     for (const r of reminders) {
       if (r.completedAt) continue;
+      if (r.lastNotifiedDate === todayKey) {
+        skippedAlreadyNotified++;
+        continue;
+      }
 
       if (!r.lastDate || !r.intervalDays) {
         skippedInvalidReminder++;
@@ -161,12 +172,21 @@ exports.main = async (event, context) => {
       const r = item.reminder;
       const nextDate = item.nextDate;
       let catName = '你的宠物';
+      let catData = null;
       try {
         const cat = await db.collection('cats').doc(r.catId).get();
-        if (cat.data) catName = cat.data.name;
+        catData = cat.data || null;
       } catch (e) {
         console.warn('[checkReminders] cat lookup failed for', r.catId, e.message);
       }
+
+      if (!catData || catData.status === 'passed_away') {
+        skippedCatUnavailable++;
+        console.warn('[checkReminders] 宠物不存在或已离世，跳过发送:', r._id, r.catId);
+        return;
+      }
+
+      catName = catData.name || catName;
 
       const typeLabel = TYPE_LABEL[r.type] || r.type;
       const daysOverdue = Math.floor((today - nextDate) / (1000 * 60 * 60 * 24));
@@ -216,6 +236,16 @@ exports.main = async (event, context) => {
           lang: 'zh_CN'
         });
         sentCount++;
+        try {
+          await db.collection('reminders').doc(r._id).update({
+            data: {
+              lastNotifiedDate: todayKey,
+              lastNotifiedAt: Date.now()
+            }
+          });
+        } catch (updateErr) {
+          console.warn('[checkReminders] lastNotifiedDate 更新失败:', r._id, updateErr.message);
+        }
       } catch (e) {
         failCount++;
         if (failedDetails.length < 10) {
@@ -236,7 +266,7 @@ exports.main = async (event, context) => {
       await Promise.all(sendTargets.slice(i, i + SEND_CONCURRENCY).map(sendOne));
     }
 
-    console.log(`[checkReminders] 完成 — 检查 ${totalChecked} 条，到期 ${totalDue} 条，本次发送 ${sendTargets.length} 条，发送成功 ${sentCount}，失败 ${failCount}，无模板 ${skippedNoTemplate}，无openid ${skippedNoOpenid}，无效提醒 ${skippedInvalidReminder}`);
+    console.log(`[checkReminders] 完成 — 检查 ${totalChecked} 条，到期 ${totalDue} 条，本次发送 ${sendTargets.length} 条，发送成功 ${sentCount}，失败 ${failCount}，无模板 ${skippedNoTemplate}，无openid ${skippedNoOpenid}，无效提醒 ${skippedInvalidReminder}，宠物不可用 ${skippedCatUnavailable}，今日已通知 ${skippedAlreadyNotified}`);
     return {
       ok: true,
       checked: totalChecked,
@@ -247,6 +277,8 @@ exports.main = async (event, context) => {
       skippedNoTemplate,
       skippedNoOpenid,
       skippedInvalidReminder,
+      skippedCatUnavailable,
+      skippedAlreadyNotified,
       failedDetails,
       previewDetails
     };
