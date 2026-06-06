@@ -1,7 +1,7 @@
 // pages/weight-records/weight-records.js
 // 体重记录列表页：按宠物筛选，查看每条体重记录，支持增删改
 const clouddb = require('../../utils/clouddb.js');
-const { datePart, calcAgo, nowTimeStr, datetime, todayStr } = require('../../utils/util.js');
+const { datePart, calcAgo, nowTimeStr, datetime, todayStr, parseDate } = require('../../utils/util.js');
 
 Page({
   data: {
@@ -27,12 +27,15 @@ Page({
     recordsPageSize: 20,
     hasMoreRecords: false,
     recordsLoading: false,
+    loadError: false,
     records: [],        // 所有体重记录（带宠物名）
     filteredRecords: [], // 筛选后记录
     summaryLatest: '',    // 最新体重
     summaryCount: 0,      // 记录次数
     summaryChangeText: '', // 累计变化文字
     summaryChangeClass: '', // up/down 样式类
+    trendSummaryText: '',
+    trendSummaryClass: '',
     isCurrentCatPassed: false, // 当前选中宠物是否已经离世
     showAddModal: false,
     addCatId: '',
@@ -73,7 +76,7 @@ Page({
   // 加载体重记录（resetPage=true 从头加载，false 加载更多）
   async loadRecords(resetPage) {
     if (resetPage !== false) {
-      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [] });
+      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [], loadError: false });
     }
     if (this.data.recordsLoading) return;
     this.setData({ recordsLoading: true });
@@ -84,7 +87,7 @@ Page({
       const skip = (page - 1) * pageSize;
 
       const newRecords = await clouddb.getWeightRecords({}, { limit: pageSize, skip: skip });
-      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+      newRecords.sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
       const catsMap = {};
       this.data.cats.forEach(c => { catsMap[c._id] = c; });
@@ -106,8 +109,12 @@ Page({
       }, () => { this.applyFilter(); });
     } catch (e) {
       console.error('[weight-records] loadRecords error:', e);
-      this.setData({ recordsLoading: false });
+      this.setData({ recordsLoading: false, loadError: true });
     }
+  },
+
+  retryLoad() {
+    this.loadRecords(true);
   },
 
   // 触底加载更多
@@ -142,6 +149,7 @@ Page({
   applyFilter() {
     const { records, currentCat, currentPeriod, cats } = this.data;
     let filtered = records;
+    let petRecords = records;
 
     // 判断当前选中宠物是否已离世了
     let isCurrentCatPassed = false;
@@ -153,6 +161,7 @@ Page({
     // 宠物筛选
     if (currentCat !== 'all') {
       filtered = filtered.filter(r => r.catId === currentCat);
+      petRecords = petRecords.filter(r => r.catId === currentCat);
     }
 
     // 时间段筛选
@@ -176,9 +185,11 @@ Page({
     let summaryCount = filtered.length;
     let summaryChangeText = '';
     let summaryChangeClass = '';
+    let trendSummaryText = '';
+    let trendSummaryClass = '';
     if (filtered.length >= 2) {
       // 汇总应基于筛选后的全部数据，而非只取首尾
-      const sortedByDate = filtered.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+      const sortedByDate = filtered.slice().sort(function(a, b) { return parseDate(a.date) - parseDate(b.date); });
       summaryLatest = sortedByDate[sortedByDate.length - 1].weight;
       const change = sortedByDate[sortedByDate.length - 1].weight - sortedByDate[0].weight;
       summaryChangeClass = change > 0 ? 'up' : 'down';
@@ -186,7 +197,34 @@ Page({
     } else if (filtered.length === 1) {
       summaryLatest = filtered[0].weight;
     }
-    this.setData({ filteredRecords: filtered, summaryLatest, summaryCount, summaryChangeText, summaryChangeClass, isCurrentCatPassed },
+
+    if (currentCat !== 'all') {
+      const cutoff = new Date();
+      cutoff.setHours(0, 0, 0, 0);
+      cutoff.setDate(cutoff.getDate() - 30);
+      const recent = petRecords
+        .filter(record => parseDate(record.date) >= cutoff)
+        .sort((a, b) => parseDate(a.date) - parseDate(b.date));
+      if (recent.length >= 2) {
+        const change = Number(recent[recent.length - 1].weight) - Number(recent[0].weight);
+        trendSummaryClass = change > 0 ? 'up' : change < 0 ? 'down' : 'stable';
+        trendSummaryText = `近30天变化 ${change > 0 ? '+' : ''}${change.toFixed(2)} kg，共 ${recent.length} 次记录`;
+      } else {
+        trendSummaryClass = 'stable';
+        trendSummaryText = '近30天记录不足，持续记录后可查看趋势';
+      }
+    }
+
+    this.setData({
+      filteredRecords: filtered,
+      summaryLatest,
+      summaryCount,
+      summaryChangeText,
+      summaryChangeClass,
+      trendSummaryText,
+      trendSummaryClass,
+      isCurrentCatPassed
+    },
       () => { wx.nextTick(() => { this.drawChart(); }); }
     );
   },
@@ -211,7 +249,7 @@ Page({
         ctx.scale(dpr, dpr);
 
         // 日期升序排列用于绘图
-        const sorted = filteredRecords.slice().sort(function(a, b) { return new Date(a.date) - new Date(b.date); });
+        const sorted = filteredRecords.slice().sort(function(a, b) { return parseDate(a.date) - parseDate(b.date); });
 
         // 布局
         const pad = { top: 28, right: 16, bottom: 46, left: 52 };
@@ -398,10 +436,20 @@ Page({
   },
 
   async deleteRecord(e) {
-    const confirmed = await new Promise(r =>
+    const firstConfirmed = await new Promise(r =>
       wx.showModal({ title: '确认删除', content: '确定要删除这条记录吗？', success: res => r(res.confirm) })
     );
-    if (!confirmed) return;
+    if (!firstConfirmed) return;
+    const secondConfirmed = await new Promise(r =>
+      wx.showModal({
+        title: '再次确认',
+        content: '删除后无法恢复，请再次确认是否删除。',
+        confirmText: '确认删除',
+        confirmColor: '#F36B6B',
+        success: res => r(res.confirm)
+      })
+    );
+    if (!secondConfirmed) return;
     await clouddb.deleteWeightRecord(e.currentTarget.dataset.id);
     this.loadRecords();
     wx.showToast({ title: '已删除', icon: 'success' });
@@ -412,7 +460,11 @@ Page({
   },
 
   onShareAppMessage() {
-    const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/weight-records/weight-records?catId=' + (this.data.catId || '') };
+    const current = this.data.catOptions.find(cat => cat.key === this.data.currentCat);
+    const title = current && current.key !== 'all' ? `看看${current.label}的体重变化` : '持续记录宠物的体重成长趋势';
+    const path = current && current.key !== 'all'
+      ? `/pages/weight-records/weight-records?catId=${current.key}`
+      : '/pages/weight-records/weight-records';
+    return { imageUrl: '/assets/logo.png', title, path };
   },
 });

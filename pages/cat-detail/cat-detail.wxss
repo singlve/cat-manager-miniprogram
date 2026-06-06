@@ -216,6 +216,121 @@
 .quick-btn.checkup { background: #e8f5e9; }
 .quick-hint { font-size: 22rpx; color: #bbb; text-align: center; margin-top: 16rpx; display: block; }
 
+/* ─── 照护概览 ─── */
+.care-section {
+  padding-bottom: 24rpx;
+}
+
+.care-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18rpx;
+}
+
+.care-item {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  min-width: 0;
+  padding: 18rpx;
+  border-radius: 22rpx;
+  background: #F7F9FB;
+  border: 1rpx solid #E8EEF4;
+  box-sizing: border-box;
+}
+
+.care-item.good {
+  background: #F4FBFA;
+  border-color: rgba(107, 198, 179, 0.22);
+}
+
+.care-item.warning {
+  background: #FFF8EE;
+  border-color: rgba(255, 184, 107, 0.30);
+}
+
+.care-icon-wrap {
+  width: 58rpx;
+  height: 58rpx;
+  border-radius: 18rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #EAF4FB, #EAF7F5);
+}
+
+.care-icon {
+  width: 38rpx;
+  height: 38rpx;
+}
+
+.care-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.care-arrow {
+  flex-shrink: 0;
+  color: #5BA7D8;
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.care-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10rpx;
+  margin-bottom: 5rpx;
+}
+
+.care-name {
+  font-size: 26rpx;
+  font-weight: 900;
+  color: #243044;
+}
+
+.care-status {
+  flex-shrink: 0;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  font-size: 19rpx;
+  font-weight: 900;
+}
+
+.care-status.good {
+  color: #2F9A83;
+  background: #DFF4EF;
+}
+
+.care-status.warning {
+  color: #B66A15;
+  background: #FFF0D8;
+}
+
+.care-status.empty {
+  color: #8B98A8;
+  background: #EEF3F7;
+}
+
+.care-date {
+  display: block;
+  font-size: 22rpx;
+  font-weight: 800;
+  color: #3F5268;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.care-ago {
+  display: block;
+  margin-top: 3rpx;
+  font-size: 21rpx;
+  color: #8B98A8;
+}
+
 /* ─── 空状态 ─── */
 .empty-records {
   display: flex;
@@ -499,6 +614,16 @@
   padding: 20rpx 24rpx;
   font-size: 28rpx;
   color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.field-chevron {
+  width: 11rpx; height: 11rpx;
+  margin: -5rpx 4rpx 0 12rpx;
+  border-right: 3rpx solid #5BA7D8;
+  border-bottom: 3rpx solid #5BA7D8;
+  transform: rotate(45deg);
 }
 .wm-input {
   background: #f5f6fa;

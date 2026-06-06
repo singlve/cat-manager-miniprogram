@@ -30,6 +30,7 @@ Page({
     loading: false,
     searched: false,
     errorMsg: '',
+    showSearchTypePicker: false,
 
     showEditor: false,
     editingUser: null,
@@ -52,6 +53,21 @@ Page({
 
   onSearchTypeChange(e) {
     this.setData({ searchType: parseInt(e.detail.value) });
+  },
+
+  openSearchTypePicker() {
+    this.setData({ showSearchTypePicker: true });
+  },
+
+  closeSearchTypePicker() {
+    this.setData({ showSearchTypePicker: false });
+  },
+
+  selectSearchType(e) {
+    this.setData({
+      searchType: parseInt(e.currentTarget.dataset.index),
+      showSearchTypePicker: false
+    });
   },
 
   onKeywordInput(e) {

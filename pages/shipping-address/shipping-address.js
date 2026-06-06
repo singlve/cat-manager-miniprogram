@@ -135,13 +135,22 @@ Page({
   // ── 删除地址 ──
   async deleteAddress(e) {
     const id = e.currentTarget.dataset.id;
-    const res = await new Promise(r => wx.showModal({
-      title: '确认删除',
-      content: '删除后不可恢复',
+    const first = await new Promise(r => wx.showModal({
+      title: '删除收货地址',
+      content: '删除后不可恢复，后续兑换实物商品时将无法继续使用。',
+      confirmText: '继续',
       confirmColor: '#e74c3c',
       success: r
     }));
-    if (!res.confirm) return;
+    if (!first.confirm) return;
+    const second = await new Promise(r => wx.showModal({
+      title: '再次确认删除',
+      content: '请再次确认是否删除这条收货地址。',
+      confirmText: '确认删除',
+      confirmColor: '#F36B6B',
+      success: r
+    }));
+    if (!second.confirm) return;
 
     try {
       await clouddb.deleteShippingAddress(id);

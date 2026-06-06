@@ -367,8 +367,24 @@ Page({
     var fb = this.data.feedbacks[idx];
     if (!fb) return;
 
+    var firstConfirmed = await new Promise(function(r) {
+      wx.showModal({
+        title: '删除留言',
+        content: '留言及其评论、点赞信息会一并删除。',
+        confirmText: '继续',
+        confirmColor: '#F36B6B',
+        success: function(res) { r(res.confirm); }
+      });
+    });
+    if (!firstConfirmed) return;
     var confirmed = await new Promise(function(r) {
-      wx.showModal({ title: '确认删除', content: '确定要删除这条留言吗？', success: function(res) { r(res.confirm); } });
+      wx.showModal({
+        title: '再次确认删除',
+        content: '删除后无法恢复，请再次确认是否删除。',
+        confirmText: '确认删除',
+        confirmColor: '#F36B6B',
+        success: function(res) { r(res.confirm); }
+      });
     });
     if (!confirmed) return;
 
@@ -443,7 +459,7 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 留言板', path: '/pages/feedback/feedback' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   }
 });
 

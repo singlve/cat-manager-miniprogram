@@ -114,7 +114,10 @@
       <!-- 收货地址（仅实物） -->
       <view wx:if="{{confirmTarget.itemType === 'physical'}}" class="addr-section">
         <text class="form-label">收货地址</text>
-        <view wx:if="{{addresses.length === 0}}" class="addr-empty" catchtap="goShippingAddress">请先添加收货地址 ></view>
+        <view wx:if="{{addresses.length === 0}}" class="addr-empty" catchtap="goShippingAddress">
+          <text>请先添加收货地址</text>
+          <view class="inline-chevron"></view>
+        </view>
         <view wx:else class="addr-list">
           <view
             wx:for="{{addresses}}" wx:for-item="a" wx:key="_id"

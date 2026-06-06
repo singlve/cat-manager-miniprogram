@@ -9,8 +9,16 @@ page { background: #f5f6fa; }
 .search-type {
   flex-shrink: 0;
   padding: 14rpx 16rpx;
-  background: #f0f2f7; border-radius: 8rpx;
-  font-size: 26rpx; color: #333;
+  background: #EAF4FB; border-radius: 18rpx;
+  font-size: 26rpx; color: #2F8DB8;
+  display: flex; align-items: center; gap: 12rpx;
+  font-weight: 800;
+}
+.search-chevron {
+  width: 9rpx; height: 9rpx; margin-top: -4rpx;
+  border-right: 3rpx solid #5BA7D8;
+  border-bottom: 3rpx solid #5BA7D8;
+  transform: rotate(45deg);
 }
 
 .search-input {
@@ -126,3 +134,37 @@ page { background: #f5f6fa; }
 .sheet-btns .confirm.disabled { opacity: .4; }
 .sheet-btns .cancel::after,
 .sheet-btns .confirm::after { border: none; }
+
+.select-mask {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 36rpx; box-sizing: border-box;
+  background: rgba(36,48,68,.48);
+}
+.select-panel {
+  width: 100%; padding: 30rpx; box-sizing: border-box;
+  border-radius: 30rpx;
+  background: linear-gradient(180deg, #F2FBFA, #FFFFFF);
+  box-shadow: 0 28rpx 70rpx rgba(24,76,108,.22);
+}
+.select-accent {
+  width: 64rpx; height: 7rpx; margin: 0 auto 22rpx;
+  border-radius: 999rpx; background: linear-gradient(90deg, #5BA7D8, #6BC6B3);
+}
+.select-title { display: block; margin-bottom: 22rpx; text-align: center; color: #243044; font-size: 31rpx; font-weight: 900; }
+.select-option {
+  min-height: 74rpx; margin-bottom: 12rpx; padding: 0 22rpx;
+  display: flex; align-items: center; justify-content: space-between;
+  box-sizing: border-box; border: 1rpx solid #E8EEF4; border-radius: 18rpx;
+  background: #FFFFFF; color: #536579; font-size: 27rpx; font-weight: 800;
+}
+.select-option.active { border-color: rgba(91,167,216,.45); background: linear-gradient(135deg, #EAF4FB, #EAF7F5); color: #2F8DB8; }
+.select-check {
+  width: 13rpx; height: 8rpx;
+  border-left: 3rpx solid #5BA7D8; border-bottom: 3rpx solid #5BA7D8;
+  transform: rotate(-45deg);
+}
+.select-cancel {
+  margin-top: 6rpx; padding: 18rpx 0; border-radius: 999rpx;
+  background: #EEF4F8; color: #6E7A8A; font-size: 27rpx; font-weight: 800; text-align: center;
+}

@@ -58,8 +58,15 @@
     <text>加载中...</text>
   </view>
 
+  <view wx:elif="{{isLoggedIn && loadError && cats.length === 0}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">暂时无法加载宠物档案</text>
+    <text class="load-error-desc">请检查网络后重试，已有数据不会丢失</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+  </view>
+
   <!-- 空状态（已登录、加载完成、且无猫） -->
-  <view wx:elif="{{isLoggedIn && !loading && cats.length === 0}}" class="empty">
+  <view wx:elif="{{isLoggedIn && !loading && !loadError && cats.length === 0}}" class="empty">
     <image class="empty-all-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
     <text class="empty-text">还没有添加宠物</text>
     <text class="empty-hint">添加你的第一只宠物，开始记录它的健康成长</text>
@@ -83,8 +90,45 @@
       </view>
     </view>
     <view class="sort-btn" bindtap="onShowSort">
-      <text class="sort-icon">↕</text>
+      <view class="sort-icon">
+        <view class="sort-arrow sort-arrow-up"></view>
+        <view class="sort-arrow sort-arrow-down"></view>
+      </view>
       <text class="sort-label">排序</text>
+    </view>
+  </view>
+
+  <view wx:if="{{isLoggedIn && cats.length > 0 && recentActivities.length > 0}}" class="activity-panel {{recentActivitiesExpanded ? 'expanded' : 'collapsed'}}">
+    <view class="activity-head" bindtap="toggleRecentActivities">
+      <view class="activity-head-copy">
+        <text class="activity-title">近期动态</text>
+        <text wx:if="{{recentActivitiesExpanded}}" class="activity-subtitle">健康记录与待办提醒</text>
+      </view>
+      <view class="activity-head-action">
+        <text class="activity-count">{{recentActivities.length}}</text>
+        <view class="activity-toggle-btn {{recentActivitiesExpanded ? 'up' : ''}}">
+          <view class="activity-toggle-chevron"></view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{recentActivitiesExpanded}}" class="activity-list">
+      <view
+        wx:for="{{recentActivities}}"
+        wx:key="id"
+        class="activity-item {{item.tone}}"
+        bindtap="goRecentActivity"
+        data-kind="{{item.kind}}"
+        data-catid="{{item.catId}}"
+      >
+        <view class="activity-icon-wrap">
+          <image class="activity-icon ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
+        </view>
+        <view class="activity-copy">
+          <text class="activity-item-title">{{item.title}}</text>
+          <text class="activity-item-desc">{{item.desc}}</text>
+        </view>
+        <text class="activity-arrow">›</text>
+      </view>
     </view>
   </view>
 
@@ -99,7 +143,8 @@
   <view wx:if="{{displayCats.length > 0}}" class="cat-list">
     <!-- Demo 水印提示（仅未登录且有 demo 数据时显示） -->
     <view wx:if="{{!isLoggedIn}}" class="demo-watermark">
-      <text>👀 以下为示例展示，登录后可管理自己的宠物</text>
+      <image class="demo-watermark-icon ui-icon-sm" src="/assets/icons/ui/about.png" mode="aspectFit" />
+      <text>以下为示例展示，登录后可管理自己的宠物</text>
     </view>
     <view wx:for="{{displayCats}}" wx:key="_id" class="cat-card type-{{item.avatar ? 'has-avatar' : 'no-avatar'}}" bindtap="goCatDetail" data-id="{{item._id}}">
       <!-- 左侧色条 -->
@@ -219,7 +264,7 @@
       <view class="quick-modal-body">
         <text class="quick-modal-label">日期</text>
         <picker mode="date" value="{{quickDate}}" bindchange="onQuickDateChange">
-          <view class="quick-picker">{{quickDate}} ▾</view>
+          <view class="quick-picker"><text>{{quickDate}}</text><view class="quick-picker-chevron"></view></view>
         </picker>
       </view>
       <view class="quick-modal-btns">

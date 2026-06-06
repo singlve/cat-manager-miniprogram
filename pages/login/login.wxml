@@ -20,7 +20,9 @@
     <!-- 其他方式 -->
     <view class="other-login-toggle" bindtap="toggleOtherLogin">
       <text>其他方式登录</text>
-      <text class="toggle-arrow {{showOtherLogin ? 'is-open' : ''}}">⌄</text>
+      <view class="toggle-arrow {{showOtherLogin ? 'is-open' : ''}}">
+        <view class="toggle-chevron"></view>
+      </view>
     </view>
 
     <!-- 手机号密码登录（折叠区） -->
@@ -48,32 +50,34 @@
 </view>
 
 <!-- 完善资料弹窗（新用户绑定手机后弹出） -->
-<view wx:if="{{showProfileSetup}}" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:9998;">
-  <view style="position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:32rpx 32rpx 0 0;padding:16rpx 48rpx 80rpx;z-index:9999;" class="bind-sheet" catchtap="stopBubble">
-    <view style="width:80rpx;height:8rpx;background:#ddd;border-radius:4rpx;margin:0 auto 24rpx;"></view>
-    <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;display:block;text-align:center;margin-bottom:12rpx;">完善资料</text>
-    <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;">设置你的头像和昵称</text>
+<view wx:if="{{showProfileSetup}}" class="profile-setup-mask">
+  <view class="profile-setup-panel" catchtap="stopBubble">
+    <view class="profile-setup-accent"></view>
+    <text class="profile-setup-kicker">WELCOME</text>
+    <text class="profile-setup-title">完善资料</text>
+    <text class="profile-setup-desc">设置头像和昵称，让照护记录更有归属感。</text>
 
     <!-- 头像选择 -->
-    <view style="display:flex;flex-direction:column;align-items:center;margin-bottom:32rpx;">
+    <view class="profile-avatar-section">
       <view class="profile-avatar-wrap">
         <view class="avatar-ring"></view>
         <button class="avatar-choose-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
           <image src="{{profileAvatar || '/images/default-avatar.svg'}}" mode="aspectFill" class="avatar-preview" />
         </button>
       </view>
-      <text style="font-size:26rpx;color:#5BA7D8;margin-top:16rpx;">点击选择头像</text>
+      <text class="profile-avatar-hint">点击选择头像</text>
     </view>
 
     <!-- 昵称输入 -->
-    <view style="background:#f5f6fa;border-radius:16rpx;padding:24rpx;margin-bottom:24rpx;">
+    <view class="profile-nickname-field">
       <input type="nickname" placeholder="请输入昵称" bindinput="profileNicknameInput" value="{{profileNickname}}"
-        style="font-size:30rpx;color:#333;width:100%;" />
+        class="profile-nickname-input" placeholder-style="color:#A5AFBC;" />
     </view>
 
-    <view style="width:100%;background:linear-gradient(135deg,#5BA7D8,#6BC6B3);color:#fff;font-size:30rpx;font-weight:600;border-radius:50rpx;padding:26rpx 0;text-align:center;" bindtap="saveProfile">完成</view>
-    <view style="text-align:center;margin-top:20rpx;">
-      <text style="font-size:26rpx;color:#999;" bindtap="skipProfileSetup">稍后再说 ›</text>
+    <view class="profile-setup-confirm" bindtap="saveProfile">完成</view>
+    <view class="profile-setup-skip" bindtap="skipProfileSetup">
+      <text>稍后再说</text>
+      <view class="profile-skip-chevron"></view>
     </view>
   </view>
 </view>

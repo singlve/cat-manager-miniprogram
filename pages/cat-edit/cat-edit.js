@@ -94,6 +94,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: "编辑宠物信息 - 宠物小管家Plus", path: "/pages/cat-edit/cat-edit" };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 }));

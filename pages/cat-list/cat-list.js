@@ -1,7 +1,7 @@
 // pages/cat-list/cat-list.js
 // 宠物列表页
 const clouddb = require('../../utils/clouddb.js');
-const { calcAgeDetail, calcDaysBetween, formatBirthdayRow } = require('../../utils/util.js');
+const { calcAgeDetail, calcDaysBetween, formatBirthdayRow, parseDate } = require('../../utils/util.js');
 
 // ─── Demo 数据（未登录时展示） ───
 function getDemoCats() {
@@ -53,7 +53,7 @@ function getDemoCats() {
 
 Page({
   data: {
-    isOnline: true,
+    isOnline: true, loadError: false,
     cats: [], displayCats: [], loading: false, isLoggedIn: false,
     filterSpecies: 'all', sortBy: 'default',
     speciesCounts: { all: 0, cat: 0, dog: 0 },
@@ -74,6 +74,8 @@ Page({
       { value: 'passedLast', label: '已离世放最后' }
     ],
     announcement: null,
+    recentActivities: [],
+    recentActivitiesExpanded: false,
     banners: [
       {
         iconPath: '/assets/icons/ui/pet.png',
@@ -132,13 +134,16 @@ Page({
   async loadAll() {
     // 只有在没有任何宠物数据展示时才显示 loading
     if (this.data.displayCats.length === 0) {
-      this.setData({ loading: true });
+      this.setData({ loading: true, loadError: false });
     }
     try {
-      const cats = await clouddb.getCats();
+      const [cats, allRecords, reminders] = await Promise.all([
+        clouddb.getCats(),
+        clouddb.getRecords(),
+        clouddb.getReminders()
+      ]);
 
       // 批量获取所有宠物的健康记录，按 catId 分组取最近日期
-      const allRecords = await clouddb.getRecords();
       const latestRecordByCat = {};
       for (const r of allRecords) {
         const existing = latestRecordByCat[r.catId];
@@ -180,7 +185,7 @@ Page({
         let daysSinceRecord;
         const latestDate = latestRecordByCat[cat._id];
         if (latestDate) {
-          daysSinceRecord = Math.floor((Date.now() - new Date(latestDate).getTime()) / 86400000);
+          daysSinceRecord = Math.floor((Date.now() - parseDate(latestDate).getTime()) / 86400000);
         }
 
         return Object.assign({}, cat, {
@@ -201,12 +206,19 @@ Page({
         if (s === 'cat') counts.cat++;
         else if (s === 'dog') counts.dog++;
       });
-      this.setData({ cats: catsWithExtras, loading: false, speciesCounts: counts });
+      const catNameMap = {};
+      catsWithExtras.forEach(cat => { catNameMap[cat._id] = cat.name; });
+      const recentActivities = this._buildRecentActivities(allRecords, reminders, catNameMap);
+      this.setData({ cats: catsWithExtras, loading: false, speciesCounts: counts, recentActivities });
       this._updateDisplay();
     } catch (e) {
       console.error('[cat-list] loadAll error:', e);
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadError: true });
     }
+  },
+
+  retryLoad() {
+    this.loadAll();
   },
 
   addCat() {
@@ -247,6 +259,74 @@ Page({
   goCatDetail(e) {
     // 不拦截：demo 猫可点击查看详情
     wx.navigateTo({ url: `/pages/cat-detail/cat-detail?id=${e.currentTarget.dataset.id}` });
+  },
+
+  goRecentActivity(e) {
+    const kind = e.currentTarget.dataset.kind;
+    const catId = e.currentTarget.dataset.catid;
+    if (kind === 'reminder') {
+      wx.switchTab({ url: '/pages/reminders/reminders' });
+      return;
+    }
+    if (catId) wx.navigateTo({ url: `/pages/cat-detail/cat-detail?id=${catId}` });
+  },
+
+  toggleRecentActivities() {
+    this.setData({ recentActivitiesExpanded: !this.data.recentActivitiesExpanded });
+  },
+
+  _buildRecentActivities(records, reminders, catNameMap) {
+    const typeMeta = {
+      bath: { label: '洗澡', iconPath: '/assets/icons/ui/bath.png' },
+      deworm: { label: '驱虫', iconPath: '/assets/icons/ui/deworm.png' },
+      vaccine: { label: '免疫', iconPath: '/assets/icons/ui/vaccine.png' },
+      checkup: { label: '体检', iconPath: '/assets/icons/ui/checkup.png' },
+      claw: { label: '修剪指甲', iconPath: '/assets/icons/ui/claw.png' },
+      other: { label: '其他', iconPath: '/assets/icons/ui/other.png' }
+    };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueItems = (reminders || [])
+      .filter(reminder => !reminder.completedAt && catNameMap[reminder.catId] && reminder.lastDate && reminder.intervalDays)
+      .map(reminder => {
+        const next = parseDate(String(reminder.lastDate).slice(0, 10));
+        next.setDate(next.getDate() + Number(reminder.intervalDays));
+        const daysUntil = Math.ceil((next - today) / 86400000);
+        const meta = typeMeta[reminder.type] || typeMeta.other;
+        return {
+          id: `reminder_${reminder._id}`,
+          kind: 'reminder',
+          catId: reminder.catId,
+          iconPath: meta.iconPath,
+          title: `${catNameMap[reminder.catId]}的${meta.label}提醒`,
+          desc: daysUntil < 0 ? `已逾期 ${Math.abs(daysUntil)} 天` : daysUntil === 0 ? '今天需要完成' : `${daysUntil} 天后到期`,
+          tone: daysUntil <= 0 ? 'danger' : 'warning',
+          sortValue: daysUntil
+        };
+      })
+      .filter(item => item.sortValue <= 7)
+      .sort((a, b) => a.sortValue - b.sortValue)
+      .slice(0, 2);
+
+    const recordItems = (records || [])
+      .filter(record => record.date && catNameMap[record.catId])
+      .sort((a, b) => parseDate(b.date) - parseDate(a.date))
+      .slice(0, 3)
+      .map(record => {
+        const meta = typeMeta[record.type] || typeMeta.other;
+        return {
+          id: `record_${record._id}`,
+          kind: 'record',
+          catId: record.catId,
+          iconPath: meta.iconPath,
+          title: `${catNameMap[record.catId]}完成了${meta.label}`,
+          desc: String(record.date).slice(0, 10),
+          tone: 'normal',
+          sortValue: parseDate(record.date).getTime()
+        };
+      });
+
+    return dueItems.concat(recordItems).slice(0, 4);
   },
 
   // ─── 速记：选类型 → 弹窗选日期 → 直接保存 ───
@@ -365,7 +445,7 @@ Page({
       sorted.sort((a, b) => {
         const aDate = a.createdAt || a.adoptedDate || a.birthday || '';
         const bDate = b.createdAt || b.adoptedDate || b.birthday || '';
-        return new Date(bDate) - new Date(aDate);
+        return parseDate(bDate) - parseDate(aDate);
       });
     } else if (sortBy === 'passedLast') {
       sorted.sort((a, b) => {

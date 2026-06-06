@@ -222,6 +222,10 @@ page { background: #f5f6fa; }
 .addr-empty {
   background: #f8f8f8; padding: 24rpx; border-radius: 12rpx;
   text-align: center; font-size: 26rpx; color: #5BA7D8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
 }
 .addr-list { max-height: 280rpx; overflow-y: auto; }
 .addr-opt {
@@ -500,7 +504,9 @@ page {
 }
 
 .sheet {
-  background: #F7F9FB;
+  background: linear-gradient(180deg, #F2FBFA, #F7F9FB);
+  border: 1rpx solid rgba(255,255,255,.82);
+  box-shadow: 0 -20rpx 60rpx rgba(24, 76, 108, .18);
 }
 
 .sheet-title,
@@ -521,6 +527,7 @@ page {
 .addr-opt {
   background: #fff;
   border: 1rpx solid #E8EEF4;
+  border-radius: 18rpx;
 }
 
 .qty-btn {
@@ -544,6 +551,7 @@ page {
 .s-cancel {
   background: #EEF4F8;
   color: #6E7A8A;
+  border: 1rpx solid #E8EEF4;
 }
 
 .track-header {
@@ -569,4 +577,12 @@ page {
 .track-step.latest .track-step-dot {
   background: #5BA7D8;
   border-color: #D7EDF9;
+}
+
+.inline-chevron {
+  width: 10rpx;
+  height: 10rpx;
+  border-top: 3rpx solid #5BA7D8;
+  border-right: 3rpx solid #5BA7D8;
+  transform: rotate(45deg);
 }

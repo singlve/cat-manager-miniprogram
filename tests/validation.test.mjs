@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // ============================================================
 // 校验逻辑：猫咪保存时的日期约束链
@@ -179,5 +181,13 @@ describe('_openid 过滤', () => {
   it('null/undefined 原样返回', () => {
     expect(filterOpenId(null)).toBeNull();
     expect(filterOpenId(undefined)).toBeUndefined();
+  });
+});
+
+describe('体重记录筛选回归', () => {
+  it('applyFilter 将局部 filtered 写入 filteredRecords', () => {
+    const source = readFileSync(resolve(import.meta.dirname, '../pages/weight-records/weight-records.js'), 'utf8');
+    expect(source).toContain('filteredRecords: filtered');
+    expect(source).not.toMatch(/\n\s+filteredRecords,\n\s+summaryLatest/);
   });
 });

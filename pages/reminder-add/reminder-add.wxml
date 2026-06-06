@@ -24,7 +24,7 @@
         <view class="picker-value {{selectedCatId ? '' : 'placeholder'}}">
           {{selectedCatName || '请选择宠物'}}
         </view>
-        <text class="picker-arrow">⌄</text>
+        <view class="picker-arrow"><view class="picker-chevron"></view></view>
       </view>
     </view>
 

@@ -1,10 +1,37 @@
 // utils/util.js
 /**
+ * 兼容微信 iOS 的日期解析。
+ * 旧数据可能是 YYYY-MM-DD HH:mm:ss，不能直接交给 iOS 的 Date 构造函数。
+ */
+function parseDate(value) {
+  if (value instanceof Date) return new Date(value.getTime());
+  if (typeof value === 'number') return new Date(value);
+  if (!value) return new Date(NaN);
+
+  const text = String(value).trim();
+  const localMatch = text.match(
+    /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?(?:\.(\d{1,3}))?)?$/
+  );
+  if (localMatch) {
+    return new Date(
+      Number(localMatch[1]),
+      Number(localMatch[2]) - 1,
+      Number(localMatch[3]),
+      Number(localMatch[4] || 0),
+      Number(localMatch[5] || 0),
+      Number(localMatch[6] || 0),
+      Number((localMatch[7] || '0').padEnd(3, '0'))
+    );
+  }
+  return new Date(text);
+}
+
+/**
  * 格式化日期为 YYYY-MM-DD
  */
 function formatDate(date) {
   if (!date) return '';
-  const d = new Date(date);
+  const d = parseDate(date);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -16,7 +43,7 @@ function formatDate(date) {
  */
 function calcNextDate(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return '';
-  const d = new Date(lastDate);
+  const d = parseDate(lastDate);
   d.setDate(d.getDate() + intervalDays);
   return formatDate(d);
 }
@@ -26,7 +53,7 @@ function calcNextDate(lastDate, intervalDays) {
  */
 function isDue(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return false;
-  const last = new Date(lastDate);
+  const last = parseDate(lastDate);
   const next = new Date(last);
   next.setDate(next.getDate() + intervalDays);
   return new Date() >= next;
@@ -37,7 +64,7 @@ function isDue(lastDate, intervalDays) {
  */
 function getOverdueDays(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return 0;
-  const last = new Date(lastDate);
+  const last = parseDate(lastDate);
   const next = new Date(last);
   next.setDate(next.getDate() + intervalDays);
   const now = new Date();
@@ -163,8 +190,8 @@ function nowTimeStr() {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// ─── 日期 + 时间拼接 → YYYY-MM-DD HH:mm:00 ───
-function datetime(date, time) { return `${date || ''} ${time || '00:00'}:00`; }
+// ─── 日期 + 时间拼接 → iOS 兼容的 YYYY-MM-DDTHH:mm:00 ───
+function datetime(date, time) { return `${date || ''}T${time || '00:00'}:00`; }
 
 // ─── 签到积分计算 ───
 function calcCheckInPoints(streak) {
@@ -459,6 +486,7 @@ function isAdmin() {
 }
 
 module.exports = {
+  parseDate,
   formatDate,
   calcNextDate,
   isDue,

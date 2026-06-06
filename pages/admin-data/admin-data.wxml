@@ -16,9 +16,10 @@
 
   <!-- 搜索栏 -->
   <view class="search-bar">
-    <picker mode="selector" range="{{searchLabels}}" bindchange="onSearchTypeChange" class="search-type">
-      <text>{{searchLabels[searchType]}} ▾</text>
-    </picker>
+    <view class="search-type" bindtap="openSearchTypePicker">
+      <text>{{searchLabels[searchType]}}</text>
+      <view class="search-chevron"></view>
+    </view>
     <input class="search-input"
            placeholder="{{searchType === 0 ? '输入昵称模糊搜索' : '输入手机号搜索'}}"
            value="{{keyword}}"
@@ -64,6 +65,24 @@
   <view wx:if="{{!searched && !loading}}" class="empty-state">
     <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
     <text class="empty-text">输入昵称或手机号搜索用户</text>
+  </view>
+
+  <view wx:if="{{showSearchTypePicker}}" class="select-mask" catchtap="closeSearchTypePicker">
+    <view class="select-panel" catchtap="stopBubble">
+      <view class="select-accent"></view>
+      <text class="select-title">选择搜索范围</text>
+      <view
+        wx:for="{{searchLabels}}"
+        wx:key="*this"
+        class="select-option {{searchType === index ? 'active' : ''}}"
+        data-index="{{index}}"
+        bindtap="selectSearchType"
+      >
+        <text>{{item}}</text>
+        <view wx:if="{{searchType === index}}" class="select-check"></view>
+      </view>
+      <view class="select-cancel" bindtap="closeSearchTypePicker">取消</view>
+    </view>
   </view>
 
   <!-- 编辑面板 -->

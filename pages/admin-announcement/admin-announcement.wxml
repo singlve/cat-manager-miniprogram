@@ -13,6 +13,13 @@
 
     <!-- 发布 -->
     <view class="post-box">
+      <view class="post-head">
+        <view>
+          <text class="post-title">发布新公告</text>
+          <text class="post-desc">启用后会同步展示在首页。</text>
+        </view>
+        <text class="post-count">{{content.length || 0}}/200</text>
+      </view>
       <textarea class="post-input" placeholder="输入公告内容..." value="{{content}}" bindinput="onContentInput" maxlength="200" auto-height/>
       <button class="post-btn {{posting ? 'disabled' : ''}}" bindtap="doPost">{{posting ? '发布中...' : '发布公告'}}</button>
     </view>
@@ -23,7 +30,10 @@
       <view wx:if="{{list.length === 0}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">暂无公告</text></view>
       <view class="card" wx:for="{{list}}" wx:key="_id">
         <view class="card-top">
-          <view class="status-dot {{item.isActive ? 'active' : ''}}"></view>
+          <view class="status-chip {{item.isActive ? 'active' : ''}}">
+            <view class="status-dot"></view>
+            <text>{{item.isActive ? '展示中' : '已停用'}}</text>
+          </view>
           <text class="card-content">{{item.content}}</text>
         </view>
         <view class="card-actions">

@@ -132,7 +132,10 @@
 
     <!-- 展开/收起月历 -->
     <view class="calendar-toggle" bindtap="toggleCalendar">
-      <text>{{showFullCalendar ? '收起完整日历 ▲' : '展开完整日历 ▼'}}</text>
+      <text>{{showFullCalendar ? '收起完整日历' : '展开完整日历'}}</text>
+      <view class="calendar-toggle-icon {{showFullCalendar ? 'is-open' : ''}}">
+        <view class="calendar-toggle-chevron"></view>
+      </view>
     </view>
 
     <!-- 完整月历 -->

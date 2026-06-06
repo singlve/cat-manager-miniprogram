@@ -1,6 +1,7 @@
 // pages/health-records/health-records.js
 // 健康记录列表页：查看所有宠物的记录，支持按宠物和类型筛选
 const clouddb = require('../../utils/clouddb.js');
+const { parseDate } = require('../../utils/util.js');
 
 Page({
   data: {
@@ -24,6 +25,7 @@ Page({
     recordsPageSize: 20,
     hasMoreRecords: false,
     recordsLoading: false,
+    loadError: false,
     showEditModal: false,
     editId: '',
     editType: '',
@@ -59,7 +61,7 @@ Page({
   // 加载健康记录（resetPage=true 从头加载，false 加载更多）
   async loadRecords(resetPage) {
     if (resetPage !== false) {
-      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [] });
+      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [], loadError: false });
     }
     if (this.data.recordsLoading) return;
     this.setData({ recordsLoading: true });
@@ -70,7 +72,7 @@ Page({
       const skip = (page - 1) * pageSize;
 
       const newRecords = await clouddb.getRecords({}, { limit: pageSize, skip: skip });
-      newRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+      newRecords.sort((a, b) => parseDate(b.date) - parseDate(a.date));
 
       // 为每条记录关联宠物信息
       const catsMap = {};
@@ -91,8 +93,12 @@ Page({
       }, () => { this.applyFilter(); });
     } catch (e) {
       console.error('[health-records] loadRecords error:', e);
-      this.setData({ recordsLoading: false });
+      this.setData({ recordsLoading: false, loadError: true });
     }
+  },
+
+  retryLoad() {
+    this.loadRecords(true);
   },
 
   // 触底加载更多
@@ -147,6 +153,10 @@ Page({
     this.setData({ editType: ['bath', 'deworm', 'vaccine', 'checkup'][e.detail.value] });
   },
 
+  selectEditType(e) {
+    this.setData({ editType: e.currentTarget.dataset.type });
+  },
+
   async saveEdit() {
     if (this._saving) return;
     const { editId, editDate, editNote, editType } = this.data;
@@ -180,10 +190,20 @@ Page({
   cancelEdit() { this.setData({ showEditModal: false }); },
 
   async deleteRecord(e) {
-    const confirmed = await new Promise(r =>
+    const firstConfirmed = await new Promise(r =>
       wx.showModal({ title: '确认删除', content: '确定要删除这条记录吗？', success: res => r(res.confirm) })
     );
-    if (!confirmed) return;
+    if (!firstConfirmed) return;
+    const secondConfirmed = await new Promise(r =>
+      wx.showModal({
+        title: '再次确认',
+        content: '删除后无法恢复，请再次确认是否删除。',
+        confirmText: '确认删除',
+        confirmColor: '#F36B6B',
+        success: res => r(res.confirm)
+      })
+    );
+    if (!secondConfirmed) return;
     try {
       await clouddb.deleteRecord(e.currentTarget.dataset.id);
       this.loadRecords();
@@ -199,7 +219,11 @@ Page({
   },
 
   onShareAppMessage() {
-    const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/health-records/health-records?catId=' + (this.data.catId || '') };
+    const current = this.data.catOptions.find(cat => cat.key === this.data.currentCat);
+    const title = current && current.key !== 'all' ? `看看${current.label}的健康记录` : '集中记录宠物的健康日常';
+    const path = current && current.key !== 'all'
+      ? `/pages/health-records/health-records?catId=${current.key}`
+      : '/pages/health-records/health-records';
+    return { imageUrl: '/assets/logo.png', title, path };
   },
 });

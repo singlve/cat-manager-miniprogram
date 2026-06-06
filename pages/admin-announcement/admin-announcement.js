@@ -45,8 +45,22 @@ Page({
 
   async doDelete(e) {
     var id = e.currentTarget.dataset.id;
-    var ok = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后无法恢复', success: s => r(s.confirm) }));
-    if (!ok) return;
+    var first = await new Promise(r => wx.showModal({
+      title: '删除公告',
+      content: '删除后公告将无法恢复。',
+      confirmText: '继续',
+      confirmColor: '#F36B6B',
+      success: s => r(s.confirm)
+    }));
+    if (!first) return;
+    var second = await new Promise(r => wx.showModal({
+      title: '再次确认删除',
+      content: '请确认不再需要这条公告。删除后首页也不会再展示它。',
+      confirmText: '确认删除',
+      confirmColor: '#F36B6B',
+      success: s => r(s.confirm)
+    }));
+    if (!second) return;
     var res = await clouddb.callAnnouncementAdmin('delete', { id: id });
     if (res.code === 0) { wx.showToast({ title: '已删除', icon: 'success' }); this.loadList(); }
   },

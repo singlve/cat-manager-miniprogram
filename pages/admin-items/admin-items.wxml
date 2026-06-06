@@ -50,12 +50,10 @@
     <block wx:elif="{{activeTab === 'records'}}">
       <!-- 搜索栏 -->
       <view class="search-bar">
-        <picker class="search-type-picker" value="{{searchTypeIdx}}" range="{{searchTypes}}" bindchange="onSearchTypeChange">
-          <view class="search-type-btn">
-            <text class="search-type-label">{{searchTypes[searchTypeIdx]}}</text>
-            <text class="search-type-arrow">▾</text>
-          </view>
-        </picker>
+        <view class="search-type-btn" bindtap="openOptionPicker" data-kind="searchType">
+          <text class="search-type-label">{{searchTypes[searchTypeIdx]}}</text>
+          <view class="select-chevron"></view>
+        </view>
         <view class="search-input-wrap">
           <image class="search-input-icon ui-icon-sm" src="/assets/icons/ui/search.png" mode="aspectFit" />
           <input class="search-input" type="text" placeholder="请输入{{searchTypes[searchTypeIdx]}}搜索..." value="{{searchKeyword}}" bindinput="onSearchInput" confirm-type="search" placeholder-class="search-placeholder" />
@@ -155,16 +153,18 @@
 
         <view class="form-group">
           <text class="form-label">类型</text>
-          <picker value="{{form.type === 'virtual' ? 0 : 1}}" range="{{['虚拟商品','实物商品']}}" bindchange="onPickerChange" data-key="type">
-            <view class="form-picker">{{form.type === 'virtual' ? '虚拟商品' : '实物商品'}} ▼</view>
-          </picker>
+          <view class="form-picker" bindtap="openOptionPicker" data-kind="itemType">
+            <text>{{form.type === 'virtual' ? '虚拟商品' : '实物商品'}}</text>
+            <view class="select-chevron"></view>
+          </view>
         </view>
         <view wx:if="{{form.type === 'virtual'}}" class="form-row">
           <view class="form-group flex-1">
             <text class="form-label">虚拟类型</text>
-            <picker value="{{form.virtualType === 'card' ? 0 : 1}}" range="{{['补签卡','积分']}}" bindchange="onPickerChange" data-key="virtualType">
-              <view class="form-picker">{{form.virtualType === 'card' ? '补签卡' : '积分'}} ▼</view>
-            </picker>
+            <view class="form-picker" bindtap="openOptionPicker" data-kind="virtualType">
+              <text>{{form.virtualType === 'card' ? '补签卡' : '积分'}}</text>
+              <view class="select-chevron"></view>
+            </view>
           </view>
           <view class="form-group flex-1">
             <text class="form-label">数量</text>
@@ -220,9 +220,10 @@
 
         <view class="form-group">
           <text class="form-label">快递公司</text>
-          <picker value="{{shipCarrierIdx}}" range="{{carrierList}}" bindchange="onShipCarrierChange">
-            <view class="form-picker">{{shipCarrier || '请选择'}} ▼</view>
-          </picker>
+          <view class="form-picker {{shipCarrier ? '' : 'placeholder'}}" bindtap="openOptionPicker" data-kind="carrier">
+            <text>{{shipCarrier || '请选择'}}</text>
+            <view class="select-chevron"></view>
+          </view>
         </view>
         <view class="form-group">
           <text class="form-label">快递单号</text>
@@ -233,6 +234,27 @@
           <view class="s-btn cancel" catchtap="closeShipEditor">取消</view>
           <view class="s-btn confirm {{shipping ? 'disabled' : ''}}" catchtap="confirmShip">{{shipping ? '保存中...' : '保存'}}</view>
         </view>
+      </view>
+    </view>
+
+    <view wx:if="{{showOptionPicker}}" class="option-mask" catchtap="closeOptionPicker">
+      <view class="option-panel" catchtap="stopBubble">
+        <view class="option-accent"></view>
+        <text class="option-title">{{optionPickerTitle}}</text>
+        <view class="option-list">
+          <view
+            wx:for="{{optionPickerOptions}}"
+            wx:key="value"
+            class="option-item {{optionPickerSelected === item.value ? 'active' : ''}}"
+            data-value="{{item.value}}"
+            data-index="{{index}}"
+            bindtap="selectOption"
+          >
+            <text>{{item.label}}</text>
+            <view wx:if="{{optionPickerSelected === item.value}}" class="option-check"></view>
+          </view>
+        </view>
+        <view class="option-cancel" bindtap="closeOptionPicker">取消</view>
       </view>
     </view>
   </block>

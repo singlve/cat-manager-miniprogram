@@ -12,6 +12,7 @@ Page({
   data: {
     categories: POST_CATEGORIES,
     categoryIdx: 0,
+    showCategoryPicker: false,
     content: '',
     images: [],       // [{path, uploading}]
     maxImages: 4,
@@ -33,6 +34,23 @@ Page({
   onCategoryChange(e) {
     this.setData({ categoryIdx: parseInt(e.detail.value) });
   },
+
+  openCategoryPicker() {
+    this.setData({ showCategoryPicker: true });
+  },
+
+  closeCategoryPicker() {
+    this.setData({ showCategoryPicker: false });
+  },
+
+  selectCategory(e) {
+    this.setData({
+      categoryIdx: parseInt(e.currentTarget.dataset.idx),
+      showCategoryPicker: false
+    });
+  },
+
+  stopBubble() {},
 
   onContentInput(e) {
     this.setData({ content: e.detail.value });
@@ -152,6 +170,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 留言板', path: '/pages/feedback/feedback' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   }
 });

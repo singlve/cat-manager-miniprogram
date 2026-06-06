@@ -75,6 +75,36 @@
     <text class="quick-hint">点击按钮选择日期，默认今天</text>
   </view>
 
+  <!-- 照护概览 -->
+  <view class="section care-section">
+    <view class="section-header">
+      <text class="section-title">照护概览</text>
+      <text class="view-more" bindtap="goHealthRecords">健康记录 ›</text>
+    </view>
+    <view class="care-grid">
+      <view
+        wx:for="{{careOverview}}"
+        wx:key="type"
+        class="care-item {{item.statusClass}}"
+        bindtap="goCareReminder"
+        data-type="{{item.type}}"
+      >
+        <view class="care-icon-wrap">
+          <image class="care-icon ui-icon" src="{{item.iconPath}}" mode="aspectFit" />
+        </view>
+        <view class="care-copy">
+          <view class="care-title-row">
+            <text class="care-name">{{item.label}}</text>
+            <text class="care-status {{item.statusClass}}">{{item.statusText}}</text>
+          </view>
+          <text class="care-date">{{item.dateText}}</text>
+          <text class="care-ago">{{item.agoText}}</text>
+        </view>
+        <text class="care-arrow">›</text>
+      </view>
+    </view>
+  </view>
+
   <!-- 健康时间轴 -->
   <view class="section">
     <view class="section-header">
@@ -148,17 +178,17 @@
   <!-- ─── 体重录入弹窗 ─── -->
   <view wx:if="{{showWeightModal}}" class="modal-mask">
     <view class="weight-modal" catchtap="" style="position:relative">
-      <text class="modal-title-text">📝 录入体重</text>
+      <text class="modal-title-text">录入体重</text>
       <view class="wm-field">
         <text class="wm-label">日期</text>
         <picker mode="date" value="{{weightDate}}" bindchange="onWeightDateChange">
-          <view class="wm-picker">{{weightDate}} ▾</view>
+          <view class="wm-picker"><text>{{weightDate}}</text><view class="field-chevron"></view></view>
         </picker>
       </view>
       <view class="wm-field">
         <text class="wm-label">时间</text>
         <picker mode="time" value="{{weightTime}}" bindchange="onWeightTimeChange">
-          <view class="wm-picker">{{weightTime || '选择时间'}} ▾</view>
+          <view class="wm-picker"><text>{{weightTime || '选择时间'}}</text><view class="field-chevron"></view></view>
         </picker>
       </view>
       <view class="wm-field">

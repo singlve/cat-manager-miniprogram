@@ -1,41 +1,61 @@
 <!-- pages/health-records/health-records.wxml -->
 <view class="container">
   <include src="../../templates/offline-tip.wxml" />
-  <view class="page-header">
-    <image class="ui-icon-sm" src="/assets/icons/ui/record.png" mode="aspectFit" />
-    <text class="page-title">健康记录</text>
+
+  <view class="ui-compact-hero health-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/pet-profile-clean.png" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">HEALTH LOG</text>
+      <text class="ui-compact-title">健康成长档案</text>
+      <text class="ui-compact-desc">集中查看洗护、驱虫、免疫和体检记录。</text>
+    </view>
   </view>
 
-  <!-- 宠物筛选标签 -->
-  <scroll-view class="cat-tabs-scroll" scroll-x>
-    <view class="cat-tabs">
-      <view
-        wx:for="{{catOptions}}"
-        wx:key="key"
-        class="cat-tab {{currentCat === item.key ? 'active' : ''}}"
-        bindtap="setCatFilter"
-        data-cat="{{item.key}}"
-      >
-        <text>{{item.label}}</text>
+  <view class="health-filter-panel">
+    <!-- 宠物筛选标签 -->
+    <view class="filter-block">
+      <text class="filter-label">查看宠物</text>
+      <scroll-view class="cat-tabs-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="cat-tabs">
+          <view
+            wx:for="{{catOptions}}"
+            wx:key="key"
+            class="cat-tab {{currentCat === item.key ? 'active' : ''}}"
+            bindtap="setCatFilter"
+            data-cat="{{item.key}}"
+          >
+            <text>{{item.label}}</text>
+          </view>
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 类型筛选标签 -->
+    <view class="filter-block type-filter-block">
+      <text class="filter-label">记录类型</text>
+      <view class="filter-tabs">
+        <view
+          wx:for="{{filterOptions}}"
+          wx:key="key"
+          class="type-tab {{currentFilter === item.key ? 'active' : ''}}"
+          bindtap="setFilter"
+          data-filter="{{item.key}}"
+        >
+          {{item.label}}
+        </view>
       </view>
     </view>
-  </scroll-view>
+  </view>
 
-  <!-- 类型筛选标签 -->
-  <view class="filter-tabs">
-    <view
-      wx:for="{{filterOptions}}"
-      wx:key="key"
-      class="tab {{currentFilter === item.key ? 'active' : ''}}"
-      bindtap="setFilter"
-      data-filter="{{item.key}}"
-    >
-      {{item.label}}
-    </view>
+  <view wx:if="{{loadError && records.length === 0}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">健康记录加载失败</text>
+    <text class="load-error-desc">请检查网络连接后重新加载</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
   </view>
 
   <!-- 空状态 -->
-  <view wx:if="{{filteredRecords.length === 0}}" class="empty">
+  <view wx:elif="{{filteredRecords.length === 0}}" class="empty">
     <image class="ui-empty-img" src="/assets/illustrations/pet-profile-clean.png" mode="aspectFill" />
     <text class="empty-text">暂无健康记录</text>
     <text class="empty-hint">在宠物详情页点击快速记录按钮为宠物添加第一条记录</text>
@@ -76,31 +96,47 @@
 
   <!-- 编辑弹窗 -->
   <view wx:if="{{showEditModal}}" class="modal-mask">
-    <view class="modal-dialog">
-      <text class="modal-title">编辑记录</text>
+    <view class="modal-dialog" catchtap="">
+      <text class="modal-kicker">HEALTH RECORD</text>
+      <text class="modal-title">编辑健康记录</text>
+      <text class="modal-subtitle">调整记录类型、日期或备注信息</text>
 
       <!-- 类型选择 -->
-      <view class="edit-field">
+      <view class="edit-field stacked">
         <text class="edit-label">类型</text>
-        <picker mode="selector" range="['洗澡','驱虫','免疫','体检']"
-          value="{{editType === 'bath' ? 0 : editType === 'deworm' ? 1 : editType === 'vaccine' ? 2 : 3}}"
-          bindchange="onEditTypeChange">
+        <view class="edit-type-grid">
+          <view class="edit-type-item {{editType === 'bath' ? 'active' : ''}}" bindtap="selectEditType" data-type="bath">
+            <image class="ui-icon-sm" src="/assets/icons/ui/bath.png" mode="aspectFit" />
+            <text>洗澡</text>
+          </view>
+          <view class="edit-type-item {{editType === 'deworm' ? 'active' : ''}}" bindtap="selectEditType" data-type="deworm">
+            <image class="ui-icon-sm" src="/assets/icons/ui/deworm.png" mode="aspectFit" />
+            <text>驱虫</text>
+          </view>
+          <view class="edit-type-item {{editType === 'vaccine' ? 'active' : ''}}" bindtap="selectEditType" data-type="vaccine">
+            <image class="ui-icon-sm" src="/assets/icons/ui/vaccine.png" mode="aspectFit" />
+            <text>免疫</text>
+          </view>
+          <view class="edit-type-item {{editType === 'checkup' ? 'active' : ''}}" bindtap="selectEditType" data-type="checkup">
+            <image class="ui-icon-sm" src="/assets/icons/ui/checkup.png" mode="aspectFit" />
+            <text>体检</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 日期选择 -->
+      <view class="edit-field stacked">
+        <text class="edit-label">日期</text>
+        <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
           <view class="edit-value">
-            {{editType === 'bath' ? '洗澡' : editType === 'deworm' ? '驱虫' : editType === 'vaccine' ? '免疫' : '体检'}} ▾
+            <text>{{editDate}}</text>
+            <text class="edit-arrow">›</text>
           </view>
         </picker>
       </view>
 
-      <!-- 日期选择 -->
-      <view class="edit-field">
-        <text class="edit-label">日期</text>
-        <picker mode="date" value="{{editDate}}" bindchange="onEditDateChange">
-          <view class="edit-value">{{editDate}} ▾</view>
-        </picker>
-      </view>
-
       <!-- 备注 -->
-      <view class="edit-field">
+      <view class="edit-field stacked">
         <text class="edit-label">备注</text>
         <input class="edit-input" value="{{editNote}}" bindinput="onEditNoteInput" placeholder="选填" placeholder-style="color:#ccc;" />
       </view>

@@ -1,6 +1,7 @@
 // utils/clouddb.js
 // 云数据库工具层：云开发 + 本地存储自动降级
 // 所有页面统一通过此模块操作数据，无需关心底层数据源
+const { parseDate } = require('./util.js');
 
 // ⚙️ 调试开关：true=强制本地模式，false=自动判断（云环境ID配好后走云端）
 const FORCE_LOCAL = false;  // 调试开关：true 强制本地模式，false 自动判断
@@ -163,7 +164,7 @@ async function getRecords(filter = {}, options = {}) {
   if (!isCloudReady()) {
     let records = _storage().getRecords() || [];
     if (filter.catId) records = records.filter(r => r.catId === filter.catId);
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+    records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
     if (options.skip) records = records.slice(options.skip);
     if (options.limit) records = records.slice(0, options.limit);
     return records;
@@ -195,7 +196,7 @@ async function getWeightRecords(filter = {}, options = {}) {
   if (!isCloudReady()) {
     let records = _storage().getWeightRecords ? _storage().getWeightRecords() : [];
     if (filter.catId) records = records.filter(r => r.catId === filter.catId);
-    records.sort((a, b) => new Date(b.date) - new Date(a.date));
+    records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
     if (options.skip) records = records.slice(options.skip);
     if (options.limit) records = records.slice(0, options.limit);
     return records;
@@ -398,7 +399,7 @@ async function getStats() {
   let overdueCount = 0;
   reminders.forEach(r => {
     if (r.lastDate && r.intervalDays) {
-      const next = new Date(r.lastDate);
+      const next = parseDate(r.lastDate);
       next.setDate(next.getDate() + r.intervalDays);
       if (next <= new Date()) overdueCount++;
     }

@@ -52,7 +52,7 @@
 
     <!-- 空状态 -->
     <view wx:if="{{groupedExpenses.length === 0}}" class="empty-tip">
-      <text class="empty-icon">💰</text>
+      <image class="empty-icon-img ui-icon-xl" src="/assets/icons/ui/expense.png" mode="aspectFit" />
       <text class="empty-text">本月还没有记账</text>
       <text class="empty-hint">点击下方按钮开始记录</text>
     </view>
@@ -72,7 +72,7 @@
         >
           <view class="exp-left">
             <view class="exp-icon-wrap">
-              <text class="exp-emoji">{{e.categoryIcon || '💰'}}</text>
+              <image class="exp-icon-img ui-icon" src="{{e._categoryIconPath}}" mode="aspectFit" />
             </view>
             <view class="exp-info">
               <text class="exp-cat">{{e.categoryName || e.category}}</text>
@@ -134,7 +134,7 @@
 
     <!-- 空状态 -->
     <view wx:if="{{annualStats.total == 0}}" class="empty-tip">
-      <text class="empty-icon">📊</text>
+      <image class="empty-icon-img ui-icon-xl" src="/assets/icons/ui/chart.png" mode="aspectFit" />
       <text class="empty-text">今年还没有记账数据</text>
     </view>
 
@@ -144,7 +144,7 @@
       <view class="cat-rows">
         <view wx:for="{{annualStats.categories}}" wx:key="key" wx:if="{{item.total > 0}}" class="cat-row">
           <view class="cr-left">
-            <text class="cr-icon">{{item.icon}}</text>
+            <image class="cr-icon-img ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
             <text class="cr-name">{{item.name}}</text>
             <text class="cr-pct">{{item.pct}}%</text>
           </view>

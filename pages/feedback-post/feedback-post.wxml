@@ -12,9 +12,10 @@
   <!-- 分类 -->
   <view class="section">
     <text class="section-label">分类</text>
-    <picker mode="selector" range="{{categories}}" range-key="label" bindchange="onCategoryChange" value="{{categoryIdx}}">
-      <view class="picker-val">{{categories[categoryIdx].label}}</view>
-    </picker>
+    <view class="picker-val" bindtap="openCategoryPicker">
+      <text>{{categories[categoryIdx].label}}</text>
+      <view class="picker-chevron"></view>
+    </view>
   </view>
 
   <!-- 内容 -->
@@ -56,5 +57,26 @@
     <button class="submit-btn {{submitting ? 'disabled' : ''}}" bindtap="submit">
       {{submitting ? '发布中...' : '发布留言'}}
     </button>
+  </view>
+
+  <view wx:if="{{showCategoryPicker}}" class="category-mask" catchtap="closeCategoryPicker">
+    <view class="category-panel" catchtap="stopBubble">
+      <view class="category-accent"></view>
+      <text class="category-title">选择留言分类</text>
+      <text class="category-desc">选择最符合内容的类型</text>
+      <view class="category-options">
+        <view
+          wx:for="{{categories}}"
+          wx:key="key"
+          class="category-option {{categoryIdx === index ? 'active' : ''}}"
+          data-idx="{{index}}"
+          bindtap="selectCategory"
+        >
+          <text>{{item.label}}</text>
+          <view wx:if="{{categoryIdx === index}}" class="category-check"></view>
+        </view>
+      </view>
+      <view class="category-cancel" bindtap="closeCategoryPicker">取消</view>
+    </view>
   </view>
 </view>

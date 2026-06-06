@@ -1,10 +1,30 @@
 import { describe, it, expect } from 'vitest';
 
 import {
-  formatDate, calcNextDate, isDue, getOverdueDays, TYPE_LABELS,
+  parseDate, formatDate, calcNextDate, isDue, getOverdueDays, TYPE_LABELS,
   calcAgeDetail, calcDaysBetween, formatBirthdayRow,
   datePart, calcAgo, nowTimeStr, datetime, todayStr, buildCheckInCalendar
 } from '../utils/util.js';
+
+describe('parseDate iOS 兼容解析', () => {
+  it('解析旧版空格分隔的日期时间', () => {
+    const date = parseDate('2026-05-15 02:13:00');
+    expect(date.getFullYear()).toBe(2026);
+    expect(date.getMonth()).toBe(4);
+    expect(date.getDate()).toBe(15);
+    expect(date.getHours()).toBe(2);
+    expect(date.getMinutes()).toBe(13);
+  });
+
+  it('解析日期和标准 ISO 日期时间', () => {
+    expect(formatDate(parseDate('2026-05-15'))).toBe('2026-05-15');
+    expect(formatDate(parseDate('2026-05-15T02:13:00'))).toBe('2026-05-15');
+  });
+
+  it('新保存的日期时间使用 T 分隔符', () => {
+    expect(datetime('2026-05-15', '02:13')).toBe('2026-05-15T02:13:00');
+  });
+});
 
 // ============================================================
 // formatDate
@@ -302,15 +322,15 @@ describe('nowTimeStr', () => {
 // ============================================================
 describe('datetime', () => {
   it('拼接日期和时间', () => {
-    expect(datetime('2026-05-01', '14:30')).toBe('2026-05-01 14:30:00');
+    expect(datetime('2026-05-01', '14:30')).toBe('2026-05-01T14:30:00');
   });
 
   it('缺少时间默认 00:00', () => {
-    expect(datetime('2026-05-01')).toBe('2026-05-01 00:00:00');
+    expect(datetime('2026-05-01')).toBe('2026-05-01T00:00:00');
   });
 
   it('空日期也能处理', () => {
-    expect(datetime('', '14:30')).toBe(' 14:30:00');
+    expect(datetime('', '14:30')).toBe('T14:30:00');
   });
 });
 

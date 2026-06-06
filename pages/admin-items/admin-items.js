@@ -28,7 +28,12 @@ Page({
     searchTypeIdx: 0,
     searchTypes: ['用户昵称', '手机号', '商品名称'],
     searchKeyword: '',
-    phoneMap: {}           // openid → phone（云端查询用户表构建）
+    phoneMap: {},          // openid → phone（云端查询用户表构建）
+    showOptionPicker: false,
+    optionPickerKind: '',
+    optionPickerTitle: '',
+    optionPickerOptions: [],
+    optionPickerSelected: ''
   },
 
   formatTime(isoStr) {
@@ -136,6 +141,68 @@ Page({
     this._applySearch();
   },
 
+  openOptionPicker(e) {
+    var kind = e.currentTarget.dataset.kind;
+    var options = [];
+    var title = '';
+    var selected = '';
+
+    if (kind === 'searchType') {
+      title = '选择搜索范围';
+      options = this.data.searchTypes.map(function(label, index) {
+        return { label: label, value: String(index) };
+      });
+      selected = String(this.data.searchTypeIdx);
+    } else if (kind === 'itemType') {
+      title = '选择商品类型';
+      options = [{ label: '虚拟商品', value: 'virtual' }, { label: '实物商品', value: 'physical' }];
+      selected = this.data.form.type;
+    } else if (kind === 'virtualType') {
+      title = '选择虚拟类型';
+      options = [{ label: '补签卡', value: 'card' }, { label: '积分', value: 'points' }];
+      selected = this.data.form.virtualType;
+    } else if (kind === 'carrier') {
+      title = '选择快递公司';
+      options = this.data.carrierList.map(function(label, index) {
+        return { label: label, value: String(index) };
+      });
+      selected = this.data.shipCarrier ? String(this.data.shipCarrierIdx) : '';
+    }
+
+    this.setData({
+      showOptionPicker: true,
+      optionPickerKind: kind,
+      optionPickerTitle: title,
+      optionPickerOptions: options,
+      optionPickerSelected: selected
+    });
+  },
+
+  closeOptionPicker() {
+    this.setData({ showOptionPicker: false });
+  },
+
+  selectOption(e) {
+    var kind = this.data.optionPickerKind;
+    var value = String(e.currentTarget.dataset.value);
+    var updates = { showOptionPicker: false, optionPickerSelected: value };
+
+    if (kind === 'searchType') {
+      updates.searchTypeIdx = parseInt(value);
+    } else if (kind === 'itemType') {
+      updates['form.type'] = value;
+    } else if (kind === 'virtualType') {
+      updates['form.virtualType'] = value;
+    } else if (kind === 'carrier') {
+      var idx = parseInt(value);
+      updates.shipCarrierIdx = idx;
+      updates.shipCarrier = this.data.carrierList[idx];
+    }
+
+    this.setData(updates);
+    if (kind === 'searchType') this._applySearch();
+  },
+
   onSearchInput(e) {
     this.setData({ searchKeyword: e.detail.value });
     this._applySearch();
@@ -218,8 +285,13 @@ Page({
 
   async deleteItem(e) {
     var id = e.currentTarget.dataset.id;
-    var res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', confirmColor: '#e74c3c', success: r }));
-    if (!res.confirm) return;
+    var confirmed = await this._confirmDeleteTwice({
+      title: '删除商品',
+      content: '商品删除后将从积分小铺下架。',
+      secondTitle: '再次确认删除',
+      secondContent: '删除后不可恢复，已有兑换记录不会自动回滚。确认删除吗？'
+    });
+    if (!confirmed) return;
     try {
       await clouddb.deleteRedeemItem(id);
       wx.showToast({ title: '已删除', icon: 'success' });

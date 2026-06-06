@@ -1,19 +1,20 @@
 // pages/reminders/reminders.js
 // 提醒列表页：逾期/即将/未来分组 + 状态筛选
 const clouddb = require('../../utils/clouddb.js');
+const { parseDate } = require('../../utils/util.js');
 
 const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
 
 function calcNextDate(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return null;
-  const d = new Date(lastDate);
+  const d = parseDate(lastDate);
   d.setDate(d.getDate() + intervalDays);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function getDaysUntil(dateStr) {
   if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  return Math.ceil((parseDate(dateStr) - new Date()) / 86400000);
 }
 
 // ── Demo 数据（未登录时展示） ──
@@ -68,7 +69,15 @@ Page({
     this.setData({ isOnline: getApp().globalData.isOnline });
     this._initAddFabPosition();
     const app = getApp();
-    this.setData({ isLoggedIn: app.isLoggedIn() });
+    const generatedFlag = wx.getStorageSync('reminderPlanGenerated');
+    if (generatedFlag) {
+      wx.removeStorageSync('reminderPlanGenerated');
+    }
+    this.setData({
+      isLoggedIn: app.isLoggedIn(),
+      statusFilter: generatedFlag ? 'active' : this.data.statusFilter,
+      catFilter: generatedFlag ? 'all' : this.data.catFilter
+    });
     if (app.isLoggedIn()) {
       this.loadData();
     } else {
@@ -313,6 +322,13 @@ Page({
 
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
 
+  goReminderPlan() {
+    const app = getApp();
+    if (!app.isLoggedIn()) { this.goLogin(); return; }
+    const catId = this.data.catFilter && this.data.catFilter !== 'all' ? this.data.catFilter : '';
+    wx.navigateTo({ url: catId ? `/pages/reminder-plan/reminder-plan?catId=${catId}` : '/pages/reminder-plan/reminder-plan' });
+  },
+
   async addReminder() {
     const app = getApp();
     if (!app.isLoggedIn()) { this.goLogin(); return; }
@@ -348,7 +364,8 @@ Page({
   },
 
   onShareAppMessage() {
-    const name = this.data.catName || '宝贝';
-    return { imageUrl: '/assets/logo.png', title: name + ' - 宠物小管家Plus', path: '/pages/reminders/reminders?catId=' + (this.data.catId || '') };
+    const current = this.data.catTabs.find(cat => cat._id === this.data.catFilter);
+    const title = current ? `一起管理${current.name}的照护提醒` : '把宠物的重要照护安排得更清楚';
+    return { imageUrl: '/assets/logo.png', title, path: '/pages/reminders/reminders' };
   },
 });

@@ -1,13 +1,19 @@
 // pages/expense/expense.js
 const clouddb = require('../../utils/clouddb.js');
-const CATEGORIES = [
-  { key: 'food',     icon: '🍖', name: '食品', color: '#FF8C42' },
-  { key: 'medical',  icon: '💊', name: '医疗', color: '#FF6B6B' },
-  { key: 'toys',     icon: '🧸', name: '玩具', color: '#4ECDC4' },
-  { key: 'grooming', icon: '🛁', name: '洗护', color: '#A78BFA' },
-  { key: 'supplies', icon: '📦', name: '用品', color: '#60A5FA' },
-  { key: 'other',    icon: '💰', name: '其他', color: '#94A3B8' }
+const EXPENSE_CATEGORIES = [
+  { key: 'food', iconPath: '/assets/icons/expense/food.png', name: '食品', color: '#FFB86B' },
+  { key: 'medical', iconPath: '/assets/icons/expense/medical.png', name: '医疗', color: '#F36B6B' },
+  { key: 'toys', iconPath: '/assets/icons/expense/toys.png', name: '玩具', color: '#6BC6B3' },
+  { key: 'grooming', iconPath: '/assets/icons/expense/grooming.png', name: '洗护', color: '#5BA7D8' },
+  { key: 'supplies', iconPath: '/assets/icons/expense/supplies.png', name: '用品', color: '#7C9ED9' },
+  { key: 'other', iconPath: '/assets/icons/expense/other.png', name: '其他', color: '#94A3B8' }
 ];
+
+function getExpenseCategory(key) {
+  return EXPENSE_CATEGORIES.find(function(category) {
+    return category.key === key;
+  }) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
+}
 
 var MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 
@@ -33,7 +39,7 @@ Page({
     yearExpenses: [],         // 全年的原始记录缓存
     annualStats: { total: 0, avgMonth: 0, months: [], categories: [], cats: [] },
     // ── 通用 ──
-    categories: CATEGORIES,
+    categories: EXPENSE_CATEGORIES,
     showDeleteModal: false,
     deleteTarget: null,
     cats: []
@@ -157,7 +163,8 @@ Page({
       }
       var g = groups[groups.length - 1];
       g.dayTotal += (Number(e.amount) || 0);
-      g.items.push(e);
+      var category = getExpenseCategory(e.category);
+      g.items.push(Object.assign({}, e, { _categoryIconPath: category.iconPath }));
     });
 
     groups.forEach(function(g) { g.dayTotalStr = g.dayTotal.toFixed(2); });
@@ -247,7 +254,7 @@ Page({
     for (var i = 1; i <= 12; i++) monthTotals[i] = 0;
     // 按分类汇总
     var catTotals = {};
-    CATEGORIES.forEach(function(c) { catTotals[c.key] = { icon: c.icon, name: c.name, color: c.color, total: 0 }; });
+    EXPENSE_CATEGORIES.forEach(function(c) { catTotals[c.key] = { iconPath: c.iconPath, name: c.name, color: c.color, total: 0 }; });
     // 按宠物汇总
     var petTotals = {};
 
@@ -302,12 +309,11 @@ Page({
 
     // 宠物排行
     var pets = Object.keys(petTotals).map(function(k) {
-      var name = k === '__shared' ? '🏠 公共花销' : '🐱 未知';
+      var name = k === '__shared' ? '公共花销' : '未知宠物';
       if (k !== '__shared') {
         var cat = (cats || []).find(function(c) { return c._id === k; });
         if (cat) {
-          var icon = cat.species === 'dog' ? '🐶' : '🐱';
-          name = icon + ' ' + cat.name;
+          name = cat.name;
         }
       }
       return { id: k, name: name, total: petTotals[k], pct: grandTotal > 0 ? Math.round((petTotals[k] / grandTotal) * 100) : 0 };
@@ -398,6 +404,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '来看看我的宠物开销账单吧 💰', path: '/pages/expense/expense' };
+    return { imageUrl: '/assets/logo.png', title: '把宠物的日常花销记录得更清楚', path: '/pages/expense/expense' };
   }
 });

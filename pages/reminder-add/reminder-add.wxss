@@ -70,11 +70,18 @@
 .picker-arrow {
   width: 72rpx;
   height: 92rpx;
-  line-height: 92rpx;
-  text-align: center;
-  color: #5BA7D8;
-  font-size: 30rpx;
-  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picker-chevron {
+  width: 12rpx;
+  height: 12rpx;
+  margin-top: -6rpx;
+  border-right: 4rpx solid #5BA7D8;
+  border-bottom: 4rpx solid #5BA7D8;
+  transform: rotate(45deg);
 }
 
 .type-grid {

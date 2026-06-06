@@ -79,6 +79,6 @@ Page(Object.assign({}, catFormMethods, {
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: "添加宠物 - 宠物小管家Plus", path: "/pages/cat-add/cat-add" };
+    return { imageUrl: '/assets/logo.png', title: '为宠物建立一份专属成长档案', path: '/pages/cat-list/cat-list' };
   },
 }));

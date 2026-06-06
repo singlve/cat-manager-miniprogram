@@ -22,6 +22,17 @@
   <!-- 已登录：筛选区域 + 卡片列表 -->
   <view wx:if="{{isLoggedIn}}">
 
+    <view class="smart-plan-entry" bindtap="goReminderPlan">
+      <view class="smart-plan-icon">
+        <image class="ui-icon" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
+      </view>
+      <view class="smart-plan-body">
+        <text class="smart-plan-title">智能提醒计划</text>
+        <text class="smart-plan-desc">一键生成洗澡、驱虫、体检等常用提醒</text>
+      </view>
+      <text class="smart-plan-arrow">›</text>
+    </view>
+
     <view class="reminder-filter-panel">
       <!-- 宠物筛选标签栏 -->
       <scroll-view wx:if="{{catTabs.length > 1}}" class="cat-filter-tabs" scroll-x enhanced show-scrollbar="{{false}}">
@@ -190,7 +201,8 @@
   <!-- Demo 数据（未登录但有猫筛选时） -->
   <view wx:elif="{{!isLoggedIn && hasData}}" class="content">
     <view class="demo-watermark">
-      <text>👀 以下为示例展示，登录后可管理自己的提醒</text>
+      <image class="demo-watermark-icon ui-icon-sm" src="/assets/icons/ui/about.png" mode="aspectFit" />
+      <text>以下为示例展示，登录后可管理自己的提醒</text>
     </view>
 
     <view wx:if="{{overdueList.length > 0}}">

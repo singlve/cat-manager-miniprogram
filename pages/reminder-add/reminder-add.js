@@ -1,6 +1,7 @@
 // pages/reminder-add/reminder-add.js
 // 添加/编辑提醒页
 const clouddb = require('../../utils/clouddb.js');
+const { parseDate } = require('../../utils/util.js');
 
 // 订阅消息模板 ID — 在微信公众平台「功能 > 订阅消息」中申请，替换为实际模板 ID
 const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
@@ -48,12 +49,21 @@ Page({
       if (cats.length > 0) {
         const defaultIndex = options.catId ? Math.max(0, cats.findIndex(c => c._id === options.catId)) : 0;
         const defaultCat = cats[defaultIndex];
+        const requestedType = TYPE_OPTIONS.find(item => item.key === options.type) || TYPE_OPTIONS[0];
+        const requestedInterval = Math.min(365, Math.max(1, parseInt(options.intervalDays) || 30));
         this.setData({
           selectedCatId: defaultCat._id,
           selectedCatName: defaultCat.name,
-          selectedCatIndex: defaultIndex
+          selectedCatIndex: defaultIndex,
+          type: requestedType.key,
+          typeLabel: requestedType.label,
+          intervalDays: requestedInterval,
+          intervalDaysRaw: String(requestedInterval),
+          lastDate: options.lastDate || ''
         });
-        await this.loadLastDate(defaultCat._id, 'bath');
+        if (!options.lastDate) {
+          await this.loadLastDate(defaultCat._id, requestedType.key);
+        }
       }
     }
     this.updateNextPreview();
@@ -135,7 +145,7 @@ Page({
     // 找同类型的最近一条记录（按时间倒序取第一条）
     const matched = records
       .filter(r => r.type === type)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => parseDate(b.date) - parseDate(a.date));
     if (matched.length > 0) {
       this.setData({ lastDate: matched[0].date });
     } else {
@@ -167,9 +177,10 @@ Page({
   noteInput(e) { this.setData({ note: e.detail.value }); },
 
   updateNextPreview() {
-    const { lastDate, intervalDays } = this.data;
+    const { lastDate } = this.data;
+    const intervalDays = this._getIntervalDays();
     if (!lastDate || !intervalDays) { this.setData({ nextPreviewDate: '' }); return; }
-    const d = new Date(lastDate);
+    const d = parseDate(lastDate);
     d.setDate(d.getDate() + intervalDays);
     this.setData({ nextPreviewDate: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` });
   },

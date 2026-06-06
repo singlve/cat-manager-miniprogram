@@ -1,7 +1,7 @@
 // pages/cat-detail/cat-detail.js
 // 宠物详情页：快速记录 + 健康时间轴
 const clouddb = require('../../utils/clouddb.js');
-const { calcAgeDetail, calcAgo, calcDaysBetween } = require('../../utils/util.js');
+const { calcAgeDetail, calcAgo, calcDaysBetween, parseDate } = require('../../utils/util.js');
 
 // ─── Demo 数据 ───
 const DEMO_CATS = {
@@ -23,7 +23,7 @@ const DEMO_RECORDS = {
 
 Page({
   data: {
-    catId: '', cat: {}, records: [], recentRecords: [], healthSummary: [], nowDate: '', isDemo: false,
+    catId: '', cat: {}, records: [], recentRecords: [], healthSummary: [], careOverview: [], nowDate: '', isDemo: false,
     weightRecords: [], latestWeight: null,
     showWeightModal: false, deleting: false,
     weightDate: new Date().toISOString().split('T')[0],
@@ -42,7 +42,14 @@ Page({
     this.setData({ catId: options.id, nowDate: new Date().toISOString().split('T')[0], isDemo });
     if (isDemo) {
       var demoRecords = DEMO_RECORDS[options.id] || [];
-      this.setData({ cat: DEMO_CATS[options.id] || {}, records: demoRecords, healthSummary: _buildHealthSummary(demoRecords), weightRecords: [], latestWeight: null });
+      this.setData({
+        cat: DEMO_CATS[options.id] || {},
+        records: demoRecords,
+        healthSummary: _buildHealthSummary(demoRecords),
+        careOverview: _buildCareOverview(demoRecords),
+        weightRecords: [],
+        latestWeight: null
+      });
     } else {
       this.loadCat();
       this.loadRecords();
@@ -73,9 +80,14 @@ Page({
   async loadRecords() {
     try {
       const records = await clouddb.getRecords({ catId: this.data.catId });
-      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+      records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
       const withAgo = records.map(function(r) { return Object.assign({}, r, { _ago: calcAgo(r.date) }); });
-      this.setData({ records: withAgo, recentRecords: withAgo.slice(0, 4), healthSummary: _buildHealthSummary(records) });
+      this.setData({
+        records: withAgo,
+        recentRecords: withAgo.slice(0, 4),
+        healthSummary: _buildHealthSummary(records),
+        careOverview: _buildCareOverview(records)
+      });
     } catch (e) {
       console.error('[cat-detail] loadRecords error:', e);
     }
@@ -85,7 +97,7 @@ Page({
   async loadWeightRecords() {
     try {
       const records = await clouddb.getWeightRecords({ catId: this.data.catId });
-      records.sort((a, b) => new Date(b.date) - new Date(a.date));
+      records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
       const latestWeight = records.length > 0 ? records[0].weight : null;
       this.setData({ weightRecords: records, latestWeight });
     } catch (e) {
@@ -208,6 +220,25 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     wx.navigateTo({ url: '/pages/health-records/health-records?catId=' + this.data.catId });
+  },
+
+  goCareReminder(e) {
+    const app = getApp();
+    if (!app.isLoggedIn()) { this._promptLogin(); return; }
+    if (this.data.cat.status === 'passed_away') {
+      wx.showToast({ title: '已离世的宠物不支持添加提醒', icon: 'none' });
+      return;
+    }
+    const type = e.currentTarget.dataset.type;
+    const item = (this.data.careOverview || []).find(care => care.type === type);
+    if (!item) return;
+    const params = [
+      `catId=${encodeURIComponent(this.data.catId)}`,
+      `type=${encodeURIComponent(item.type)}`,
+      `intervalDays=${encodeURIComponent(item.intervalDays || 30)}`
+    ];
+    if (item.lastDate) params.push(`lastDate=${encodeURIComponent(item.lastDate)}`);
+    wx.navigateTo({ url: `/pages/reminder-add/reminder-add?${params.join('&')}` });
   },
 
   goEdit() {
@@ -475,6 +506,60 @@ function _buildHealthSummary(records) {
 function _recordTypeLabel(type) {
   var map = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checkup: '体检', claw: '修剪指甲', other: '其他' };
   return map[type] || type || '记录';
+}
+
+function _buildCareOverview(records) {
+  var configs = [
+    { type: 'bath', label: '洗澡', intervalDays: 60, iconPath: '/assets/icons/ui/bath.png' },
+    { type: 'deworm', label: '驱虫', intervalDays: 90, iconPath: '/assets/icons/ui/deworm.png' },
+    { type: 'vaccine', label: '免疫', intervalDays: 365, iconPath: '/assets/icons/ui/vaccine.png' },
+    { type: 'checkup', label: '体检', intervalDays: 365, iconPath: '/assets/icons/ui/checkup.png' }
+  ];
+  var latest = {};
+  (records || []).forEach(function(r) {
+    if (!r || !r.type || !r.date) return;
+    var date = String(r.date).slice(0, 10);
+    if (!latest[r.type] || date > latest[r.type]) latest[r.type] = date;
+  });
+
+  return configs.map(function(config) {
+    var date = latest[config.type];
+    if (!date) {
+      return {
+        type: config.type,
+        label: config.label,
+        iconPath: config.iconPath,
+        dateText: '未记录',
+        agoText: '暂无记录',
+        statusText: '待记录',
+        statusClass: 'empty',
+        lastDate: '',
+        intervalDays: config.intervalDays
+      };
+    }
+    var days = _daysSince(date);
+    var needsAttention = days !== null && days > config.intervalDays;
+    return {
+      type: config.type,
+      label: config.label,
+      iconPath: config.iconPath,
+      dateText: date,
+      agoText: calcAgo(date),
+      statusText: needsAttention ? '建议安排' : '状态正常',
+      statusClass: needsAttention ? 'warning' : 'good',
+      lastDate: date,
+      intervalDays: config.intervalDays
+    };
+  });
+}
+
+function _daysSince(dateStr) {
+  var date = new Date(String(dateStr).slice(0, 10));
+  if (Number.isNaN(date.getTime())) return null;
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  date.setHours(0, 0, 0, 0);
+  return Math.floor((today - date) / 86400000);
 }
 
 function _roundRect(ctx, x, y, w, h, r) {
