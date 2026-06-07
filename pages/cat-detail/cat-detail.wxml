@@ -1,5 +1,5 @@
 <!-- pages/cat-detail/cat-detail.wxml -->
-<view class="container">
+<view class="container {{themeClass}}">
 
   <view class="ui-compact-hero">
     <image class="ui-compact-hero-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
@@ -49,25 +49,25 @@
     <view class="quick-actions">
       <picker mode="date" value="{{nowDate}}" data-type="bath" bindchange="onQuickRecord">
         <view class="quick-btn bath">
-          <image class="quick-icon ui-icon" src="/assets/icons/ui/bath.png" mode="aspectFit" />
+          <image class="quick-icon ui-icon theme-business-icon" src="/assets/icons/ui/bath.png" mode="aspectFit" />
           <text class="quick-label">洗澡</text>
         </view>
       </picker>
       <picker mode="date" value="{{nowDate}}" data-type="deworm" bindchange="onQuickRecord">
         <view class="quick-btn deworm">
-          <image class="quick-icon ui-icon" src="/assets/icons/ui/deworm.png" mode="aspectFit" />
+          <image class="quick-icon ui-icon theme-business-icon" src="/assets/icons/ui/deworm.png" mode="aspectFit" />
           <text class="quick-label">驱虫</text>
         </view>
       </picker>
       <picker mode="date" value="{{nowDate}}" data-type="vaccine" bindchange="onQuickRecord">
         <view class="quick-btn vaccine">
-          <image class="quick-icon ui-icon" src="/assets/icons/ui/vaccine.png" mode="aspectFit" />
+          <image class="quick-icon ui-icon theme-business-icon" src="/assets/icons/ui/vaccine.png" mode="aspectFit" />
           <text class="quick-label">免疫</text>
         </view>
       </picker>
       <picker mode="date" value="{{nowDate}}" data-type="checkup" bindchange="onQuickRecord">
         <view class="quick-btn checkup">
-          <image class="quick-icon ui-icon" src="/assets/icons/ui/checkup.png" mode="aspectFit" />
+          <image class="quick-icon ui-icon theme-business-icon" src="/assets/icons/ui/checkup.png" mode="aspectFit" />
           <text class="quick-label">体检</text>
         </view>
       </picker>
@@ -90,7 +90,7 @@
         data-type="{{item.type}}"
       >
         <view class="care-icon-wrap">
-          <image class="care-icon ui-icon" src="{{item.iconPath}}" mode="aspectFit" />
+          <image class="care-icon ui-icon theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
         </view>
         <view class="care-copy">
           <view class="care-title-row">
@@ -102,6 +102,19 @@
         </view>
         <text class="care-arrow">›</text>
       </view>
+    </view>
+    <view class="next-reminder-card" bindtap="goReminderList">
+      <view class="next-reminder-icon">
+        <image class="ui-icon" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
+      </view>
+      <view class="next-reminder-copy">
+        <text class="next-reminder-kicker">下一项提醒</text>
+        <text wx:if="{{nextReminder}}" class="next-reminder-title">{{nextReminder._typeLabel}} · {{nextReminder._scheduleText}}</text>
+        <text wx:else class="next-reminder-title">暂未设置进行中的提醒</text>
+        <text wx:if="{{nextReminder}}" class="next-reminder-date">{{nextReminder._nextDate}}</text>
+        <text wx:else class="next-reminder-date">前往提醒页安排下一次照护</text>
+      </view>
+      <view class="next-reminder-chevron"></view>
     </view>
   </view>
 
@@ -124,7 +137,7 @@
           <view class="timeline-left">
             <view wx:if="{{index < records.length - 1 && index < 4}}" class="timeline-line"></view>
             <view class="timeline-dot dot-{{item.type}}">
-              <image class="dot-icon ui-icon-sm" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : '/assets/icons/ui/checkup.png'}}" mode="aspectFit" />
+              <image class="dot-icon ui-icon-sm theme-business-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : '/assets/icons/ui/checkup.png'}}" mode="aspectFit" />
             </view>
           </view>
           <view class="timeline-content">
@@ -161,6 +174,7 @@
       <view class="weight-meta">
         <text class="weight-label">最新体重</text>
         <text class="weight-date" wx:if="{{weightRecords.length > 0}}">{{weightRecords[0].date}}</text>
+        <text class="weight-trend {{weightTrendClass}}" wx:if="{{weightTrendText}}">{{weightTrendText}}</text>
       </view>
       <view class="weight-total">
         <text class="weight-total-num">{{weightRecords.length}}</text>
@@ -214,7 +228,7 @@
       </view>
       <view class="wm-btns">
         <view class="wm-btn cancel" bindtap="closeWeightModal">取消</view>
-        <view class="wm-btn confirm" bindtap="saveWeightRecord">保存</view>
+        <view class="wm-btn confirm {{weightSaving ? 'disabled' : ''}}" bindtap="saveWeightRecord">{{weightSaving ? '保存中...' : '保存'}}</view>
       </view>
     </view>
   </view>

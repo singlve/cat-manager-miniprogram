@@ -1,5 +1,5 @@
 /* pages/expense/expense.wxss */
-page { background: #F7F9FB; }
+page { background: var(--theme-bg, #F7F9FB); }
 
 /* ═══════════════ 顶部导航 ═══════════════ */
 .nav-bar {
@@ -18,7 +18,7 @@ page { background: #F7F9FB; }
   width: 48rpx;
   height: 48rpx;
   border-radius: 24rpx;
-  background: #EAF4FB;
+  background: var(--theme-primary-soft, #EAF4FB);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,8 +34,8 @@ page { background: #F7F9FB; }
 .arrow-mark {
   width: 16rpx;
   height: 16rpx;
-  border-top: 5rpx solid #5BA7D8;
-  border-right: 5rpx solid #5BA7D8;
+  border-top: 5rpx solid var(--theme-primary, #5BA7D8);
+  border-right: 5rpx solid var(--theme-primary, #5BA7D8);
   box-sizing: border-box;
 }
 .arrow-left { transform: rotate(-135deg); margin-left: 6rpx; }
@@ -56,11 +56,11 @@ page { background: #F7F9FB; }
   transition: all .2s;
 }
 .tog-btn.active {
-  background-color: #5BA7D8;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background-color: var(--theme-primary, #5BA7D8);
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 6rpx 16rpx rgba(91, 167, 216, .24);
+  box-shadow: 0 6rpx 16rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .24);
 }
 
 /* ═══════════════ 筛选 ═══════════════ */
@@ -76,7 +76,7 @@ page { background: #F7F9FB; }
   align-items: center;
   justify-content: space-between;
   background: rgba(255,255,255,.92) !important;
-  border: 1rpx solid rgba(91, 167, 216, .18) !important;
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91, 167, 216), .18) !important;
   border-radius: 24rpx !important;
   padding: 0 28rpx;
   box-shadow: 0 10rpx 24rpx rgba(45, 83, 115, .08) !important;
@@ -90,8 +90,8 @@ page { background: #F7F9FB; }
 .filter-arrow-mark {
   width: 16rpx;
   height: 16rpx;
-  border-right: 4rpx solid #5BA7D8;
-  border-bottom: 4rpx solid #5BA7D8;
+  border-right: 4rpx solid var(--theme-primary, #5BA7D8);
+  border-bottom: 4rpx solid var(--theme-primary, #5BA7D8);
   transform: rotate(45deg);
   margin-left: 16rpx;
   box-sizing: border-box;
@@ -99,18 +99,18 @@ page { background: #F7F9FB; }
 
 /* ═══════════════ 月度卡片 ═══════════════ */
 .month-card {
-  background-color: #5BA7D8;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background-color: var(--theme-primary, #5BA7D8);
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   margin: 16rpx 24rpx 0;
   border-radius: 20rpx;
   padding: 24rpx 28rpx 20rpx;
-  box-shadow: 0 16rpx 34rpx rgba(91, 167, 216, .22);
+  box-shadow: 0 16rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .22);
 }
 .page .month-card {
-  background-color: #5BA7D8 !important;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3) !important;
+  background-color: var(--theme-primary, #5BA7D8) !important;
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486)) !important;
   border: none !important;
-  box-shadow: 0 16rpx 34rpx rgba(91, 167, 216, .22) !important;
+  box-shadow: 0 16rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .22) !important;
 }
 .mc-header {
   display: flex;
@@ -183,14 +183,14 @@ page { background: #F7F9FB; }
 .exp-left { display: flex; align-items: center; min-width: 0; }
 .exp-icon-wrap {
   width: 72rpx; height: 72rpx; border-radius: 16rpx;
-  background: #EAF4FB; display: flex; align-items: center; justify-content: center;
+  background: var(--theme-primary-soft, #EAF4FB); display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .exp-icon-img { width: 40rpx; height: 40rpx; }
 .exp-info { margin-left: 16rpx; min-width: 0; }
 .exp-cat { font-size: 28rpx; color: #243044; font-weight: 600; display: block; }
 .exp-note { font-size: 24rpx; color: #6E7A8A; display: block; margin-top: 2rpx; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340rpx; }
-.exp-pet-name { font-size: 22rpx; color: #5BA7D8; display: block; margin-top: 2rpx; }
+.exp-pet-name { font-size: 22rpx; color: var(--theme-primary, #5BA7D8); display: block; margin-top: 2rpx; }
 .exp-amount { font-size: 32rpx; color: #FF6B6B; font-weight: 700; flex-shrink: 0; }
 
 .hint-box { text-align: center; padding: 8rpx 24rpx 20rpx; }
@@ -198,19 +198,19 @@ page { background: #F7F9FB; }
 
 /* ═══════════════ 年度：汇总卡片 ═══════════════ */
 .year-summary-card {
-  background-color: #5BA7D8;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background-color: var(--theme-primary, #5BA7D8);
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   margin: 16rpx 24rpx 0;
   border-radius: 20rpx;
   padding: 32rpx;
   text-align: center;
-  box-shadow: 0 16rpx 34rpx rgba(91, 167, 216, .22);
+  box-shadow: 0 16rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .22);
 }
 .page .year-summary-card {
-  background-color: #5BA7D8 !important;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3) !important;
+  background-color: var(--theme-primary, #5BA7D8) !important;
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486)) !important;
   border: none !important;
-  box-shadow: 0 16rpx 34rpx rgba(91, 167, 216, .22) !important;
+  box-shadow: 0 16rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .22) !important;
 }
 .ys-label { display: block; font-size: 26rpx; color: rgba(255,255,255,0.75); }
 .ys-total { display: block; font-size: 56rpx; color: #fff; font-weight: 800; margin: 12rpx 0 24rpx; }
@@ -234,6 +234,22 @@ page { background: #F7F9FB; }
   padding: 24rpx;
   box-shadow: 0 8rpx 22rpx rgba(36, 48, 68, .05);
 }
+
+.monthly-insights {
+  margin: 18rpx 24rpx;
+  padding: 22rpx 12rpx;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-radius: 22rpx;
+  background: rgba(255,255,255,.94);
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .12);
+}
+.insight-item { min-width: 0; padding: 0 12rpx; text-align: center; border-right: 1rpx solid var(--theme-divider, #E8EEF4); }
+.insight-item:last-child { border-right: 0; }
+.insight-label { display: block; color: var(--theme-text-muted, #A5AFBC); font-size: 20rpx; }
+.insight-value { display: block; margin-top: 8rpx; color: var(--theme-text, #243044); font-size: 23rpx; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.insight-value.up { color: #C8564F; }
+.insight-value.down { color: var(--theme-secondary-deep, #3F9486); }
 .chart-title {
   font-size: 28rpx; font-weight: 700; color: #243044;
   margin-bottom: 20rpx; display: block;
@@ -331,8 +347,8 @@ page { background: #F7F9FB; }
 }
 .add-btn {
   width: 100%;
-  background-color: #5BA7D8;
-  background-image: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background-color: var(--theme-primary, #5BA7D8);
+  background-image: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff; font-size: 34rpx; font-weight: 700;
   border-radius: 50rpx; padding: 28rpx 0;
   border: none;
@@ -362,7 +378,7 @@ page { background: #F7F9FB; }
   border-radius: 34rpx;
   background:
     radial-gradient(circle at 20% 0%, rgba(255,255,255,.88) 0, rgba(255,255,255,0) 260rpx),
-    linear-gradient(180deg, #EAF4FB 0%, #EAF7F5 100%);
+    linear-gradient(180deg, var(--theme-primary-soft, #EAF4FB) 0%, var(--theme-secondary-soft, #EAF7F5) 100%);
   border: 1rpx solid rgba(255,255,255,.78);
   box-shadow: 0 28rpx 70rpx rgba(36, 48, 68, .22);
   box-sizing: border-box;
@@ -401,12 +417,12 @@ page { background: #F7F9FB; }
   padding: 0 24rpx;
   border-radius: 24rpx;
   background: rgba(255,255,255,.78);
-  border: 1rpx solid rgba(91, 167, 216, .12);
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91, 167, 216), .12);
   box-sizing: border-box;
 }
 .cat-filter-option.active {
   background: #fff !important;
-  border-color: rgba(91, 167, 216, .38) !important;
+  border-color: rgba(var(--theme-primary-rgb, 91, 167, 216), .38) !important;
   box-shadow: 0 12rpx 28rpx rgba(45, 83, 115, .12);
 }
 .cat-filter-option-text {
@@ -415,10 +431,10 @@ page { background: #F7F9FB; }
   font-weight: 700;
 }
 .cat-filter-option.active .cat-filter-option-text {
-  color: #2F8DB8 !important;
+  color: var(--theme-primary-deep, #2F8DB8) !important;
 }
 .cat-filter-check {
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-size: 34rpx;
   font-weight: 900;
 }

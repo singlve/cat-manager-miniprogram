@@ -3,12 +3,17 @@
 const clouddb = require('../../utils/clouddb.js');
 const { hashPassword } = require('../../utils/crypto.js');
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: {
     mode: 'mine',       // 'login' | 'mine'
     needPassword: true,
     tempUser: null,
-    isNewUser: false
+    isNewUser: false,
+    submitting: false
   },
 
   onLoad(options) {
@@ -30,6 +35,7 @@ Page({
   onConfirmInput(e)  { this._confirm = e.detail.value; },
 
   async submit() {
+    if (this.data.submitting) return;
     const phone = this._phone || '';
     const password = this._password || '';
     const confirm = this._confirm || '';
@@ -52,18 +58,21 @@ Page({
       wx.showToast({ title: '请设置密码（至少6位）', icon: 'none' }); return;
     }
 
-    wx.showLoading({ title: '绑定中...' });
+    this.setData({ submitting: true });
+    wx.showLoading({ title: '绑定中...', mask: true });
 
     try {
       if (mode === 'login') {
-        await this._bindForLogin(phone, password);
+        return await this._bindForLogin(phone, password);
       } else {
-        await this._bindForMine(phone, password);
+        return await this._bindForMine(phone, password);
       }
     } catch (e) {
-      wx.hideLoading();
       console.error('[bind-phone] submit error:', e);
       wx.showToast({ title: '绑定失败，请重试', icon: 'none' });
+      this.setData({ submitting: false });
+    } finally {
+      wx.hideLoading();
     }
   },
 
@@ -77,8 +86,9 @@ Page({
       try { tempUser = wx.getStorageSync('currentUser') || null; } catch (e) {}
     }
     if (!tempUser || !tempUser._id) {
-      wx.hideLoading();
-      wx.showToast({ title: '用户数据异常，请重新登录', icon: 'none' }); return;
+      wx.showToast({ title: '用户数据异常，请重新登录', icon: 'none' });
+      this.setData({ submitting: false });
+      return false;
     }
 
     const openid = tempUser._openid || getApp().globalData.openid || '';
@@ -86,8 +96,9 @@ Page({
     // 查重
     const existing = await clouddb.getUserByPhone(phone);
     if (existing && openid && existing._openid !== openid) {
-      wx.hideLoading();
-      wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' }); return;
+      wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' });
+      this.setData({ submitting: false });
+      return false;
     }
 
     const updates = { phone, loginType: 'wechat_phone' };
@@ -102,7 +113,6 @@ Page({
     if (password) merged.password = hashPassword(password);
     try { wx.setStorageSync('currentUser', merged); } catch (e) {}
 
-    wx.hideLoading();
     wx.showToast({ title: '绑定成功', icon: 'success' });
 
     // 新用户 → 完善资料；老用户 → 首页
@@ -113,6 +123,7 @@ Page({
         wx.switchTab({ url: '/pages/cat-list/cat-list' });
       }
     }, 800);
+    return true;
   },
 
   // mine 模式：更新当前已登录用户
@@ -123,8 +134,9 @@ Page({
     // 查重
     const existing = await clouddb.getUserByPhone(phone);
     if (existing && currentUser._openid && existing._openid !== currentUser._openid) {
-      wx.hideLoading();
-      wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' }); return;
+      wx.showToast({ title: '该手机号已被其他账号绑定', icon: 'none' });
+      this.setData({ submitting: false });
+      return false;
     }
 
     const updates = { phone };
@@ -139,9 +151,9 @@ Page({
     if (password) currentUser.password = hashPassword(password);
     try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
 
-    wx.hideLoading();
     wx.showToast({ title: '绑定成功', icon: 'success' });
     setTimeout(() => wx.navigateBack(), 800);
+    return true;
   },
 
   skip() {

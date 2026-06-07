@@ -2,6 +2,10 @@
 // 定时触发：检查所有提醒，向即将到期/已逾期的用户推送订阅消息
 const cloud = require('wx-server-sdk');
 const https = require('https');
+const {
+  buildReminderSummary,
+  groupRemindersByOpenid
+} = require('./summary.js');
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 const db = cloud.database();
@@ -19,13 +23,14 @@ const TYPE_LABEL = { bath: '洗澡', deworm: '驱虫', vaccine: '免疫', checku
 const PAGE_SIZE = 100;
 const SEND_CONCURRENCY = 5;
 
-function limitThingValue(value) {
-  value = String(value || '');
-  return value.length > 20 ? value.slice(0, 20) : value;
-}
-
 function formatDateKey(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function parseLocalDate(value) {
+  const match = String(value || '').trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (!match) return new Date(NaN);
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }
 
 let tokenCache = { token: '', expiresAt: 0 };
@@ -111,7 +116,9 @@ exports.main = async (event, context) => {
   let totalChecked = 0;
   let totalDue = 0;
   let sentCount = 0;
+  let sentReminderCount = 0;
   let failCount = 0;
+  let failedReminderCount = 0;
   let skippedNoTemplate = 0;
   let skippedNoOpenid = 0;
   let skippedInvalidReminder = 0;
@@ -148,7 +155,7 @@ exports.main = async (event, context) => {
         continue;
       }
 
-      const lastDate = new Date(r.lastDate);
+      const lastDate = parseLocalDate(r.lastDate);
       if (Number.isNaN(lastDate.getTime())) {
         skippedInvalidReminder++;
         continue;
@@ -168,112 +175,145 @@ exports.main = async (event, context) => {
       ? dueReminders.slice(0, Math.max(0, Number(event.limit) || 0))
       : dueReminders;
 
-    async function sendOne(item) {
+    const catCache = new Map();
+    async function prepareOne(item) {
       const r = item.reminder;
-      const nextDate = item.nextDate;
       let catName = '你的宠物';
       let catData = null;
-      try {
-        const cat = await db.collection('cats').doc(r.catId).get();
-        catData = cat.data || null;
-      } catch (e) {
-        console.warn('[checkReminders] cat lookup failed for', r.catId, e.message);
+      if (catCache.has(r.catId)) {
+        catData = catCache.get(r.catId);
+      } else {
+        try {
+          const cat = await db.collection('cats').doc(r.catId).get();
+          catData = cat.data || null;
+        } catch (e) {
+          console.warn('[checkReminders] cat lookup failed for', r.catId, e.message);
+        }
+        catCache.set(r.catId, catData);
       }
 
       if (!catData || catData.status === 'passed_away') {
         skippedCatUnavailable++;
         console.warn('[checkReminders] 宠物不存在或已离世，跳过发送:', r._id, r.catId);
-        return;
+        return null;
       }
 
       catName = catData.name || catName;
 
-      const typeLabel = TYPE_LABEL[r.type] || r.type;
-      const daysOverdue = Math.floor((today - nextDate) / (1000 * 60 * 60 * 24));
-      const thing1Value = `${catName} - ${typeLabel}`;
-      const thing26Value = daysOverdue > 0
-        ? `${thing1Value} 已逾期 ${daysOverdue} 天！！！`
-        : `${thing1Value} 就在今天，赶紧去完成吧！`;
-
-      // 没有模板 ID 时仅统计，不发送
-      if (!TEMPLATE_ID) {
-        skippedNoTemplate++;
-        console.log('[checkReminders] 未配置模板ID，跳过发送:', catName, typeLabel);
-        return;
-      }
-
       if (!r._openid) {
         skippedNoOpenid++;
         console.warn('[checkReminders] 提醒缺少 _openid，无法发送:', r._id);
-        return;
+        return null;
       }
+
+      return {
+        reminder: r,
+        nextDate: item.nextDate,
+        catName,
+        typeLabel: TYPE_LABEL[r.type] || r.type
+      };
+    }
+
+    const prepared = (await Promise.all(sendTargets.map(prepareOne))).filter(Boolean);
+    const messageGroups = groupRemindersByOpenid(prepared);
+
+    async function updateGroupStatus(group, updates) {
+      await Promise.all(group.reminders.map(async item => {
+        try {
+          await db.collection('reminders').doc(item.reminder._id).update({ data: updates });
+        } catch (updateErr) {
+          console.warn('[checkReminders] 通知状态更新失败:', item.reminder._id, updateErr.message);
+        }
+      }));
+    }
+
+    async function sendOneGroup(group) {
+      const summary = buildReminderSummary(group.reminders, today);
+      if (!summary) return;
 
       if (previewDetails.length < 10) {
         previewDetails.push({
-          reminderId: r._id,
-          catId: r.catId,
-          type: r.type,
-          thing1: limitThingValue(thing1Value),
-          time23: nextDate.toLocaleDateString('zh-CN'),
-          thing26: limitThingValue(thing26Value),
-          thing26Raw: thing26Value
+          reminderIds: group.reminders.map(item => item.reminder._id),
+          reminderCount: group.reminders.length,
+          catId: summary.first.reminder.catId,
+          thing1: summary.thing1,
+          time23: summary.time23,
+          thing26: summary.thing26,
+          thing26Raw: summary.thing26Raw
         });
       }
 
       if (event.dryRun) return;
 
+      if (!TEMPLATE_ID) {
+        skippedNoTemplate += group.reminders.length;
+        console.log('[checkReminders] 未配置模板ID，跳过一组提醒:', group.reminders.length);
+        return;
+      }
+
       try {
+        const attemptAt = Date.now();
         await sendSubscribeMessage({
-          touser: r._openid,
+          touser: group.openid,
           template_id: TEMPLATE_ID,
           data: {
-            thing1: { value: limitThingValue(thing1Value) },
-            time23: { value: nextDate.toLocaleDateString('zh-CN') },
-            thing26: { value: limitThingValue(thing26Value) }
+            thing1: { value: summary.thing1 },
+            time23: { value: summary.time23 },
+            thing26: { value: summary.thing26 }
           },
-          page: `pages/cat-detail/cat-detail?id=${r.catId}`,
+          page: group.reminders.length === 1
+            ? `pages/cat-detail/cat-detail?id=${summary.first.reminder.catId}`
+            : 'pages/reminders/reminders',
           miniprogram_state: MINIPROGRAM_STATE,
           lang: 'zh_CN'
         });
         sentCount++;
-        try {
-          await db.collection('reminders').doc(r._id).update({
-            data: {
-              lastNotifiedDate: todayKey,
-              lastNotifiedAt: Date.now()
-            }
-          });
-        } catch (updateErr) {
-          console.warn('[checkReminders] lastNotifiedDate 更新失败:', r._id, updateErr.message);
-        }
+        sentReminderCount += group.reminders.length;
+        await updateGroupStatus(group, {
+          lastNotifiedDate: todayKey,
+          lastNotifiedAt: attemptAt,
+          lastNotifyAttemptAt: attemptAt,
+          lastNotifyStatus: 'success',
+          lastNotifyErrorCode: '',
+          lastNotifyError: ''
+        });
       } catch (e) {
         failCount++;
+        failedReminderCount += group.reminders.length;
+        await updateGroupStatus(group, {
+          lastNotifyAttemptAt: Date.now(),
+          lastNotifyStatus: 'failed',
+          lastNotifyErrorCode: e.errCode || e.errcode || e.code || '',
+          lastNotifyError: e.errMsg || e.errmsg || e.message || String(e)
+        });
         if (failedDetails.length < 10) {
           failedDetails.push({
-            reminderId: r._id,
-            catId: r.catId,
-            type: r.type,
+            reminderIds: group.reminders.map(item => item.reminder._id),
+            reminderCount: group.reminders.length,
             templateId: TEMPLATE_ID,
             errCode: e.errCode || e.errcode || e.code || '',
             errMsg: e.errMsg || e.errmsg || e.message || String(e)
           });
         }
-        console.error('[checkReminders] send failed for', r._id, ':', e.message);
+        console.error('[checkReminders] grouped send failed:', group.reminders.length, e.message);
       }
     }
 
-    for (let i = 0; i < sendTargets.length; i += SEND_CONCURRENCY) {
-      await Promise.all(sendTargets.slice(i, i + SEND_CONCURRENCY).map(sendOne));
+    for (let i = 0; i < messageGroups.length; i += SEND_CONCURRENCY) {
+      await Promise.all(messageGroups.slice(i, i + SEND_CONCURRENCY).map(sendOneGroup));
     }
 
-    console.log(`[checkReminders] 完成 — 检查 ${totalChecked} 条，到期 ${totalDue} 条，本次发送 ${sendTargets.length} 条，发送成功 ${sentCount}，失败 ${failCount}，无模板 ${skippedNoTemplate}，无openid ${skippedNoOpenid}，无效提醒 ${skippedInvalidReminder}，宠物不可用 ${skippedCatUnavailable}，今日已通知 ${skippedAlreadyNotified}`);
+    console.log(`[checkReminders] 完成 — 检查 ${totalChecked} 条，到期 ${totalDue} 条，合并为 ${messageGroups.length} 条消息，发送成功 ${sentCount} 条消息/${sentReminderCount} 项提醒，失败 ${failCount} 条消息/${failedReminderCount} 项提醒，无模板 ${skippedNoTemplate}，无openid ${skippedNoOpenid}，无效提醒 ${skippedInvalidReminder}，宠物不可用 ${skippedCatUnavailable}，今日已通知 ${skippedAlreadyNotified}`);
     return {
       ok: true,
       checked: totalChecked,
       due: totalDue,
-      attempted: sendTargets.length,
+      attempted: messageGroups.length,
+      attemptedReminders: prepared.length,
       sent: sentCount,
+      sentReminders: sentReminderCount,
       failed: failCount,
+      failedReminders: failedReminderCount,
       skippedNoTemplate,
       skippedNoOpenid,
       skippedInvalidReminder,

@@ -1,9 +1,36 @@
 // pages/reminders/reminders.js
 // 提醒列表页：逾期/即将/未来分组 + 状态筛选
 const clouddb = require('../../utils/clouddb.js');
+const { reportError } = require('../../utils/error-log.js');
 const { parseDate } = require('../../utils/util.js');
+const { getInitialThemeData } = require('../../utils/themes.js');
+const {
+  SUBSCRIBE_TMPL_ID,
+  getSubscribeState,
+  getLatestNotifyResult,
+  getAuthorizationCopy
+} = require('../../utils/reminder-notifications.js');
+const { confirmDangerousAction } = require('../../utils/util.js');
+const { markPageLoaded, shouldRefreshPage } = require('../../utils/data-cache.js');
+const initialTheme = getInitialThemeData();
+const REMINDER_CACHE_TTL = 45 * 1000;
 
-const SUBSCRIBE_TMPL_ID = 'BMr3A8IZjnDrHnIxsIUZU4LX7khHdVrFo8F2aN7Fu8U';
+const REMINDER_TYPE_META = {
+  bath: { label: '洗澡', iconPath: '/assets/icons/ui/bath.png' },
+  deworm: { label: '驱虫', iconPath: '/assets/icons/ui/deworm.png' },
+  vaccine: { label: '免疫', iconPath: '/assets/icons/ui/vaccine.png' },
+  checkup: { label: '体检', iconPath: '/assets/icons/ui/checkup.png' },
+  claw: { label: '修剪指甲', iconPath: '/assets/icons/ui/claw.png' },
+  other: { label: '其他', iconPath: '/assets/icons/ui/other.png' }
+};
+
+function decorateReminder(reminder) {
+  const meta = REMINDER_TYPE_META[reminder.type] || REMINDER_TYPE_META.other;
+  return Object.assign({}, reminder, {
+    _typeLabel: meta.label,
+    _typeIconPath: meta.iconPath
+  });
+}
 
 function calcNextDate(lastDate, intervalDays) {
   if (!lastDate || !intervalDays) return null;
@@ -38,7 +65,7 @@ function getDemoReminders() {
     { _id: 'demo_1', catId: 'demo_1', catName: '橘座', type: 'deworm', lastDate: fmt(overdueLast), intervalDays: 30, nextDate: overdueNext, daysUntil: getDaysUntil(overdueNext), isOverdue: true, isUrgent: false, note: '使用体内驱虫药', completedAt: null },
     { _id: 'demo_2', catId: 'demo_2', catName: '雪球', type: 'vaccine', lastDate: fmt(upcomingLast), intervalDays: 30, nextDate: upcomingNext, daysUntil: getDaysUntil(upcomingNext), isOverdue: false, isUrgent: true, note: '猫三联疫苗', completedAt: null },
     { _id: 'demo_3', catId: 'demo_1', catName: '橘座', type: 'bath', lastDate: fmt(futureLast), intervalDays: 30, nextDate: futureNext, daysUntil: getDaysUntil(futureNext), isOverdue: false, isUrgent: false, note: '', completedAt: null }
-  ];
+  ].map(decorateReminder);
 
   return {
     allReminders: raw
@@ -48,17 +75,29 @@ function getDemoReminders() {
 Page({
   data: {
     isOnline: true,
+    themeClass: initialTheme.themeClass,
+    themeKey: initialTheme.themeKey,
+    themePrimary: initialTheme.themePrimary,
+    themeSecondary: initialTheme.themeSecondary,
     overdueList: [],
     upcomingList: [],
     futureList: [],
     hasData: false,       // 当前是否有数据展示
     overdueCount: 0,
     loading: false,
+    loadError: false,
     isLoggedIn: false,
     catTabs: [],
     catFilter: 'all',
     statusFilter: 'active', // 'active'|'overdue'|'completed'|'all'
     allReminders: [],
+    batchMode: false,
+    selectedReminderIds: [],
+    batchOperating: false,
+    deletingReminderId: '',
+    notifyAuth: getAuthorizationCopy('unknown'),
+    latestNotify: getLatestNotifyResult([]),
+    checkingNotify: false,
     addFabX: 0,
     addFabY: 0,
     addFabMovingX: 0,
@@ -66,9 +105,16 @@ Page({
   },
 
   onShow() {
-    this.setData({ isOnline: getApp().globalData.isOnline });
-    this._initAddFabPosition();
     const app = getApp();
+    const activeTheme = app.applyTheme();
+    this.setData({
+      isOnline: app.globalData.isOnline,
+      themeClass: activeTheme.className,
+      themeKey: activeTheme.key,
+      themePrimary: activeTheme.primary,
+      themeSecondary: activeTheme.secondary
+    });
+    this._initAddFabPosition();
     const generatedFlag = wx.getStorageSync('reminderPlanGenerated');
     if (generatedFlag) {
       wx.removeStorageSync('reminderPlanGenerated');
@@ -79,7 +125,11 @@ Page({
       catFilter: generatedFlag ? 'all' : this.data.catFilter
     });
     if (app.isLoggedIn()) {
-      this.loadData();
+      if (generatedFlag || shouldRefreshPage('tab.reminders', ['cats', 'reminders'], REMINDER_CACHE_TTL)) {
+        this.loadData();
+      } else {
+        this.refreshNotifyAuthorization();
+      }
     } else {
       const demo = getDemoReminders();
       this.setData({
@@ -123,7 +173,7 @@ Page({
   },
 
   async loadData() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     try {
       const [cats, reminders] = await Promise.all([
         clouddb.getCats(),
@@ -146,7 +196,7 @@ Page({
         .map(r => {
           const next = calcNextDate(r.lastDate, r.intervalDays);
           const days = getDaysUntil(next);
-          return {
+          return decorateReminder({
             ...r,
             catName: catNameMap[r.catId] || r.catName || '',
             nextDate: next || '未设置',
@@ -154,7 +204,7 @@ Page({
             isOverdue: days !== null && days < 0,
             isUrgent: days !== null && days >= 0 && days <= 7,
             completedAt: r.completedAt || null
-          };
+          });
         });
 
       all.sort((a, b) => {
@@ -169,13 +219,54 @@ Page({
       this.setData({
         allReminders: all,
         catTabs,
-        loading: false
+        loading: false,
+        latestNotify: getLatestNotifyResult(all)
       });
       this._applyFilters();
+      markPageLoaded('tab.reminders', ['cats', 'reminders']);
+      this.refreshNotifyAuthorization();
     } catch (e) {
-      console.error('[reminders] loadData error:', e);
-      this.setData({ loading: false });
+      reportError('reminders.loadData', e);
+      this.setData({ loading: false, loadError: true });
     }
+  },
+
+  retryLoad() { this.loadData(); },
+
+  refreshNotifyAuthorization() {
+    if (!wx.getSetting) return;
+    this.setData({ checkingNotify: true });
+    wx.getSetting({
+      withSubscriptions: true,
+      success: res => {
+        this.setData({
+          notifyAuth: getAuthorizationCopy(getSubscribeState(res)),
+          checkingNotify: false
+        });
+      },
+      fail: () => this.setData({ checkingNotify: false })
+    });
+  },
+
+  requestNotifyAuthorization() {
+    if (!SUBSCRIBE_TMPL_ID || !wx.requestSubscribeMessage) return;
+    wx.requestSubscribeMessage({
+      tmplIds: [SUBSCRIBE_TMPL_ID],
+      complete: () => this.refreshNotifyAuthorization()
+    });
+  },
+
+  openNotifySettings() {
+    if (!wx.openSetting) return;
+    wx.openSetting({ withSubscriptions: true, complete: () => this.refreshNotifyAuthorization() });
+  },
+
+  onNotifyAction() {
+    if (this.data.notifyAuth.status === 'success' || this.data.notifyAuth.status === 'disabled') {
+      this.openNotifySettings();
+      return;
+    }
+    this.requestNotifyAuthorization();
   },
 
   // ── 按宠物 + 状态筛选 ──
@@ -199,12 +290,16 @@ Page({
     const showUpcoming = isCompletedMode ? [] : filtered.filter(r => r.isUrgent && !r.isOverdue);
     const showFuture = isCompletedMode ? [] : filtered.filter(r => !r.isOverdue && !r.isUrgent);
     const showCompleted = isCompletedMode ? filtered : [];
+    const selectedIds = this.data.selectedReminderIds || [];
+    const markSelected = list => list.map(item => Object.assign({}, item, {
+      _selected: selectedIds.indexOf(item._id) !== -1
+    }));
 
     this.setData({
-      overdueList: showOverdue,
-      upcomingList: showUpcoming,
-      futureList: showFuture,
-      completedList: showCompleted,
+      overdueList: markSelected(showOverdue),
+      upcomingList: markSelected(showUpcoming),
+      futureList: markSelected(showFuture),
+      completedList: markSelected(showCompleted),
       overdueCount: showOverdue.length,
       hasData
     });
@@ -214,7 +309,7 @@ Page({
   onStatusFilterChange(e) {
     const status = e.currentTarget.dataset.status;
     if (status === this.data.statusFilter) return;
-    this.setData({ statusFilter: status });
+    this.setData({ statusFilter: status, batchMode: false, selectedReminderIds: [] });
     this._applyFilters();
   },
 
@@ -222,9 +317,119 @@ Page({
   onCatFilterChange(e) {
     const catId = e.currentTarget.dataset.catid;
     if (catId === this.data.catFilter) return;
-    this.setData({ catFilter: catId }, () => {
+    this.setData({ catFilter: catId, batchMode: false, selectedReminderIds: [] }, () => {
       this._applyFilters();
     });
+  },
+
+  toggleBatchMode() {
+    this.setData({
+      batchMode: !this.data.batchMode,
+      selectedReminderIds: []
+    }, () => this._applyFilters());
+  },
+
+  toggleReminderSelection(e) {
+    if (!this.data.batchMode || this.data.batchOperating) return;
+    const id = e.currentTarget.dataset.id;
+    const selected = (this.data.selectedReminderIds || []).slice();
+    const index = selected.indexOf(id);
+    if (index === -1) selected.push(id);
+    else selected.splice(index, 1);
+    this.setData({ selectedReminderIds: selected }, () => this._applyFilters());
+  },
+
+  selectAllVisible() {
+    const visible = []
+      .concat(this.data.overdueList || [])
+      .concat(this.data.upcomingList || [])
+      .concat(this.data.futureList || [])
+      .concat(this.data.completedList || []);
+    const ids = visible.map(item => item._id);
+    const allSelected = ids.length > 0 && ids.every(id => this.data.selectedReminderIds.indexOf(id) !== -1);
+    this.setData({ selectedReminderIds: allSelected ? [] : ids }, () => this._applyFilters());
+  },
+
+  async batchDeleteReminders() {
+    const ids = this.data.selectedReminderIds || [];
+    if (!ids.length || this.data.batchOperating) return;
+    const confirmed = await confirmDangerousAction({
+      title: '批量删除提醒',
+      content: `确定删除选中的 ${ids.length} 条提醒吗？删除后无法恢复。`,
+      secondContent: `将永久删除这 ${ids.length} 条提醒，请再次确认。`
+    });
+    if (!confirmed) return;
+    this.setData({ batchOperating: true });
+    try {
+      await Promise.all(ids.filter(id => !id.startsWith('demo_')).map(id => clouddb.deleteReminder(id)));
+      this.setData({ batchMode: false, selectedReminderIds: [] });
+      await this.loadData();
+      wx.showToast({ title: '已批量删除', icon: 'success' });
+    } catch (e) {
+      console.error('[reminders] batch delete error:', e);
+      wx.showToast({ title: '批量删除失败', icon: 'none' });
+    } finally {
+      this.setData({ batchOperating: false });
+    }
+  },
+
+  async batchCompleteReminders() {
+    const ids = this.data.selectedReminderIds || [];
+    if (!ids.length || this.data.batchOperating || this.data.statusFilter === 'completed') return;
+    const confirmed = await new Promise(resolve => wx.showModal({
+      title: '批量完成提醒',
+      content: `确认已完成选中的 ${ids.length} 项照护吗？`,
+      confirmText: '确认完成',
+      success: result => resolve(result.confirm)
+    }));
+    if (!confirmed) return;
+    const shouldCreateNext = await new Promise(resolve => wx.showModal({
+      title: '生成下次提醒',
+      content: '是否按各自的当前间隔生成下一周期提醒？',
+      confirmText: '全部生成',
+      cancelText: '不生成',
+      success: result => resolve(result.confirm)
+    }));
+    const execute = () => this._doBatchComplete(ids, shouldCreateNext);
+    if (shouldCreateNext && SUBSCRIBE_TMPL_ID) {
+      wx.requestSubscribeMessage({ tmplIds: [SUBSCRIBE_TMPL_ID], complete: execute });
+    } else {
+      execute();
+    }
+  },
+
+  async _doBatchComplete(ids, shouldCreateNext) {
+    this.setData({ batchOperating: true });
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    try {
+      const selected = this.data.allReminders.filter(reminder => ids.indexOf(reminder._id) !== -1);
+      for (let index = 0; index < selected.length; index++) {
+        const reminder = selected[index];
+        if (reminder._id.startsWith('demo_')) continue;
+        await clouddb.updateReminder(reminder._id, { lastDate: todayStr, completedAt: todayStr });
+        if (shouldCreateNext) {
+          await clouddb.addReminder({
+            _id: `rem_${Date.now()}_${index}`,
+            catId: reminder.catId,
+            catName: reminder.catName,
+            type: reminder.type,
+            lastDate: todayStr,
+            intervalDays: reminder.intervalDays,
+            note: reminder.note || '',
+            previousReminderId: reminder._id
+          });
+        }
+      }
+      this.setData({ batchMode: false, selectedReminderIds: [] });
+      await this.loadData();
+      wx.showToast({ title: shouldCreateNext ? '已完成并生成下次' : '已批量完成', icon: 'success' });
+    } catch (e) {
+      console.error('[reminders] batch complete error:', e);
+      wx.showToast({ title: '批量操作失败', icon: 'none' });
+    } finally {
+      this.setData({ batchOperating: false });
+    }
   },
 
   // ── 标记完成 ──
@@ -350,13 +555,25 @@ Page({
   async deleteReminder(e) {
     const app = getApp();
     if (!app.isLoggedIn()) { this.goLogin(); return; }
-    const confirmed = await new Promise(r =>
-      wx.showModal({ title: '确认删除', content: '确定要删除这条提醒吗？', success: res => r(res.confirm) })
-    );
+    const id = e.currentTarget.dataset.id;
+    if (!id || this.data.deletingReminderId) return;
+    const confirmed = await confirmDangerousAction({
+      title: '删除提醒',
+      content: '确定要删除这条提醒吗？',
+      secondContent: '删除后不会再发送这条提醒，且无法恢复。'
+    });
     if (!confirmed) return;
-    await clouddb.deleteReminder(e.currentTarget.dataset.id);
-    this.loadData();
-    wx.showToast({ title: '已删除', icon: 'success' });
+    this.setData({ deletingReminderId: id });
+    try {
+      await clouddb.deleteReminder(id);
+      await this.loadData();
+      wx.showToast({ title: '已删除', icon: 'success' });
+    } catch (error) {
+      reportError('reminders.delete', error, { reminderId: id });
+      wx.showToast({ title: '删除失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ deletingReminderId: '' });
+    }
   },
 
   async onPullDownRefresh() {

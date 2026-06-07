@@ -6,7 +6,11 @@ const { verifyPassword } = require('../../utils/crypto.js');
 // ─── 默认头像（灰色宠物占位符） ───
 const DEFAULT_AVATAR = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgcng9IjYwIiBmaWxsPSIjRjVGNUY1Ii8+PHRleHQgeD0iNjAiIHk9Ijc4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjU2IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+8J+QsTwvdGV4dD48L3N2Zz4=';
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: {
     phone: '', password: '', showOtherLogin: false,
     // 完善资料弹窗（新用户绑定手机后由 bind-phone 页 redirect 回来触发）

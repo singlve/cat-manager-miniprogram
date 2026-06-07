@@ -1,5 +1,5 @@
 <!-- pages/login/login.wxml -->
-<view class="login-page">
+<view class="login-page {{themeClass}}">
   <view class="login-shell">
 
     <!-- Logo -->

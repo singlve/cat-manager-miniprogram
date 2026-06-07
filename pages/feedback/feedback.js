@@ -13,6 +13,8 @@ const CATEGORIES = [
   { key: 'experience', label: '体验',  iconPath: '/assets/icons/ui/feedback.png' },
   { key: 'other',      label: '其他',  iconPath: '/assets/icons/ui/other.png' }
 ];
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
   data: {
     isAdmin: false,
@@ -22,6 +24,7 @@ Page({
     filter: 'all',
     categories: CATEGORIES,
     loading: true,
+    loadError: false,
 
     // 通知
     notifications: [],
@@ -43,12 +46,13 @@ Page({
   },
 
   onShow() {
+    syncPageTheme(this);
     this.loadFeedbacks();
     this._loadNotifications();
   },
 
   async loadFeedbacks() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     try {
       var list = await clouddb.getFeedback() || [];
       var currentUser = {};
@@ -108,11 +112,16 @@ Page({
         });
       });
 
-      this.setData({ feedbacks: list, filteredFeedbacks: this._applyFilter(this.data.filter, list), loading: false, currentOpenid: currentOpenid });
+      this.setData({ feedbacks: list, filteredFeedbacks: this._applyFilter(this.data.filter, list), loading: false, loadError: false, currentOpenid: currentOpenid });
     } catch (e) {
       console.error('[feedback] load fail:', e);
-      this.setData({ loading: false });
+      this.setData({ loading: false, loadError: true });
     }
+  },
+
+  retryLoad() {
+    this.loadFeedbacks();
+    this._loadNotifications();
   },
 
   // ─── 通知 ───

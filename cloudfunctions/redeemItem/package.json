@@ -1,0 +1,10 @@
+{
+  "name": "redeemItem",
+  "version": "1.0.0",
+  "description": "积分商品原子兑换",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "~3.0.0"
+  }
+}

@@ -3,6 +3,8 @@
 const clouddb = require('../../utils/clouddb.js');
 const { parseDate } = require('../../utils/util.js');
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
   data: {
     isOnline: true,
@@ -10,9 +12,16 @@ Page({
     cats: [],            // 所有宠物列表
     catOptions: [],      // 筛选标签：[{key, label}]
     currentCat: 'all',   // 当前筛选的宠物 key
-    records: [],
     filteredRecords: [],
+    loadedRecordCount: 0,
     currentFilter: 'all',
+    dateFilter: 'all',
+    dateFilterOptions: [
+      { key: 'all', label: '全部时间' },
+      { key: '30', label: '近30天' },
+      { key: '90', label: '近90天' },
+      { key: 'year', label: '本年度' }
+    ],
     filterOptions: [
       { key: 'all',     label: '全部' },
       { key: 'bath',    label: '洗澡' },
@@ -30,10 +39,12 @@ Page({
     editId: '',
     editType: '',
     editDate: '',
-    editNote: ''
+    editNote: '',
+    editSaving: false
   },
 
   async onLoad(options) {
+    this._skipFirstOnShowReload = true;
     this.setData({ catId: options.catId || '' });
     await this.loadCats();
     // 从宠物详情页进入时，默认筛选该宠物
@@ -44,7 +55,12 @@ Page({
   },
 
   onShow() {
+    syncPageTheme(this);
     this.setData({ isOnline: getApp().globalData.isOnline });
+    if (this._skipFirstOnShowReload) {
+      this._skipFirstOnShowReload = false;
+      return;
+    }
     this.loadRecords();
   },
 
@@ -61,7 +77,8 @@ Page({
   // 加载健康记录（resetPage=true 从头加载，false 加载更多）
   async loadRecords(resetPage) {
     if (resetPage !== false) {
-      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [], loadError: false });
+      this._records = [];
+      this.setData({ recordsPage: 1, hasMoreRecords: true, filteredRecords: [], loadedRecordCount: 0, loadError: false });
     }
     if (this.data.recordsLoading) return;
     this.setData({ recordsLoading: true });
@@ -82,11 +99,12 @@ Page({
         _catAvatar: catsMap[r.catId] ? (catsMap[r.catId]._displayAvatar || catsMap[r.catId].avatar || '') : ''
       }); });
 
-      const allRecords = page === 1 ? withCat : [].concat(this.data.records, withCat);
+      const allRecords = page === 1 ? withCat : [].concat(this._records || [], withCat);
+      this._records = allRecords;
       const hasMore = newRecords.length >= pageSize;
 
       this.setData({
-        records: allRecords,
+        loadedRecordCount: allRecords.length,
         recordsPage: page + 1,
         hasMoreRecords: hasMore,
         recordsLoading: false,
@@ -120,14 +138,35 @@ Page({
     this.applyFilter();
   },
 
+  setDateFilter(e) {
+    this.setData({ dateFilter: e.currentTarget.dataset.range });
+    this.applyFilter();
+  },
+
   applyFilter() {
-    const { records, currentCat, currentFilter } = this.data;
-    let filtered = records;
+    const { currentCat, currentFilter, dateFilter } = this.data;
+    let filtered = this._records || [];
     if (currentCat !== 'all') {
       filtered = filtered.filter(r => r.catId === currentCat);
     }
     if (currentFilter !== 'all') {
       filtered = filtered.filter(r => r.type === currentFilter);
+    }
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+      if (dateFilter === 'year') {
+        const year = now.getFullYear();
+        filtered = filtered.filter(record => parseDate(record.date).getFullYear() === year);
+      } else {
+        const start = new Date(now);
+        start.setDate(start.getDate() - Number(dateFilter) + 1);
+        start.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(record => {
+          const date = parseDate(record.date);
+          return !Number.isNaN(date.getTime()) && date >= start && date <= now;
+        });
+      }
     }
     this.setData({ filteredRecords: filtered });
   },
@@ -136,7 +175,7 @@ Page({
 
   // ─── 编辑 ───
   openEdit(e) {
-    const record = this.data.records.find(r => r._id === e.currentTarget.dataset.id);
+    const record = (this._records || []).find(r => r._id === e.currentTarget.dataset.id);
     if (!record) return;
     this.setData({
       showEditModal: true,
@@ -158,15 +197,15 @@ Page({
   },
 
   async saveEdit() {
-    if (this._saving) return;
+    if (this.data.editSaving) return;
     const { editId, editDate, editNote, editType } = this.data;
     if (!editDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
 
-    this._saving = true;
+    this.setData({ editSaving: true });
 
     try {
       // 校验：日期不能早于宠物生日
-      const record = this.data.records.find(r => r._id === editId);
+      const record = (this._records || []).find(r => r._id === editId);
       if (record && record.catId) {
         const cat = await clouddb.getCatById(record.catId);
         if (cat && cat.birthday && editDate < cat.birthday) {
@@ -183,7 +222,7 @@ Page({
       console.error('[health-records] saveEdit error:', e);
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
     } finally {
-      this._saving = false;
+      this.setData({ editSaving: false });
     }
   },
 

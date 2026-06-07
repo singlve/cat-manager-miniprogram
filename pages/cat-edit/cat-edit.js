@@ -3,7 +3,9 @@
 
 const clouddb = require("../../utils/clouddb.js");
 const { catFormMethods, catFormDataDefaults } = require("../../utils/cat-form-behavior.js");
+const { todayStr } = require("../../utils/util.js");
 const { DOG_BREEDS, CAT_BREEDS } = require("../../utils/breeds.js");
+const { syncPageTheme } = require("../../utils/themes.js");
 
 Page(Object.assign({}, catFormMethods, {
   data: Object.assign({}, catFormDataDefaults, {
@@ -12,13 +14,17 @@ Page(Object.assign({}, catFormMethods, {
     isEdit: true
   }),
 
+  onShow() {
+    syncPageTheme(this);
+  },
+
   onLoad(options) {
     if (!options.id) {
       wx.showToast({ title: "参数错误", icon: "none" });
       setTimeout(function() { wx.navigateBack(); }, 1000);
       return;
     }
-    this.setData({ catId: options.id, nowDate: new Date().toISOString().split("T")[0] });
+    this.setData({ catId: options.id, nowDate: todayStr() });
     this.loadCat(options.id);
   },
 

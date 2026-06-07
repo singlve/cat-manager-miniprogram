@@ -1,0 +1,170 @@
+<view class="page theme-center-page {{themeClass}}">
+  <view class="theme-hero">
+    <view class="theme-hero-art">
+      <view class="hero-swatch swatch-one"></view>
+      <view class="hero-swatch swatch-two"></view>
+      <view class="hero-swatch swatch-three"></view>
+      <view class="hero-paw">+</view>
+    </view>
+    <view class="theme-hero-copy">
+      <text class="theme-kicker">THEME STUDIO</text>
+      <text class="theme-title">主题装扮</text>
+      <text class="theme-desc">使用积分永久解锁，为照护日常换一种心情。</text>
+    </view>
+  </view>
+
+  <view class="live-preview" style="{{previewStyle}}">
+    <view class="live-preview-head">
+      <view>
+        <text class="live-preview-kicker">实时预览</text>
+        <text class="live-preview-name">{{selectedTheme.name}}</text>
+      </view>
+      <text class="live-preview-state">{{selectedTheme.active ? '当前使用' : '正在试用'}}</text>
+    </view>
+    <view class="preview-scene-tabs">
+      <view
+        wx:for="{{previewScenes}}"
+        wx:key="key"
+        class="preview-scene-tab {{previewScene === item.key ? 'active' : ''}}"
+        bindtap="switchPreviewScene"
+        data-scene="{{item.key}}"
+      >{{item.label}}</view>
+    </view>
+    <view class="live-preview-screen">
+      <view class="live-preview-nav">
+        <view class="live-preview-nav-dot"></view>
+        <text class="live-preview-nav-title">宠物小管家Plus</text>
+        <view class="live-preview-nav-more"></view>
+      </view>
+      <view wx:if="{{selectedTheme.limited}}" class="seasonal-decor decor-{{selectedTheme.key}}">
+        <view class="seasonal-mark mark-one"></view>
+        <text class="seasonal-label">{{selectedTheme.badge}}</text>
+        <view class="seasonal-mark mark-two"></view>
+      </view>
+      <view wx:if="{{previewScene === 'home'}}" class="live-preview-content preview-scene-home">
+        <view class="live-preview-feature">
+          <view class="live-preview-icon">+</view>
+          <view class="live-preview-copy">
+            <text class="preview-copy-title">健康速记</text>
+            <text class="preview-copy-desc">洗澡、驱虫与体检记录</text>
+          </view>
+        </view>
+        <view class="live-preview-tabs">
+          <view class="live-preview-tab active">全部</view>
+          <view class="live-preview-tab">猫</view>
+          <view class="live-preview-tab">狗</view>
+        </view>
+        <view class="live-preview-card">
+          <view class="live-preview-avatar">P</view>
+          <view class="live-preview-copy">
+            <text class="preview-copy-title">宝贝档案</text>
+            <text class="preview-copy-desc">今天也有好好记录</text>
+          </view>
+          <view class="live-preview-chip">速记</view>
+        </view>
+      </view>
+      <view wx:elif="{{previewScene === 'reminder'}}" class="live-preview-content preview-scene-reminder">
+        <view class="scene-filter-row">
+          <view class="scene-filter active">进行中</view>
+          <view class="scene-filter">已完成</view>
+        </view>
+        <view class="scene-reminder-card urgent">
+          <view class="scene-reminder-icon">!</view>
+          <view class="live-preview-copy">
+            <text class="preview-copy-title">驱虫提醒</text>
+            <text class="preview-copy-desc">明天需要完成</text>
+          </view>
+          <view class="scene-status">临近</view>
+        </view>
+        <view class="scene-reminder-card">
+          <view class="scene-reminder-icon">+</view>
+          <view class="live-preview-copy">
+            <text class="preview-copy-title">洗澡提醒</text>
+            <text class="preview-copy-desc">还有 8 天</text>
+          </view>
+          <view class="scene-check">✓</view>
+        </view>
+      </view>
+      <view wx:else class="live-preview-content preview-scene-expense">
+        <view class="scene-expense-summary">
+          <text class="scene-summary-label">本月支出</text>
+          <text class="scene-summary-value">¥ 286.00</text>
+          <view class="scene-summary-stats">
+            <text>食品</text><text>洗护</text><text>医疗</text>
+          </view>
+        </view>
+        <view class="scene-expense-row">
+          <view class="scene-expense-icon">¥</view>
+          <view class="live-preview-copy">
+            <text class="preview-copy-title">宠物食品</text>
+            <text class="preview-copy-desc">今天 12:30</text>
+          </view>
+          <text class="scene-expense-amount">-68</text>
+        </view>
+      </view>
+    </view>
+    <view class="live-preview-meta">
+      <text>{{selectedTheme.desc}}</text>
+      <text wx:if="{{selectedTheme.owned}}" class="live-preview-owned">永久拥有</text>
+      <text wx:else class="live-preview-price">{{selectedTheme.points}} 积分</text>
+    </view>
+  </view>
+
+  <view class="theme-tip">
+    <text>已解锁 {{ownedThemes.length}} / {{themes.length}}</text>
+    <view class="theme-tip-actions">
+      <text wx:if="{{activeTheme !== 'default'}}" class="theme-reset-link" bindtap="restoreDefaultTheme">恢复默认</text>
+      <text class="theme-tip-link" bindtap="goMall">前往积分小铺</text>
+    </view>
+  </view>
+
+  <view class="theme-list">
+    <view
+      wx:for="{{themes}}"
+      wx:key="key"
+      class="theme-card theme-card-{{item.key}} {{item.active ? 'active' : ''}} {{item.previewing ? 'previewing' : ''}} {{item.owned ? '' : 'locked'}}"
+      bindtap="previewThemeStyle"
+      data-key="{{item.key}}"
+    >
+      <view class="theme-preview preview-{{item.key}}">
+        <view class="preview-header"></view>
+        <view class="preview-body">
+          <view class="preview-card"></view>
+          <view class="preview-row">
+            <view class="preview-dot"></view>
+            <view class="preview-line"></view>
+          </view>
+          <view class="preview-button"></view>
+        </view>
+      </view>
+      <view class="theme-info">
+        <view class="theme-name-row">
+          <text class="theme-name">{{item.name}}</text>
+          <text wx:if="{{item.limited}}" class="theme-limited-badge">{{item.badge || '节日限定'}}</text>
+          <text wx:if="{{item.previewing && !item.active}}" class="theme-status previewing">预览中</text>
+          <text wx:elif="{{item.active}}" class="theme-status active">使用中</text>
+          <text wx:elif="{{item.owned}}" class="theme-status owned">已解锁</text>
+          <text wx:else class="theme-status locked">{{item.points}} 积分</text>
+        </view>
+        <text class="theme-card-desc">{{item.desc}}</text>
+        <view class="theme-colors">
+          <view class="color-dot" style="background:{{item.primary}}"></view>
+          <view class="color-dot" style="background:{{item.secondary}}"></view>
+          <view class="color-dot" style="background:{{item.soft}}"></view>
+        </view>
+      </view>
+      <view class="theme-action">
+        <view wx:if="{{item.active}}" class="action-active-dot"></view>
+        <view wx:elif="{{item.previewing}}" class="action-check"></view>
+        <view wx:else class="action-chevron"></view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showApplyBar}}" class="theme-apply-bar">
+    <button class="theme-cancel-btn" bindtap="cancelPreview">取消预览</button>
+    <button class="theme-apply-btn" loading="{{saving}}" bindtap="handlePrimaryAction">
+      {{selectedTheme.owned ? '应用这套主题' : '去积分小铺兑换'}}
+    </button>
+  </view>
+</view>

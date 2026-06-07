@@ -2,6 +2,8 @@
 // 云数据库工具层：云开发 + 本地存储自动降级
 // 所有页面统一通过此模块操作数据，无需关心底层数据源
 const { parseDate } = require('./util.js');
+const { getThemeProducts } = require('./themes.js');
+const { markDataDirty } = require('./data-cache.js');
 
 // ⚙️ 调试开关：true=强制本地模式，false=自动判断（云环境ID配好后走云端）
 const FORCE_LOCAL = false;  // 调试开关：true 强制本地模式，false 自动判断
@@ -20,6 +22,11 @@ const SHIPPING_ADDRESS_COL = 'shipping_addresses';
 const EXPENSE_COL = 'expenses';
 const FEEDBACK_COL = 'feedback';
 const NOTIFY_COL = 'notifications';
+const SERVICE_CACHE_TTL = 30 * 1000;
+let announcementCache = null;
+let announcementRequest = null;
+const notifyCountCache = Object.create(null);
+const notifyCountRequests = Object.create(null);
 
 // ════════════════════════════════════════════════════
 // 基础：判断云开发是否可用
@@ -56,6 +63,24 @@ async function _cloudQuery(collection, query = {}, options = {}) {
   return data || [];
 }
 
+async function _cloudQueryAll(collection, query = {}, options = {}) {
+  const pageSize = Math.min(options.pageSize || 20, 20);
+  const maxRows = options.maxRows || 1000;
+  let rows = [];
+  let skip = 0;
+  while (rows.length < maxRows) {
+    const page = await _cloudQuery(collection, query, {
+      ...options,
+      skip,
+      limit: Math.min(pageSize, maxRows - rows.length)
+    });
+    rows = rows.concat(page);
+    if (page.length < pageSize) break;
+    skip += page.length;
+  }
+  return rows;
+}
+
 async function _cloudAdd(collection, data) {
   // 云数据库禁止客户端写入 _openid（系统保留字段），写入前过滤掉
   const { _openid, ...cloudData } = data;
@@ -78,6 +103,11 @@ async function _cloudDelete(collection, id) {
   }
 }
 
+async function _cloudSet(collection, id, data) {
+  const { _id, _openid, ...safeData } = data;
+  await wx.cloud.database().collection(collection).doc(id).set({ data: safeData });
+}
+
 // ════════════════════════════════════════════════════
 // 宠物档案（CATS）
 // ════════════════════════════════════════════════════
@@ -98,7 +128,11 @@ async function getCats() {
     }
   } catch (e) { /* 缓存不可用时回退到直接查询 */ }
 
-  const cats = await _cloudQuery(CAT_COL, {}, { orderBy: '_createTime', orderDesc: 'desc' });
+  const cats = await _cloudQueryAll(CAT_COL, {}, {
+    orderBy: '_createTime',
+    orderDesc: 'desc',
+    maxRows: 200
+  });
 
   // 写入缓存
   try {
@@ -109,6 +143,48 @@ async function getCats() {
   } catch (e) { /* 忽略 */ }
 
   return cats;
+}
+
+function _cacheCats(cats) {
+  try {
+    const app = getApp();
+    if (app.globalData) app.globalData.catsCache = { data: cats, ts: Date.now() };
+  } catch (e) {}
+}
+
+async function getHomeOverview() {
+  if (isCloudReady()) {
+    try {
+      const result = await wx.cloud.callFunction({ name: 'getHomeOverview' });
+      if (result.result && result.result.code === 0 && result.result.data) {
+        const data = result.result.data;
+        _cacheCats(data.cats || []);
+        return data;
+      }
+    } catch (e) {
+      console.warn('[clouddb] getHomeOverview fallback:', e);
+    }
+  }
+
+  const [cats, records, reminders] = await Promise.all([
+    getCats(),
+    getRecords(),
+    getReminders()
+  ]);
+  const latestRecordByCat = {};
+  records.forEach(function(record) {
+    if (!latestRecordByCat[record.catId] || record.date > latestRecordByCat[record.catId]) {
+      latestRecordByCat[record.catId] = record.date;
+    }
+  });
+  return {
+    cats,
+    latestRecordByCat,
+    recentRecords: records.slice().sort(function(a, b) {
+      return parseDate(b.date) - parseDate(a.date);
+    }).slice(0, 3),
+    reminders
+  };
 }
 
 async function getCatById(id) {
@@ -133,27 +209,35 @@ function refreshCatsCache() {
 }
 
 async function addCat(cat) {
-  if (!isCloudReady()) { _storage().addCat(cat); return cat._id; }
+  if (!isCloudReady()) { _storage().addCat(cat); markDataDirty('cats'); return cat._id; }
   const id = await _cloudAdd(CAT_COL, { ...cat, _createTime: Date.now() });
   refreshCatsCache();
+  markDataDirty('cats');
   return id;
 }
 
 async function updateCat(id, updates) {
-  if (!isCloudReady()) { _storage().updateCat(id, updates); return; }
+  if (!isCloudReady()) { _storage().updateCat(id, updates); markDataDirty('cats'); return; }
   await _cloudUpdate(CAT_COL, id, updates);
   refreshCatsCache();
+  markDataDirty('cats');
 }
 
 async function deleteCat(id) {
-  if (!isCloudReady()) { _storage().removeCat(id); return; }
-  // 云端：删除关联记录和提醒，再删宠物
-  const records = await _cloudQuery(RECORD_COL, { catId: id });
-  for (const r of records) await _cloudDelete(RECORD_COL, r._id);
-  const reminders = await _cloudQuery(REMIND_COL, { catId: id });
-  for (const r of reminders) await _cloudDelete(REMIND_COL, r._id);
-  await _cloudDelete(CAT_COL, id);
+  if (!isCloudReady()) {
+    _storage().removeCat(id);
+    markDataDirty(['cats', 'records', 'weights', 'reminders', 'expenses']);
+    return;
+  }
+  const result = await wx.cloud.callFunction({
+    name: 'deletePet',
+    data: { catId: id }
+  });
+  if (!result.result || result.result.code !== 0) {
+    throw new Error((result.result && result.result.msg) || '删除宠物失败');
+  }
   refreshCatsCache();
+  markDataDirty(['cats', 'records', 'weights', 'reminders', 'expenses']);
 }
 
 // ════════════════════════════════════════════════════
@@ -174,18 +258,22 @@ async function getRecords(filter = {}, options = {}) {
 }
 
 async function addRecord(record) {
-  if (!isCloudReady()) { _storage().addRecord(record); return record._id; }
-  return await _cloudAdd(RECORD_COL, { ...record, _createTime: Date.now() });
+  if (!isCloudReady()) { _storage().addRecord(record); markDataDirty('records'); return record._id; }
+  const id = await _cloudAdd(RECORD_COL, { ...record, _createTime: Date.now() });
+  markDataDirty('records');
+  return id;
 }
 
 async function updateRecord(id, updates) {
-  if (!isCloudReady()) { _storage().updateRecord(id, updates); return; }
+  if (!isCloudReady()) { _storage().updateRecord(id, updates); markDataDirty('records'); return; }
   await _cloudUpdate(RECORD_COL, id, updates);
+  markDataDirty('records');
 }
 
 async function deleteRecord(id) {
-  if (!isCloudReady()) { _storage().deleteRecord(id); return; }
+  if (!isCloudReady()) { _storage().deleteRecord(id); markDataDirty('records'); return; }
   await _cloudDelete(RECORD_COL, id);
+  markDataDirty('records');
 }
 
 // ════════════════════════════════════════════════════
@@ -208,25 +296,32 @@ async function getWeightRecords(filter = {}, options = {}) {
 async function addWeightRecord(record) {
   if (!isCloudReady()) {
     if (_storage().addWeightRecord) _storage().addWeightRecord(record);
+    markDataDirty('weights');
     return record._id;
   }
-  return await _cloudAdd(WEIGHT_COL, { ...record, _createTime: Date.now() });
+  const id = await _cloudAdd(WEIGHT_COL, { ...record, _createTime: Date.now() });
+  markDataDirty('weights');
+  return id;
 }
 
 async function updateWeightRecord(id, updates) {
   if (!isCloudReady()) {
     if (_storage().updateWeightRecord) _storage().updateWeightRecord(id, updates);
+    markDataDirty('weights');
     return;
   }
   await _cloudUpdate(WEIGHT_COL, id, updates);
+  markDataDirty('weights');
 }
 
 async function deleteWeightRecord(id) {
   if (!isCloudReady()) {
     if (_storage().deleteWeightRecord) _storage().deleteWeightRecord(id);
+    markDataDirty('weights');
     return;
   }
   await _cloudDelete(WEIGHT_COL, id);
+  markDataDirty('weights');
 }
 
 // ════════════════════════════════════════════════════
@@ -239,22 +334,30 @@ async function getReminders(filter = {}) {
     if (filter.catId) return reminders.filter(r => r.catId === filter.catId);
     return reminders;
   }
-  return await _cloudQuery(REMIND_COL, filter, { orderBy: '_createTime', orderDesc: 'desc' });
+  return await _cloudQueryAll(REMIND_COL, filter, {
+    orderBy: '_createTime',
+    orderDesc: 'desc',
+    maxRows: 1000
+  });
 }
 
 async function addReminder(reminder) {
-  if (!isCloudReady()) { _storage().addReminder(reminder); return reminder._id; }
-  return await _cloudAdd(REMIND_COL, { ...reminder, _createTime: Date.now() });
+  if (!isCloudReady()) { _storage().addReminder(reminder); markDataDirty('reminders'); return reminder._id; }
+  const id = await _cloudAdd(REMIND_COL, { ...reminder, _createTime: Date.now() });
+  markDataDirty('reminders');
+  return id;
 }
 
 async function updateReminder(id, updates) {
-  if (!isCloudReady()) { _storage().updateReminder(id, updates); return; }
+  if (!isCloudReady()) { _storage().updateReminder(id, updates); markDataDirty('reminders'); return; }
   await _cloudUpdate(REMIND_COL, id, updates);
+  markDataDirty('reminders');
 }
 
 async function deleteReminder(id) {
-  if (!isCloudReady()) { _storage().deleteReminder(id); return; }
+  if (!isCloudReady()) { _storage().deleteReminder(id); markDataDirty('reminders'); return; }
   await _cloudDelete(REMIND_COL, id);
+  markDataDirty('reminders');
 }
 
 // ════════════════════════════════════════════════════
@@ -358,17 +461,54 @@ async function uploadAvatar(tempFilePath, catId) {
   }
 }
 
+const AVATAR_URL_CACHE_TTL = 50 * 60 * 1000;
+const AVATAR_URL_BATCH_SIZE = 50;
+const avatarUrlCache = new Map();
+
+async function getAvatarUrls(fileIds) {
+  const ids = Array.from(new Set((fileIds || []).filter(Boolean)));
+  const urls = {};
+  const pendingCloudIds = [];
+  const now = Date.now();
+
+  ids.forEach(function(fileId) {
+    if (!fileId.startsWith('cloud://') || !isCloudReady()) {
+      urls[fileId] = fileId;
+      return;
+    }
+    const cached = avatarUrlCache.get(fileId);
+    if (cached && now - cached.ts < AVATAR_URL_CACHE_TTL) {
+      urls[fileId] = cached.url;
+      return;
+    }
+    pendingCloudIds.push(fileId);
+  });
+
+  for (let start = 0; start < pendingCloudIds.length; start += AVATAR_URL_BATCH_SIZE) {
+    const batch = pendingCloudIds.slice(start, start + AVATAR_URL_BATCH_SIZE);
+    try {
+      const res = await wx.cloud.getTempFileURL({ fileList: batch });
+      const resultList = (res && res.fileList) || [];
+      batch.forEach(function(fileId, index) {
+        const result = resultList.find(function(item) {
+          return item && (item.fileID === fileId || item.fileId === fileId);
+        }) || resultList[index];
+        const url = result && result.tempFileURL ? result.tempFileURL : fileId;
+        urls[fileId] = url;
+        if (url !== fileId) avatarUrlCache.set(fileId, { url, ts: now });
+      });
+    } catch (e) {
+      batch.forEach(function(fileId) { urls[fileId] = fileId; });
+    }
+  }
+
+  return urls;
+}
+
 async function getAvatarUrl(fileId) {
   if (!fileId) return '';
-  if (!fileId.startsWith('cloud://')) return fileId; // 本地路径直接用
-  if (!isCloudReady()) return fileId;
-  try {
-    const res = await wx.cloud.getTempFileURL({ fileList: [fileId] });
-    if (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) {
-      return res.fileList[0].tempFileURL;
-    }
-    return fileId;
-  } catch (e) { return fileId; }
+  const urls = await getAvatarUrls([fileId]);
+  return urls[fileId] || fileId;
 }
 
 // ════════════════════════════════════════════════════
@@ -496,6 +636,36 @@ async function _seedRedeemItems(db) {
   }
 }
 
+// 将内置主题迁移为可由管理员维护的正式商城商品。
+// 只补缺失项，不覆盖管理员已经修改过的积分、名称或上下架状态。
+async function ensureThemeRedeemItems() {
+  const items = await getRedeemItems();
+  const created = [];
+  const themeProducts = getThemeProducts();
+
+  for (var i = 0; i < themeProducts.length; i++) {
+    const product = themeProducts[i];
+    const exists = items.some(function(item) {
+      return item.virtualType === 'theme' && item.virtualValue === product.virtualValue;
+    });
+    if (exists) continue;
+
+    const itemData = Object.assign({}, product, {
+      systemManaged: true,
+      systemKey: 'theme:' + product.virtualValue
+    });
+    // 云数据库使用自动生成的文档 id，本地模式仍可沿用稳定 id。
+    if (isCloudReady()) delete itemData._id;
+    const added = await addRedeemItem(itemData);
+    if (added) {
+      items.push(added);
+      created.push(added);
+    }
+  }
+
+  return { items: items, created: created };
+}
+
 async function addRedeemItem(item) {
   if (isCloudReady()) {
     try {
@@ -530,6 +700,101 @@ async function deleteRedeemItem(id) {
   return _storage().deleteRedeemItem(id);
 }
 
+async function redeemItemAtomic(params) {
+  params = params || {};
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'redeemItem',
+      data: {
+        userId: params.userId,
+        itemId: params.itemId,
+        quantity: params.quantity,
+        requestId: params.requestId
+      }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) {
+      const error = new Error(result.msg || '兑换失败，请重试');
+      error.code = result.code;
+      throw error;
+    }
+    return result.data;
+  }
+
+  const storage = _storage();
+  const item = (storage.getRedeemItems() || []).find(function(row) {
+    return row._id === params.itemId;
+  });
+  const quantity = Math.max(1, Math.min(20, parseInt(params.quantity, 10) || 1));
+  const user = wx.getStorageSync('currentUser') || {};
+  if (!item || item.enabled === false) throw new Error('商品不存在或已下架');
+  if (item.type !== 'physical' && quantity !== 1) throw new Error('虚拟商品每次只能兑换一件');
+  const totalCost = (parseInt(item.points, 10) || 0) * quantity;
+  if ((parseInt(user.totalPoints, 10) || 0) < totalCost) throw new Error('积分不足');
+  if (item.type === 'physical' && (parseInt(item.stock, 10) || 0) < quantity) throw new Error('库存不足');
+
+  const ownedThemes = Array.from(new Set(['default'].concat(user.ownedThemes || [])));
+  if (item.virtualType === 'theme' && ownedThemes.indexOf(item.virtualValue) !== -1) {
+    throw new Error('这个主题已经拥有');
+  }
+
+  let nextPoints = (parseInt(user.totalPoints, 10) || 0) - totalCost;
+  let nextCards = parseInt(user.makeUpCards, 10) || 0;
+  let nextThemes = ownedThemes;
+  if (item.virtualType === 'card') nextCards += (parseInt(item.virtualValue, 10) || 0) * quantity;
+  if (item.virtualType === 'points') nextPoints += (parseInt(item.virtualValue, 10) || 0) * quantity;
+  if (item.virtualType === 'theme') nextThemes = Array.from(new Set(ownedThemes.concat(item.virtualValue)));
+
+  for (let i = 0; i < quantity; i++) {
+    const record = storage.addRedeemRecord({
+      itemId: item._id,
+      itemName: item.name,
+      itemType: item.type,
+      pointsSpent: parseInt(item.points, 10) || 0,
+      userNickname: user.nickname || '',
+      openid: user._openid || '',
+      redeemedAt: new Date().toISOString(),
+      status: item.type === 'physical' ? 'in_backpack' : 'completed',
+      virtualType: item.virtualType || '',
+      themeKey: item.virtualType === 'theme' ? item.virtualValue : ''
+    });
+    if (item.type === 'physical' || item.virtualType === 'theme') {
+      const inventory = storage.addToInventory({
+        itemId: item._id,
+        itemName: item.name,
+        itemType: item.type,
+        virtualType: item.virtualType || '',
+        themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
+        image: item.image || '',
+        pointsSpent: parseInt(item.points, 10) || 0,
+        ownedAt: new Date().toISOString(),
+        status: item.type === 'physical' ? 'in_backpack' : 'completed',
+        redeemRecordId: record._id
+      });
+      storage.updateRedeemRecord(record._id, { inventoryId: inventory._id });
+    }
+  }
+
+  if (item.type === 'physical') {
+    storage.updateRedeemItem(item._id, { stock: item.stock - quantity });
+  }
+  Object.assign(user, {
+    totalPoints: nextPoints,
+    makeUpCards: nextCards,
+    ownedThemes: nextThemes
+  });
+  wx.setStorageSync('currentUser', user);
+  return {
+    points: nextPoints,
+    makeUpCards: nextCards,
+    ownedThemes: nextThemes,
+    itemType: item.type,
+    virtualType: item.virtualType || '',
+    themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
+    quantity
+  };
+}
+
 // ════════════════════════════════════════════════════
 // 兑换记录
 // ════════════════════════════════════════════════════
@@ -546,11 +811,12 @@ async function addRedeemRecord(record) {
 async function getRedeemRecords(filter) {
   if (isCloudReady()) {
     try {
-      const db = wx.cloud.database();
       const openid = await getOpenId();
-      const coll = db.collection(REDEEM_RECORD_COL).where({ _openid: openid, ...filter });
-      const { data } = await coll.orderBy('redeemedAt', 'desc').get();
-      return data;
+      return await _cloudQueryAll(REDEEM_RECORD_COL, { _openid: openid, ...(filter || {}) }, {
+        orderBy: 'redeemedAt',
+        orderDesc: 'desc',
+        maxRows: 500
+      });
     } catch (e) { console.error('[clouddb] getRedeemRecords fail', e); }
   }
   var records = _storage().getRedeemRecords();
@@ -626,12 +892,11 @@ async function getUserInventory() {
   if (isCloudReady()) {
     try {
       const openid = await getOpenId();
-      const db = wx.cloud.database();
-      const { data } = await db.collection(INVENTORY_COL)
-        .where({ _openid: openid })
-        .orderBy('ownedAt', 'desc')
-        .get();
-      return data;
+      return await _cloudQueryAll(INVENTORY_COL, { _openid: openid }, {
+        orderBy: 'ownedAt',
+        orderDesc: 'desc',
+        maxRows: 500
+      });
     } catch (e) { console.error('[clouddb] getUserInventory fail', e); }
   }
   return _storage().getUserInventory();
@@ -850,6 +1115,7 @@ async function addExpense(expense) {
     } catch (e) { console.error('[clouddb] addExpense cloud fail:', e); }
   }
   _storage().addExpense(expense);
+  markDataDirty('expenses');
   return expense;
 }
 
@@ -868,7 +1134,11 @@ async function getExpenses(query = {}) {
         }
         cloudQuery.date = dateFilter;
       }
-      var result = await _cloudQuery(EXPENSE_COL, cloudQuery, { orderBy: 'date', orderDesc: 'desc' });
+      var result = await _cloudQueryAll(EXPENSE_COL, cloudQuery, {
+        orderBy: 'date',
+        orderDesc: 'desc',
+        maxRows: 2000
+      });
       return result || [];
     } catch (e) { console.error('[clouddb] getExpenses cloud fail:', e); }
   }
@@ -883,6 +1153,94 @@ async function deleteExpense(id) {
     } catch (e) { console.error('[clouddb] deleteExpense cloud fail:', e); }
   }
   _storage().deleteExpense(id);
+  markDataDirty('expenses');
+}
+
+async function updateExpense(id, updates) {
+  if (!id) return;
+  if (updates.amount) updates.amount = Number(updates.amount);
+  if (isCloudReady()) {
+    try {
+      await _cloudUpdate(EXPENSE_COL, id, updates);
+      markDataDirty('expenses');
+      return;
+    } catch (e) { console.error('[clouddb] updateExpense cloud fail:', e); throw e; }
+  }
+  _storage().updateExpense(id, updates);
+  markDataDirty('expenses');
+}
+
+async function getBackupSnapshot() {
+  if (!isCloudReady()) {
+    const storage = _storage();
+    return {
+      cats: storage.getCats() || [],
+      healthRecords: storage.getRecords() || [],
+      weightRecords: storage.getWeightRecords() || [],
+      reminders: storage.getReminders() || [],
+      expenses: storage.getAllExpenses() || []
+    };
+  }
+  const [cats, healthRecords, weightRecords, reminders, expenses] = await Promise.all([
+    _cloudQueryAll(CAT_COL, {}, { orderBy: '_createTime', orderDesc: 'desc' }),
+    _cloudQueryAll(RECORD_COL, {}, { orderBy: 'date', orderDesc: 'desc' }),
+    _cloudQueryAll(WEIGHT_COL, {}, { orderBy: 'date', orderDesc: 'desc' }),
+    _cloudQueryAll(REMIND_COL, {}, { orderBy: '_createTime', orderDesc: 'desc' }),
+    _cloudQueryAll(EXPENSE_COL, {}, { orderBy: 'date', orderDesc: 'desc' })
+  ]);
+  return { cats, healthRecords, weightRecords, reminders, expenses };
+}
+
+function _mergeBackupRows(existing, incoming, replace) {
+  if (replace) return incoming.slice();
+  const rows = existing.slice();
+  const indexes = {};
+  rows.forEach(function(row, index) { if (row && row._id) indexes[row._id] = index; });
+  incoming.forEach(function(row) {
+    if (indexes[row._id] === undefined) {
+      indexes[row._id] = rows.length;
+      rows.push(row);
+    } else {
+      rows[indexes[row._id]] = Object.assign({}, rows[indexes[row._id]], row);
+    }
+  });
+  return rows;
+}
+
+async function restoreBackupSnapshot(snapshot, mode) {
+  const data = snapshot || {};
+  const replace = mode === 'replace';
+  const groups = [
+    { key: 'cats', collection: CAT_COL },
+    { key: 'healthRecords', collection: RECORD_COL },
+    { key: 'weightRecords', collection: WEIGHT_COL },
+    { key: 'reminders', collection: REMIND_COL },
+    { key: 'expenses', collection: EXPENSE_COL }
+  ];
+
+  if (!isCloudReady()) {
+    const storage = _storage();
+    storage.saveCats(_mergeBackupRows(storage.getCats() || [], data.cats || [], replace));
+    storage.saveRecords(_mergeBackupRows(storage.getRecords() || [], data.healthRecords || [], replace));
+    storage.saveWeightRecords(_mergeBackupRows(storage.getWeightRecords() || [], data.weightRecords || [], replace));
+    storage.saveReminders(_mergeBackupRows(storage.getReminders() || [], data.reminders || [], replace));
+    storage.saveExpenses(_mergeBackupRows(storage.getAllExpenses() || [], data.expenses || [], replace));
+    refreshCatsCache();
+    return { restored: groups.reduce((sum, group) => sum + (data[group.key] || []).length, 0) };
+  }
+
+  for (const group of groups) {
+    const incoming = data[group.key] || [];
+    if (replace) {
+      const current = await _cloudQueryAll(group.collection);
+      for (const row of current) await _cloudDelete(group.collection, row._id);
+    }
+    for (const row of incoming) {
+      await _cloudSet(group.collection, row._id, row);
+    }
+  }
+  refreshCatsCache();
+  return { restored: groups.reduce((sum, group) => sum + (data[group.key] || []).length, 0) };
 }
 
 // ════════════════════════════════════════════════════
@@ -989,21 +1347,36 @@ async function addNotification(data) {
   if (!isCloudReady()) return;
   try {
     await _cloudAdd(NOTIFY_COL, { ...data, read: false, createdAt: Date.now() });
+    if (data && data.toOpenid) delete notifyCountCache[data.toOpenid];
   } catch (e) { console.error('[clouddb] addNotification fail:', e); }
 }
 
 async function getUnreadNotifyCount(openid) {
   if (!isCloudReady() || !openid) return 0;
-  try {
-    var res = await _cloudQuery(NOTIFY_COL, { toOpenid: openid, read: false });
-    return res.length;
-  } catch (e) { console.error('[clouddb] getUnreadNotifyCount fail:', e); return 0; }
+  const cached = notifyCountCache[openid];
+  if (cached && Date.now() - cached.ts < SERVICE_CACHE_TTL) return cached.value;
+  if (notifyCountRequests[openid]) return notifyCountRequests[openid];
+  notifyCountRequests[openid] = _cloudQueryAll(NOTIFY_COL, { toOpenid: openid, read: false }, { maxRows: 999 })
+    .then(function(rows) {
+      notifyCountCache[openid] = { value: rows.length, ts: Date.now() };
+      return rows.length;
+    })
+    .catch(function(e) {
+      console.error('[clouddb] getUnreadNotifyCount fail:', e);
+      return 0;
+    })
+    .finally(function() { delete notifyCountRequests[openid]; });
+  return notifyCountRequests[openid];
 }
 
 async function getNotifications(openid) {
   if (!isCloudReady() || !openid) return [];
   try {
-    return await _cloudQuery(NOTIFY_COL, { toOpenid: openid }, { orderBy: 'createdAt', orderDesc: 'desc' });
+    return await _cloudQueryAll(NOTIFY_COL, { toOpenid: openid }, {
+      orderBy: 'createdAt',
+      orderDesc: 'desc',
+      maxRows: 200
+    });
   } catch (e) { console.error('[clouddb] getNotifications fail:', e); return []; }
 }
 
@@ -1015,6 +1388,7 @@ async function markNotificationsRead(openid) {
       name: 'adminFeedback',
       data: { action: 'markNotificationsRead', openid }
     });
+    delete notifyCountCache[openid];
   } catch (e) { console.error('[clouddb] markNotificationsRead fail:', e); }
 }
 
@@ -1056,19 +1430,31 @@ async function checkImageSafe(cloudFileId) {
 
 async function getActiveAnnouncement() {
   if (!isCloudReady()) return null;
-  try {
-    var res = await wx.cloud.callFunction({
+  const cloudRef = wx.cloud;
+  if (announcementCache && announcementCache.cloudRef === cloudRef &&
+      Date.now() - announcementCache.ts < SERVICE_CACHE_TTL) {
+    return announcementCache.value;
+  }
+  if (announcementCache && announcementCache.cloudRef !== cloudRef) {
+    announcementCache = null;
+    announcementRequest = null;
+  }
+  if (announcementRequest) return announcementRequest;
+  announcementRequest = wx.cloud.callFunction({
       name: 'adminAnnouncement',
       data: { action: 'active' }
-    });
-    if (res.result && res.result.code === 0) {
-      return res.result.data || null;
-    }
-    return null;
-  } catch (e) {
-    console.error('[clouddb] getActiveAnnouncement error:', e);
-    return null;
-  }
+    })
+    .then(function(res) {
+      const value = res.result && res.result.code === 0 ? (res.result.data || null) : null;
+      announcementCache = { value, ts: Date.now(), cloudRef };
+      return value;
+    })
+    .catch(function(e) {
+      console.error('[clouddb] getActiveAnnouncement error:', e);
+      return null;
+    })
+    .finally(function() { announcementRequest = null; });
+  return announcementRequest;
 }
 
 async function callAnnouncementAdmin(action, data) {
@@ -1077,13 +1463,14 @@ async function callAnnouncementAdmin(action, data) {
     name: 'adminAnnouncement',
     data: Object.assign({ action: action }, data || {})
   });
+  announcementCache = null;
   return res.result || { code: -1, msg: '调用失败' };
 }
 
 module.exports = {
   isCloudReady,
   // cats
-  getCats, getAllCats: getCats, getCatById, addCat, updateCat, deleteCat, refreshCatsCache,
+  getCats, getAllCats: getCats, getHomeOverview, getCatById, addCat, updateCat, deleteCat, refreshCatsCache,
   // records
   getRecords, addRecord, updateRecord, deleteRecord,
   // weight
@@ -1100,7 +1487,7 @@ module.exports = {
   // announcements
   getActiveAnnouncement, callAnnouncementAdmin,
   // storage
-  uploadAvatar, getAvatarUrl,
+  uploadAvatar, getAvatarUrl, getAvatarUrls,
   // auth
   getOpenId,
   // stats
@@ -1108,14 +1495,14 @@ module.exports = {
   // shipping
   getShippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, setDefaultAddress,
   // redeem items
-  getRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem,
+  getRedeemItems, ensureThemeRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem, redeemItemAtomic,
   // redeem records
   getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord, deleteRedeemRecordsAdmin,
   // inventory
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
   // expenses
-  addExpense, getExpenses, deleteExpense,
+  addExpense, getExpenses, updateExpense, deleteExpense, getBackupSnapshot, restoreBackupSnapshot,
   // avatar frames
   getAvatarFrames, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments

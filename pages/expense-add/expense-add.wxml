@@ -1,5 +1,5 @@
 <!--pages/expense-add/expense-add.wxml-->
-<view class="page">
+<view class="page {{themeClass}}">
   <view class="ui-compact-hero expense-hero">
     <image class="ui-compact-hero-img" src="/assets/illustrations/rewards-hero-pets-transparent.png" mode="aspectFit" />
     <view class="ui-compact-hero-body">
@@ -14,7 +14,7 @@
       <text class="field-label">记到哪里</text>
       <view class="picker-box" bindtap="openPetPicker">
         <view class="picker-main">
-          <image class="picker-icon ui-icon-sm" src="{{cats[selectedCatIdx] && cats[selectedCatIdx]._id ? (cats[selectedCatIdx].species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png') : '/assets/icons/ui/expense.png'}}" mode="aspectFit" />
+          <image class="picker-icon ui-icon-sm" src="{{cats[selectedCatIdx] && cats[selectedCatIdx]._id ? (cats[selectedCatIdx].species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png') : '/assets/icons/ui/record.png'}}" mode="aspectFit" />
           <text>{{cats[selectedCatIdx] ? cats[selectedCatIdx].name : '选择宠物'}}</text>
         </view>
         <view class="picker-arrow"></view>
@@ -34,7 +34,7 @@
           data-idx="{{ci}}"
         >
           <view class="category-icon-wrap">
-            <image class="category-icon ui-icon" src="{{c.iconPath}}" mode="aspectFit" />
+            <image class="category-icon ui-icon theme-business-icon" src="{{c.iconPath}}" mode="aspectFit" />
           </view>
           <text class="category-name">{{c.name}}</text>
         </view>
@@ -101,7 +101,7 @@
           data-index="{{index}}"
         >
           <view class="pet-option-icon">
-            <image class="ui-icon" src="{{item._id ? (item.species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png') : '/assets/icons/ui/expense.png'}}" mode="aspectFit" />
+            <image class="ui-icon" src="{{item._id ? (item.species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png') : '/assets/icons/ui/record.png'}}" mode="aspectFit" />
           </view>
           <view class="pet-option-copy">
             <text class="pet-option-name">{{item.name}}</text>

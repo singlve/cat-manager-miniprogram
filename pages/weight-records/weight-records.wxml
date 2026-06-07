@@ -1,5 +1,5 @@
 <!-- pages/weight-records/weight-records.wxml -->
-<view class="container">
+<view class="container {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero weight-hero">
@@ -71,7 +71,7 @@
     </view>
   </view>
 
-  <view wx:if="{{loadError && records.length === 0}}" class="load-error-state">
+  <view wx:if="{{loadError && loadedRecordCount === 0}}" class="load-error-state">
     <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
     <text class="load-error-title">体重记录加载失败</text>
     <text class="load-error-desc">请检查网络连接后重新加载</text>
@@ -146,7 +146,7 @@
   </view>
 
   <!-- 底部分页状态 -->
-  <view wx:if="{{records.length > 0}}" class="list-footer">
+  <view wx:if="{{loadedRecordCount > 0}}" class="list-footer">
     <text wx:if="{{recordsLoading}}" class="list-footer-text">加载中...</text>
     <text wx:elif="{{!hasMoreRecords}}" class="list-footer-text">— 没有更多了 —</text>
   </view>
@@ -207,7 +207,7 @@
 
       <view class="modal-btns" catchtap="">
         <view class="modal-btn cancel" hover-class="btn-hover" bindtap="cancelModal">取消</view>
-        <view class="modal-btn confirm" hover-class="btn-hover" bindtap="saveAdd">保存</view>
+        <view class="modal-btn confirm {{savingRecord ? 'disabled' : ''}}" hover-class="btn-hover" bindtap="saveAdd">{{savingRecord ? '保存中...' : '保存'}}</view>
       </view>
     </view>
   </view>
@@ -268,7 +268,7 @@
 
       <view class="modal-btns" catchtap="">
         <view class="modal-btn cancel" hover-class="btn-hover" bindtap="cancelModal">取消</view>
-        <view class="modal-btn confirm" hover-class="btn-hover" bindtap="saveEdit">保存</view>
+        <view class="modal-btn confirm {{savingRecord ? 'disabled' : ''}}" hover-class="btn-hover" bindtap="saveEdit">{{savingRecord ? '保存中...' : '保存'}}</view>
       </view>
     </view>
   </view>

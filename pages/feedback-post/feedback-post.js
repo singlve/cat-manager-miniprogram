@@ -8,7 +8,11 @@ const POST_CATEGORIES = [
   { key: 'other',      label: '其他' }
 ];
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: {
     categories: POST_CATEGORIES,
     categoryIdx: 0,
@@ -118,6 +122,7 @@ Page({
 
   // ─── 提交 ───
   async submit() {
+    if (this.data.submitting) return;
     var content = (this.data.content || '').trim();
     if (!content) { wx.showToast({ title: '请输入内容', icon: 'none' }); return; }
     if (content.length > 1000) { wx.showToast({ title: '内容不能超过1000字', icon: 'none' }); return; }
@@ -134,6 +139,7 @@ Page({
 
     this.setData({ submitting: true });
 
+    var submitted = false;
     try {
       // UGC 文本安全校验
       var checkRes = await clouddb.checkTextSafe(content);
@@ -159,13 +165,14 @@ Page({
         adopted: false
       });
 
+      submitted = true;
       wx.showToast({ title: '发布成功', icon: 'success' });
       setTimeout(function() { wx.navigateBack(); }, 1000);
     } catch (e) {
       console.error('[feedback-post] submit fail:', e);
       wx.showToast({ title: '发布失败，请重试', icon: 'none' });
     } finally {
-      this.setData({ submitting: false });
+      if (!submitted) this.setData({ submitting: false });
     }
   },
 

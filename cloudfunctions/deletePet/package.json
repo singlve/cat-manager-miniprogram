@@ -1,0 +1,9 @@
+{
+  "name": "deletePet",
+  "version": "1.0.0",
+  "description": "安全删除宠物及其关联数据",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

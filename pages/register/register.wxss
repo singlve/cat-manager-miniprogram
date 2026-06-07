@@ -51,7 +51,7 @@
 
 .register-btn {
   width: 100%;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-size: 34rpx;
   font-weight: 700;
@@ -75,6 +75,6 @@
 }
 
 .link {
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-weight: 600;
 }

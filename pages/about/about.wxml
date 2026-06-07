@@ -1,5 +1,5 @@
 <!-- pages/about/about.wxml -->
-<view class="page">
+<view class="page {{themeClass}}">
   <image class="ui-empty-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFill" />
   <text class="app-name">宠物小管家Plus</text>
   <text class="version">版本 1.0.0</text>

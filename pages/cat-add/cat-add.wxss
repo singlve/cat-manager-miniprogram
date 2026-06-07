@@ -33,7 +33,7 @@
 
 /* 已选头像 */
 .avatar-selected {
-  border: 5rpx solid #5BA7D8;
+  border: 5rpx solid var(--theme-primary, #5BA7D8);
   box-shadow: 0 0 0 8rpx rgba(74,144,217,0.15);
 }
 
@@ -50,7 +50,7 @@
   right: 0;
   width: 56rpx;
   height: 56rpx;
-  background: #5BA7D8;
+  background: var(--theme-primary, #5BA7D8);
   border-radius: 50%;
   border: 4rpx solid #fff;
   display: flex;
@@ -120,7 +120,7 @@
   transition: border-color 0.2s;
 }
 
-.input:focus { border-color: #5BA7D8; background: #fff; }
+.input:focus { border-color: var(--theme-primary, #5BA7D8); background: #fff; }
 
 .gender-group { display: flex; gap: 24rpx; }
 
@@ -141,8 +141,8 @@
 
 .gender-option.active {
   background: #e8f4ff;
-  border-color: #5BA7D8;
-  color: #5BA7D8;
+  border-color: var(--theme-primary, #5BA7D8);
+  color: var(--theme-primary, #5BA7D8);
 }
 
 .switch-row {
@@ -198,7 +198,7 @@
 
 .custom-breed-link text {
   font-size: 24rpx;
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
 }
 
 /* ─── 品种搜索选择弹窗 ─── */
@@ -256,7 +256,7 @@
 }
 
 .breed-search-input:focus {
-  border-color: #5BA7D8;
+  border-color: var(--theme-primary, #5BA7D8);
   background: #fff;
 }
 
@@ -293,7 +293,7 @@
 }
 
 .breed-item-active {
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-weight: 600;
 }
 
@@ -303,7 +303,7 @@
 
 .breed-check {
   font-size: 32rpx;
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-weight: 700;
 }
 
@@ -342,7 +342,7 @@
 .save-btn {
   width: 100%;
   max-width: 686rpx;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-size: 34rpx;
   font-weight: 700;
@@ -362,3 +362,49 @@
 }
 
 .save-btn:active:not([disabled]) { transform: scale(0.97); }
+
+/* ─── 主题中性色收口（编辑页通过 @import 同步生效） ─── */
+.container {
+  background: var(--theme-bg, #F7F9FB);
+}
+
+.form-card {
+  background: var(--theme-card, #FFFFFF);
+}
+
+.label,
+.hint,
+.upload-hint {
+  color: var(--theme-text-secondary, #6E7A8A);
+}
+
+.breed-modal {
+  background: var(--theme-card, #FFFFFF);
+}
+
+.breed-modal-header,
+.breed-item {
+  border-color: var(--theme-divider, #E8EEF4);
+}
+
+.breed-modal-title,
+.breed-search-input,
+.breed-item {
+  color: var(--theme-text, #243044);
+}
+
+.breed-modal-close,
+.breed-search-clear,
+.breed-empty {
+  color: var(--theme-text-muted, #A5AFBC);
+}
+
+.breed-search-input,
+.input-clear {
+  background: var(--theme-surface-muted, #F5F9FC) !important;
+}
+
+.breed-search-input:focus,
+.breed-item:active {
+  background: var(--theme-primary-soft, #EAF4FB);
+}

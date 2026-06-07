@@ -1,17 +1,44 @@
 // app.js
 // 宠物小管家Plus - 应用入口
+const themes = require('./utils/themes.js');
+const { reportError } = require('./utils/error-log.js');
+
 App({
   globalData: {
     userInfo: null,
     openid: null,
     cloudReady: false,
     isOnline: true,    // 网络状态（默认在线）
-    catsCache: { data: null, ts: 0 }  // 猫咪列表缓存（5分钟过期）
+    catsCache: { data: null, ts: 0 },  // 猫咪列表缓存（5分钟过期）
+    activeTheme: themes.DEFAULT_THEME_KEY
   },
 
   onLaunch() {
+    this.applyTheme(themes.getStoredThemeKey());
     this.initCloud();
     this._initNetworkMonitor();
+  },
+
+  onShow() {
+    this.applyTheme(themes.getStoredThemeKey());
+  },
+
+  applyTheme(themeKey) {
+    const theme = themes.applyNativeTheme(themeKey || themes.getStoredThemeKey());
+    this.globalData.activeTheme = theme.key;
+    return theme;
+  },
+
+  previewTheme(themeKey) {
+    return themes.applyNativeTheme(themeKey, { persist: false });
+  },
+
+  getTheme() {
+    return themes.getTheme(this.globalData.activeTheme || themes.getStoredThemeKey());
+  },
+
+  getThemeClass() {
+    return this.getTheme().className;
   },
 
   // 判断用户是否已登录（本地 storage 中有 currentUser 且有 openid）
@@ -47,7 +74,7 @@ App({
       await this.fetchOpenId();
 
     } catch (e) {
-      console.error('[app] 云开发初始化失败:', e);
+      reportError('app.initCloud', e);
     }
   },
 
@@ -59,6 +86,7 @@ App({
       }
     } catch (e) {
       console.warn('[app] login 云函数未部署或调用失败（正常，部署后消失）:', e);
+      reportError('app.fetchOpenId', e);
     }
   },
 

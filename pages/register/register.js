@@ -3,7 +3,11 @@
 const clouddb = require('../../utils/clouddb.js');
 const { hashPassword } = require('../../utils/crypto.js');
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: { nickname: '', phone: '', password: '', confirmPassword: '' },
 
   nicknameInput(e)   { this.setData({ nickname: e.detail.value }); },

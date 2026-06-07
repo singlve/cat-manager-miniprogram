@@ -1,6 +1,6 @@
 <!-- pages/cat-add/cat-add.wxml -->
 <!-- 添加宠物页面 - 使用共享表单模板 -->
 
-<view class="container">
+<view class="container {{themeClass}}">
   <include src="../../templates/cat-form.wxml" />
 </view>

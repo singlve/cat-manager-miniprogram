@@ -36,7 +36,7 @@ page { background: #f0f2f7; }
 .login-main-btn {
   display: block;
   margin: 20rpx 60rpx 0;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff; font-size: 32rpx; font-weight: 600;
   border-radius: 50rpx; padding: 28rpx 0;
   box-shadow: 0 12rpx 36rpx rgba(74,144,217,0.4);
@@ -63,7 +63,7 @@ page { background: #f0f2f7; }
   width: 130rpx;
   height: 130rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,7 +145,7 @@ page { background: #f0f2f7; }
 }
 .makeup-badge-inline:active { background: #e8edf5; }
 .makeup-badge-icon { font-size: 24rpx; }
-.makeup-badge-num { font-size: 22rpx; color: #5BA7D8; font-weight: 700; }
+.makeup-badge-num { font-size: 22rpx; color: var(--theme-primary, #5BA7D8); font-weight: 700; }
 .makeup-badge-arrow { font-size: 24rpx; color: #bbb; margin-left: 2rpx; }
 
 /* 连签 + 抽奖提示同行 */
@@ -165,14 +165,14 @@ page { background: #f0f2f7; }
   font-size: 22rpx; color: #999;
 }
 .days-until-text.ready {
-  color: #5BA7D8; font-weight: 600;
+  color: var(--theme-primary, #5BA7D8); font-weight: 600;
 }
 .lottery-trigger {
   text-decoration: underline;
 }
 
 .checkin-btn {
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-size: 26rpx; font-weight: 600;
   padding: 16rpx 36rpx;
@@ -218,11 +218,11 @@ page { background: #f0f2f7; }
 }
 
 .cal-day.checked .cal-circle {
-  background: #5BA7D8;
+  background: var(--theme-primary, #5BA7D8);
 }
 
 .cal-day.today .cal-circle {
-  box-shadow: 0 0 0 3rpx #5BA7D8;
+  box-shadow: 0 0 0 3rpx var(--theme-primary, #5BA7D8);
 }
 
 .cal-day.today.checked .cal-circle {
@@ -277,7 +277,7 @@ page { background: #f0f2f7; }
 .calendar-toggle {
   display: flex; align-items: center; justify-content: center; gap: 10rpx;
   padding: 16rpx 0 8rpx;
-  font-size: 24rpx; color: #5BA7D8;
+  font-size: 24rpx; color: var(--theme-primary, #5BA7D8);
 }
 .calendar-toggle:active { opacity: 0.7; }
 
@@ -288,7 +288,7 @@ page { background: #f0f2f7; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #EAF4FB;
+  background: var(--theme-primary-soft, #EAF4FB);
   transition: transform .22s ease;
 }
 
@@ -300,8 +300,8 @@ page { background: #f0f2f7; }
   width: 8rpx;
   height: 8rpx;
   margin-top: -4rpx;
-  border-right: 3rpx solid #5BA7D8;
-  border-bottom: 3rpx solid #5BA7D8;
+  border-right: 3rpx solid var(--theme-primary, #5BA7D8);
+  border-bottom: 3rpx solid var(--theme-primary, #5BA7D8);
   transform: rotate(45deg);
 }
 
@@ -334,13 +334,13 @@ page { background: #f0f2f7; }
   position: relative;
 }
 .month-day.empty { background: transparent; }
-.month-day.checked { background: #5BA7D8; }
+.month-day.checked { background: var(--theme-primary, #5BA7D8); }
 .month-day.today {
   background: #f5f6fa;
-  box-shadow: 0 0 0 3rpx #5BA7D8;
+  box-shadow: 0 0 0 3rpx var(--theme-primary, #5BA7D8);
 }
 .month-day.today.checked {
-  background: #5BA7D8;
+  background: var(--theme-primary, #5BA7D8);
   box-shadow: 0 0 0 3rpx rgba(74,144,217,0.3);
 }
 .month-day.can-makeup {
@@ -356,7 +356,7 @@ page { background: #f0f2f7; }
   line-height: 1;
 }
 .month-day.checked .month-day-num { color: #fff; font-weight: 600; }
-.month-day.today .month-day-num { color: #5BA7D8; font-weight: 700; }
+.month-day.today .month-day-num { color: var(--theme-primary, #5BA7D8); font-weight: 700; }
 .month-day.today.checked .month-day-num { color: #fff; font-weight: 700; }
 
 .month-day-check {
@@ -365,7 +365,7 @@ page { background: #f0f2f7; }
   border-radius: 50%;
   background: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16rpx; color: #5BA7D8; font-weight: 700;
+  font-size: 16rpx; color: var(--theme-primary, #5BA7D8); font-weight: 700;
 }
 .month-day-check.madeup { color: #FF9500; }
 
@@ -413,7 +413,7 @@ page { background: #f0f2f7; }
   transform: translate(-50%, -50%);
   width: 120rpx; height: 120rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-size: 28rpx; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
@@ -471,8 +471,8 @@ page { background: #f0f2f7; }
   padding: 16rpx 24rpx;
 }
 
-.points-entry-text { font-size: 26rpx; color: #5BA7D8; }
-.points-entry-arrow { font-size: 32rpx; color: #5BA7D8; }
+.points-entry-text { font-size: 26rpx; color: var(--theme-primary, #5BA7D8); }
+.points-entry-arrow { font-size: 32rpx; color: var(--theme-primary, #5BA7D8); }
 
 .points-divider {
   width: 1rpx; height: 28rpx;
@@ -485,7 +485,7 @@ page { background: #f0f2f7; }
 }
 
 .share-task-btn {
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #fff;
   font-size: 28rpx; font-weight: 600;
   padding: 20rpx 0;
@@ -707,7 +707,7 @@ page { background: #f0f2f7; }
 }
 .emoji-opt.selected {
   background: #e8f0ff;
-  border-color: #5BA7D8;
+  border-color: var(--theme-primary, #5BA7D8);
   transform: scale(1.15);
 }
 
@@ -751,7 +751,7 @@ page { background: #f0f2f7; }
   padding: 24rpx 0; border-radius: 50rpx; text-align: center;
 }
 .sheet-btn.cancel { color: #666; background: #f0f0f0; }
-.sheet-btn.confirm { color: #fff; background: #5BA7D8; }
+.sheet-btn.confirm { color: #fff; background: var(--theme-primary, #5BA7D8); }
 .sheet-btn:active { opacity: 0.75; }
 
 /* ─── 绑定手机号弹窗 ─── */
@@ -768,4 +768,64 @@ page { background: #f0f2f7; }
   padding: 16rpx 48rpx calc(80rpx + constant(safe-area-inset-bottom));
   z-index: 999;
   /* stopBubble 防止点击内容穿透到遮罩 */
+}
+
+/* ─── 主题中性色收口 ─── */
+.stats-card,
+.menu-card,
+.dev-reset-btn,
+.logout-btn,
+.sheet-content,
+.bindphone-sheet {
+  background: var(--theme-card, #FFFFFF);
+}
+
+.stat-num,
+.menu-text,
+.sheet-title,
+.edit-input {
+  color: var(--theme-text, #243044);
+}
+
+.stat-label,
+.menu-group-label,
+.dev-reset-btn,
+.avatar-upload-plus,
+.avatar-upload-label,
+.footer-hint {
+  color: var(--theme-text-muted, #A5AFBC);
+}
+
+.menu-desc,
+.edit-label,
+.sheet-btn.cancel {
+  color: var(--theme-text-secondary, #6E7A8A);
+}
+
+.stat-divider,
+.menu-divider,
+.menu-item {
+  border-color: var(--theme-divider, #E8EEF4);
+  background-color: var(--theme-divider, #E8EEF4);
+}
+
+.menu-item {
+  background: transparent;
+}
+
+.menu-item:active,
+.dev-reset-btn:active,
+.emoji-opt,
+.avatar-upload-btn,
+.edit-field,
+.sheet-btn.cancel {
+  background: var(--theme-surface-muted, #F5F9FC);
+}
+
+.sheet-handle {
+  background: var(--theme-divider, #E8EEF4);
+}
+
+.menu-arrow {
+  color: var(--theme-text-muted, #A5AFBC);
 }

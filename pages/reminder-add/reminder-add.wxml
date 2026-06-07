@@ -1,5 +1,5 @@
 <!-- pages/reminder-add/reminder-add.wxml -->
-<view class="container">
+<view class="container {{themeClass}}">
   <!-- 无可用宠物：全部已经离世 -->
   <view wx:if="{{noCatsAvailable}}" class="empty-cats">
     <image class="ui-empty-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFill" />
@@ -19,13 +19,18 @@
     </view>
 
     <view class="form-group">
-      <text class="label">选择宠物 <text class="required">*</text></text>
-      <view class="picker custom-picker" bindtap="openCatPickerModal">
+      <text class="label">{{isEdit ? '所属宠物' : '选择宠物'}} <text class="required">*</text></text>
+      <view wx:if="{{isEdit}}" class="picker custom-picker cat-picker-readonly">
+        <view class="picker-value">{{lockedCatName || selectedCatName}}</view>
+        <view class="readonly-badge">不可修改</view>
+      </view>
+      <view wx:else class="picker custom-picker" bindtap="openCatPickerModal">
         <view class="picker-value {{selectedCatId ? '' : 'placeholder'}}">
           {{selectedCatName || '请选择宠物'}}
         </view>
         <view class="picker-arrow"><view class="picker-chevron"></view></view>
       </view>
+      <text wx:if="{{isEdit}}" class="field-hint readonly-hint">提醒已归属于该宠物，编辑时不能更换。</text>
     </view>
 
     <view class="form-group">
@@ -38,7 +43,7 @@
           bindtap="typeChangeTap"
           data-type="{{item.key}}"
         >
-          <image class="type-icon ui-icon" src="{{item.iconPath}}" mode="aspectFit" />
+          <image class="type-icon ui-icon theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
           <text class="type-label">{{item.label}}</text>
         </view>
       </view>
@@ -100,10 +105,15 @@
   </view>
 
   <view class="btn-section">
-    <button class="save-btn" bindtap="save">{{isEdit ? '保存修改' : '创建提醒'}}</button>
+    <button
+      class="save-btn {{saving ? 'saving' : ''}}"
+      bindtap="save"
+      disabled="{{saving}}"
+      loading="{{saving}}"
+    >{{saving ? '保存中...' : (isEdit ? '保存修改' : '创建提醒')}}</button>
   </view>
 
-  <view wx:if="{{showCatPickerModal}}" class="cat-picker-mask" catchtap="closeCatPickerModal">
+  <view wx:if="{{showCatPickerModal && !isEdit}}" class="cat-picker-mask" catchtap="closeCatPickerModal">
     <view class="cat-picker-panel" catchtap="">
       <view class="cat-picker-head">
         <text class="cat-picker-title">选择宠物</text>

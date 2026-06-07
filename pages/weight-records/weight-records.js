@@ -1,7 +1,9 @@
 // pages/weight-records/weight-records.js
 // 体重记录列表页：按宠物筛选，查看每条体重记录，支持增删改
 const clouddb = require('../../utils/clouddb.js');
-const { datePart, calcAgo, nowTimeStr, datetime, todayStr, parseDate } = require('../../utils/util.js');
+const { datePart, calcAgo, formatDate, nowTimeStr, datetime, todayStr, parseDate } = require('../../utils/util.js');
+
+const { syncPageTheme, getThemeCanvasPalette } = require('../../utils/themes.js');
 
 Page({
   data: {
@@ -28,8 +30,8 @@ Page({
     hasMoreRecords: false,
     recordsLoading: false,
     loadError: false,
-    records: [],        // 所有体重记录（带宠物名）
     filteredRecords: [], // 筛选后记录
+    loadedRecordCount: 0,
     summaryLatest: '',    // 最新体重
     summaryCount: 0,      // 记录次数
     summaryChangeText: '', // 累计变化文字
@@ -48,10 +50,12 @@ Page({
     editDate: todayStr(),
     editTime: nowTimeStr(),
     editWeight: '',
-    editNote: ''
+    editNote: '',
+    savingRecord: false
   },
 
   async onLoad(options) {
+    this._skipFirstOnShowReload = true;
     this.setData({ catId: options.catId || '' });
     await this.loadCats();
     if (options.catId) {
@@ -61,7 +65,12 @@ Page({
   },
 
   onShow() {
+    syncPageTheme(this);
     this.setData({ isOnline: getApp().globalData.isOnline });
+    if (this._skipFirstOnShowReload) {
+      this._skipFirstOnShowReload = false;
+      return;
+    }
     this.loadCats().then(() => this.loadRecords());
   },
 
@@ -76,7 +85,8 @@ Page({
   // 加载体重记录（resetPage=true 从头加载，false 加载更多）
   async loadRecords(resetPage) {
     if (resetPage !== false) {
-      this.setData({ recordsPage: 1, hasMoreRecords: true, records: [], filteredRecords: [], loadError: false });
+      this._records = [];
+      this.setData({ recordsPage: 1, hasMoreRecords: true, filteredRecords: [], loadedRecordCount: 0, loadError: false });
     }
     if (this.data.recordsLoading) return;
     this.setData({ recordsLoading: true });
@@ -98,11 +108,12 @@ Page({
         _ago: calcAgo(r.date)
       }); });
 
-      const allRecords = page === 1 ? withCat : [].concat(this.data.records, withCat);
+      const allRecords = page === 1 ? withCat : [].concat(this._records || [], withCat);
+      this._records = allRecords;
       const hasMore = newRecords.length >= pageSize;
 
       this.setData({
-        records: allRecords,
+        loadedRecordCount: allRecords.length,
         recordsPage: page + 1,
         hasMoreRecords: hasMore,
         recordsLoading: false,
@@ -147,9 +158,9 @@ Page({
   },
 
   applyFilter() {
-    const { records, currentCat, currentPeriod, cats } = this.data;
-    let filtered = records;
-    let petRecords = records;
+    const { currentCat, currentPeriod, cats } = this.data;
+    let filtered = this._records || [];
+    let petRecords = this._records || [];
 
     // 判断当前选中宠物是否已离世了
     let isCurrentCatPassed = false;
@@ -175,7 +186,7 @@ Page({
         const cutoff = new Date();
         cutoff.setHours(0, 0, 0, 0);
         cutoff.setDate(cutoff.getDate() - days);
-        const cutoffStr = cutoff.toISOString().split('T')[0];
+        const cutoffStr = formatDate(cutoff);
         filtered = filtered.filter(r => datePart(r.date) >= cutoffStr);
       }
     }
@@ -244,6 +255,7 @@ Page({
         const dpr = wx.getSystemInfoSync().pixelRatio;
         const W = res[0].width;
         const H = res[0].height;
+        const palette = getThemeCanvasPalette(getApp().globalData.activeTheme);
         canvas.width = W * dpr;
         canvas.height = H * dpr;
         ctx.scale(dpr, dpr);
@@ -274,12 +286,12 @@ Page({
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.font = '12px -apple-system, sans-serif';
-        ctx.fillStyle = '#999';
+        ctx.fillStyle = '#6E7A8A';
         for (let i = 0; i <= yTicks; i++) {
           const v = yMin + (i / yTicks) * (yMax - yMin);
           const y = yAt(v);
           ctx.beginPath();
-          ctx.strokeStyle = '#f0f0f0';
+          ctx.strokeStyle = palette.grid;
           ctx.lineWidth = 1;
           ctx.moveTo(pad.left, y);
           ctx.lineTo(W - pad.right, y);
@@ -310,14 +322,14 @@ Page({
         ctx.lineTo(xAt(sorted.length - 1), yAt(yMin));
         ctx.closePath();
         const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + ch);
-        grad.addColorStop(0, 'rgba(74,144,217,0.28)');
-        grad.addColorStop(1, 'rgba(74,144,217,0.03)');
+        grad.addColorStop(0, palette.areaStrong);
+        grad.addColorStop(1, palette.areaLight);
         ctx.fillStyle = grad;
         ctx.fill();
 
         // ── 折线 ──
         ctx.beginPath();
-        ctx.strokeStyle = '#5BA7D8';
+        ctx.strokeStyle = palette.primary;
         ctx.lineWidth = 2.5;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -331,7 +343,7 @@ Page({
         for (let i = 0; i < sorted.length; i++) {
           const x = xAt(i), y = yAt(sorted[i].weight);
           ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
-          ctx.beginPath(); ctx.fillStyle = '#5BA7D8'; ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.fillStyle = palette.primary; ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
         }
       });
   },
@@ -353,7 +365,7 @@ Page({
 
   // ─── 打开编辑弹窗 ───
   openEdit(e) {
-    const record = this.data.records.find(r => r._id === e.currentTarget.dataset.id);
+    const record = (this._records || []).find(r => r._id === e.currentTarget.dataset.id);
     if (!record) return;
     this.setData({
       showEditModal: true,
@@ -401,6 +413,7 @@ Page({
 
   // 新增保存
   async saveAdd() {
+    if (this.data.savingRecord) return;
     const { addCatId, addDate, addTime, addWeight, addNote, isCurrentCatPassed } = this.data;
     if (isCurrentCatPassed) {
       wx.showToast({ title: '已离世的宠物不支持记录', icon: 'none' }); return;
@@ -411,24 +424,41 @@ Page({
     if (isNaN(w) || w <= 0) { wx.showToast({ title: '请输入有效体重(kg)', icon: 'none' }); return; }
     if (w > 30) { wx.showToast({ title: '体重数值过大，请检查', icon: 'none' }); return; }
 
-    await clouddb.addWeightRecord({ catId: addCatId, date: datetime(addDate, addTime), weight: w, note: addNote || '' });
-    this.setData({ showAddModal: false });
-    this.loadRecords();
-    wx.showToast({ title: '记录成功', icon: 'success' });
+    this.setData({ savingRecord: true });
+    try {
+      await clouddb.addWeightRecord({ catId: addCatId, date: datetime(addDate, addTime), weight: w, note: addNote || '' });
+      this.setData({ showAddModal: false });
+      this.loadRecords();
+      wx.showToast({ title: '记录成功', icon: 'success' });
+    } catch (error) {
+      console.error('[weight-records] save add error:', error);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ savingRecord: false });
+    }
   },
 
   // 编辑保存
   async saveEdit() {
+    if (this.data.savingRecord) return;
     const { editId, editDate, editTime, editWeight, editNote } = this.data;
     if (!editDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
     const w = parseFloat(editWeight);
     if (isNaN(w) || w <= 0) { wx.showToast({ title: '请输入有效体重(kg)', icon: 'none' }); return; }
     if (w > 30) { wx.showToast({ title: '体重数值过大，请检查', icon: 'none' }); return; }
 
-    await clouddb.updateWeightRecord(editId, { date: datetime(editDate, editTime), weight: w, note: editNote || '' });
-    this.setData({ showEditModal: false, showAddModal: false });
-    this.loadRecords();
-    wx.showToast({ title: '修改成功', icon: 'success' });
+    this.setData({ savingRecord: true });
+    try {
+      await clouddb.updateWeightRecord(editId, { date: datetime(editDate, editTime), weight: w, note: editNote || '' });
+      this.setData({ showEditModal: false, showAddModal: false });
+      this.loadRecords();
+      wx.showToast({ title: '修改成功', icon: 'success' });
+    } catch (error) {
+      console.error('[weight-records] save edit error:', error);
+      wx.showToast({ title: '保存失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ savingRecord: false });
+    }
   },
 
   cancelModal() {

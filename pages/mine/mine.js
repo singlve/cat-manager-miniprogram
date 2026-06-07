@@ -2,6 +2,8 @@
 // 「我的」页面
 const clouddb = require('../../utils/clouddb.js');
 const { todayStr, calcCheckInPoints, buildCheckInWeek, buildCheckInMonth, getLotteryDrawsForStreak, calcCumulativeRewards, isAdmin } = require('../../utils/util.js');
+const { getInitialThemeData } = require('../../utils/themes.js');
+const initialTheme = getInitialThemeData();
 
 function getAvatarEmoji(currentUser) {
   if (currentUser && currentUser.avatarEmoji) return currentUser.avatarEmoji;
@@ -18,6 +20,10 @@ function getAvatarType(currentUser) {
 Page({
   data: {
     isOnline: true,
+    themeClass: initialTheme.themeClass,
+    themeKey: initialTheme.themeKey,
+    themePrimary: initialTheme.themePrimary,
+    themeSecondary: initialTheme.themeSecondary,
     isLoggedIn: false,
     isAdmin: false,
     showFeedback: false,
@@ -27,9 +33,6 @@ Page({
     avatarEmoji: '😺',
     avatarType: 'emoji',
     phone: '',
-    catCount: 0,
-    reminderCount: 0,
-    recordCount: 0,
     // 资料编辑
     showEditModal: false,
     editNickname: '',
@@ -96,9 +99,17 @@ Page({
   },
 
   onShow() {
-    this.setData({ isOnline: getApp().globalData.isOnline });
     const app = getApp();
-    this.setData({ isLoggedIn: app.isLoggedIn(), isAdmin: isAdmin() });
+    const activeTheme = app.applyTheme();
+    this.setData({
+      isOnline: app.globalData.isOnline,
+      themeClass: activeTheme.className,
+      themeKey: activeTheme.key,
+      themePrimary: activeTheme.primary,
+      themeSecondary: activeTheme.secondary,
+      isLoggedIn: app.isLoggedIn(),
+      isAdmin: isAdmin()
+    });
     if (app.isLoggedIn()) { this.loadUserInfo(); this._loadNotifyCount(); }
     this._checkFeedbackEntry();
   },
@@ -123,6 +134,13 @@ Page({
         if (cloudUser) {
           currentUser = cloudUser;
           try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+          const activeTheme = getApp().applyTheme(currentUser.activeTheme || 'default');
+          this.setData({
+            themeClass: activeTheme.className,
+            themeKey: activeTheme.key,
+            themePrimary: activeTheme.primary,
+            themeSecondary: activeTheme.secondary
+          });
         }
       } catch (e) { console.error('[mine] loadUserInfo cloud sync error:', e); }
     }
@@ -232,21 +250,6 @@ Page({
       claimedCumulativeMilestones,
       showingCumulReward: cumulReward.earned ? cumulReward : null
     });
-
-    try {
-      const [cats, reminders, records] = await Promise.all([
-        clouddb.getCats(),
-        clouddb.getReminders(),
-        clouddb.getRecords()
-      ]);
-      this.setData({
-        catCount: cats.length,
-        reminderCount: reminders.filter(r => !r.completedAt).length,
-        recordCount: records.length
-      });
-    } catch (e) {
-      console.error('[mine] loadUserInfo error:', e);
-    }
   },
 
   goCats()      { wx.switchTab({ url: '/pages/cat-list/cat-list' }); },
@@ -254,11 +257,11 @@ Page({
   goRecords()   { wx.navigateTo({ url: '/pages/health-records/health-records' }); },
   goExpense()   { wx.navigateTo({ url: '/pages/expense/expense' }); },
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
-  goPointsMall()    { wx.navigateTo({ url: '/pages/points-mall/points-mall' }); },
-  goInventory()    { wx.navigateTo({ url: '/pages/inventory/inventory' }); },
-  goAdmin()         { wx.navigateTo({ url: '/pages/admin-items/admin-items' }); },
-  goAdminAnnounce() { wx.navigateTo({ url: '/pages/admin-announcement/admin-announcement' }); },
-  goAdminData()    { wx.navigateTo({ url: '/pages/admin-data/admin-data' }); },
+  goPointsMall()    { wx.navigateTo({ url: '/packages/services/points-mall/points-mall' }); },
+  goInventory()    { wx.navigateTo({ url: '/packages/services/inventory/inventory' }); },
+  goAdmin()         { wx.navigateTo({ url: '/packages/services/admin-items/admin-items' }); },
+  goAdminAnnounce() { wx.navigateTo({ url: '/packages/services/admin-announcement/admin-announcement' }); },
+  goAdminData()    { wx.navigateTo({ url: '/packages/services/admin-data/admin-data' }); },
   goFeedback()    { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   goAbout()        { wx.navigateTo({ url: '/pages/about/about' }); },
 
@@ -773,10 +776,10 @@ Page({
     currentUser.lotteryUsed = drawnMilestones.length;
     currentUser._lastDrawDate = today;
 
-    var resultColor = '#5BA7D8';
+    var resultColor = getApp().getTheme().primary;
     if (prize.type === 'points') {
       currentUser.totalPoints = (currentUser.totalPoints || 0) + prize.value;
-      resultColor = '#5BA7D8';
+      resultColor = getApp().getTheme().primary;
     } else if (prize.type === 'card') {
       currentUser.makeUpCards = (currentUser.makeUpCards || 0) + prize.value;
       resultColor = '#5CB85C';

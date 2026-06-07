@@ -1,5 +1,5 @@
 <!-- pages/mine/mine.wxml -->
-<view class="page">
+<view class="page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
   <!-- 未登录状态 -->
@@ -267,7 +267,7 @@
       <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:32rpx;">
         <text style="font-size:26rpx;color:#999;">剩余补签卡：</text>
         <image class="ui-icon-sm" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
-        <text style="font-size:30rpx;color:#5BA7D8;font-weight:700;">{{makeUpCards}} 张</text>
+        <text style="font-size:30rpx;color:{{themePrimary || '#5BA7D8'}};font-weight:700;">{{makeUpCards}} 张</text>
       </view>
       <view class="sheet-btns">
         <view class="sheet-btn cancel" bindtap="cancelMakeUp">取消</view>
@@ -316,7 +316,7 @@
         <text style="font-size:36rpx;font-weight:700;color:#1a1a1a;">补签卡</text>
       </view>
       <view style="display:flex;align-items:center;justify-content:center;gap:8rpx;margin-bottom:36rpx;">
-        <text style="font-size:52rpx;font-weight:700;color:#5BA7D8;">{{makeUpCards}}</text>
+        <text style="font-size:52rpx;font-weight:700;color:{{themePrimary || '#5BA7D8'}};">{{makeUpCards}}</text>
         <text style="font-size:28rpx;color:#666;">张可用</text>
       </view>
       <text style="font-size:26rpx;color:#999;display:block;text-align:center;margin-bottom:40rpx;line-height:1.6;">每分享小程序到微信群或朋友圈

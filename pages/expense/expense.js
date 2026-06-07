@@ -1,26 +1,17 @@
 // pages/expense/expense.js
 const clouddb = require('../../utils/clouddb.js');
-const EXPENSE_CATEGORIES = [
-  { key: 'food', iconPath: '/assets/icons/expense/food.png', name: '食品', color: '#FFB86B' },
-  { key: 'medical', iconPath: '/assets/icons/expense/medical.png', name: '医疗', color: '#F36B6B' },
-  { key: 'toys', iconPath: '/assets/icons/expense/toys.png', name: '玩具', color: '#6BC6B3' },
-  { key: 'grooming', iconPath: '/assets/icons/expense/grooming.png', name: '洗护', color: '#5BA7D8' },
-  { key: 'supplies', iconPath: '/assets/icons/expense/supplies.png', name: '用品', color: '#7C9ED9' },
-  { key: 'other', iconPath: '/assets/icons/expense/other.png', name: '其他', color: '#94A3B8' }
-];
-
-function getExpenseCategory(key) {
-  return EXPENSE_CATEGORIES.find(function(category) {
-    return category.key === key;
-  }) || EXPENSE_CATEGORIES[EXPENSE_CATEGORIES.length - 1];
-}
+const { getExpenseCategories, getExpenseCategory } = require('../../utils/expense-categories.js');
+const EXPENSE_CATEGORIES = getExpenseCategories('default');
 
 var MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
   data: {
     isOnline: true,
     loading: true,
+    loadError: false,
     viewMode: 'month',        // 'month' | 'year'
     // ── 年份 ──
     currentYear: 0,
@@ -31,6 +22,7 @@ Page({
     expenses: [],             // 当月过滤后的记录
     groupedExpenses: [],
     stats: { total: '0.00', cats: {}, catsByName: {} },
+    monthlyInsights: { changeText: '暂无上月数据', changeClass: 'neutral', topCategory: '-', topPet: '-' },
     catFilter: 'all',
     catFilterIdx: 0,
     catFilterOptions: [{ id: 'all', name: '猫咪' }],
@@ -58,19 +50,32 @@ Page({
   },
 
   onShow() {
+    var theme = syncPageTheme(this);
+    this.setData({ categories: getExpenseCategories(theme.key) });
     this.setData({ isOnline: getApp().globalData.isOnline });
-    this.loadYearData();
+    this.loadExpenseData();
   },
 
   // ════════════════════════════════════════════════════
-  // 数据加载：拉取全年记账 + 猫咪列表
+  // 数据加载：月度只拉当前月和上月，年度才拉全年
   // ════════════════════════════════════════════════════
-  async loadYearData() {
-    this.setData({ loading: true });
+  async loadExpenseData() {
+    this.setData({ loading: true, loadError: false });
     try {
       var y = this.data.currentYear;
-      var start = y + '-01-01';
-      var end = y + '-12-31';
+      var start;
+      var end;
+      if (this.data.viewMode === 'year') {
+        start = y + '-01-01';
+        end = y + '-12-31';
+      } else {
+        var currentParts = this.data.currentMonth.split('-');
+        var monthYear = Number(currentParts[0]);
+        var month = Number(currentParts[1]);
+        var previous = new Date(monthYear, month - 2, 1);
+        start = previous.getFullYear() + '-' + String(previous.getMonth() + 1).padStart(2, '0') + '-01';
+        end = this.data.currentMonth + '-31';
+      }
 
       var expenses = await clouddb.getExpenses({ dateStart: start, dateEnd: end });
       expenses = expenses || [];
@@ -95,9 +100,14 @@ Page({
       }
     } catch (e) {
       console.error('[expense] loadYearData fail:', e);
+      this.setData({ loadError: true });
     }
     this.setData({ loading: false });
   },
+
+  loadYearData() { return this.loadExpenseData(); },
+
+  retryLoad() { this.loadExpenseData(); },
 
   // ════════════════════════════════════════════════════
   // 月度视图
@@ -115,7 +125,33 @@ Page({
     });
 
     this.calcStats(expenses);
+    this.computeMonthlyInsights(expenses);
     this.computeGroupedExpenses();
+  },
+
+  computeMonthlyInsights(expenses) {
+    const currentTotal = (expenses || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    const parts = this.data.currentMonth.split('-');
+    const month = Number(parts[1]);
+    const prevKey = month > 1 ? parts[0] + '-' + String(month - 1).padStart(2, '0') : '';
+    const prevExpenses = prevKey ? (this.data.yearExpenses || []).filter(item => item.date && item.date.indexOf(prevKey) === 0) : [];
+    const prevTotal = prevExpenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+    let changeText = '暂无上月数据';
+    let changeClass = 'neutral';
+    if (prevTotal > 0) {
+      const pct = Math.round(((currentTotal - prevTotal) / prevTotal) * 100);
+      changeText = pct === 0 ? '与上月持平' : (pct > 0 ? '较上月增加 ' + pct + '%' : '较上月减少 ' + Math.abs(pct) + '%');
+      changeClass = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'neutral');
+    }
+    const categoryTotals = {};
+    const petTotals = {};
+    (expenses || []).forEach(item => {
+      categoryTotals[item.categoryName || item.category || '其他'] = (categoryTotals[item.categoryName || item.category || '其他'] || 0) + Number(item.amount || 0);
+      const petName = item.petName || (item.petId ? (this.data.cats.find(cat => cat._id === item.petId) || {}).name : '公共花销') || '未知宠物';
+      petTotals[petName] = (petTotals[petName] || 0) + Number(item.amount || 0);
+    });
+    const topName = totals => Object.keys(totals).sort((a, b) => totals[b] - totals[a])[0] || '-';
+    this.setData({ monthlyInsights: { changeText, changeClass, topCategory: topName(categoryTotals), topPet: topName(petTotals) } });
   },
 
   calcStats(expenses) {
@@ -156,6 +192,7 @@ Page({
 
     var groups = [];
     var lastDate = '';
+    var themeKey = this.data.themeKey;
     expenses.forEach(function(e) {
       if (e.date !== lastDate) {
         lastDate = e.date;
@@ -163,7 +200,7 @@ Page({
       }
       var g = groups[groups.length - 1];
       g.dayTotal += (Number(e.amount) || 0);
-      var category = getExpenseCategory(e.category);
+      var category = getExpenseCategory(e.category, themeKey);
       g.items.push(Object.assign({}, e, { _categoryIconPath: category.iconPath }));
     });
 
@@ -176,16 +213,10 @@ Page({
     var parts = this.data.currentMonth.split('-');
     var y = parseInt(parts[0], 10);
     var m = parseInt(parts[1], 10);
-    var prevYear = this.data.currentYear;
     if (m === 1) { y--; m = 12; } else { m--; }
     var cm = y + '-' + String(m).padStart(2, '0');
     this.setData({ currentMonth: cm, currentYear: y });
-    // 年份变了需要重新拉数据
-    if (y !== prevYear) {
-      this.loadYearData();
-    } else {
-      this.applyMonthFilter();
-    }
+    this.loadExpenseData();
   },
 
   onNextMonth() {
@@ -203,13 +234,8 @@ Page({
     }
     if (m === 12) { y++; m = 1; } else { m++; }
     var cm = y + '-' + String(m).padStart(2, '0');
-    this.setData({ currentMonth: cm });
-    if (y !== this.data.currentYear) {
-      this.setData({ currentYear: y });
-      this.loadYearData();
-    } else {
-      this.applyMonthFilter();
-    }
+    this.setData({ currentMonth: cm, currentYear: y });
+    this.loadExpenseData();
   },
 
   // 年份切换
@@ -217,7 +243,7 @@ Page({
     var y = this.data.currentYear - 1;
     if (y < 2020) return;
     this.setData({ currentYear: y });
-    this.loadYearData();
+    this.loadExpenseData();
   },
 
   onNextYear() {
@@ -227,7 +253,7 @@ Page({
       return;
     }
     this.setData({ currentYear: y });
-    this.loadYearData();
+    this.loadExpenseData();
   },
 
   // 视图切换
@@ -235,11 +261,7 @@ Page({
     var mode = e.currentTarget.dataset.mode;
     if (mode === this.data.viewMode) return;
     this.setData({ viewMode: mode });
-    if (mode === 'year') {
-      this.computeAnnualStats();
-    } else {
-      this.applyMonthFilter();
-    }
+    this.loadExpenseData();
   },
 
   // ════════════════════════════════════════════════════
@@ -254,7 +276,9 @@ Page({
     for (var i = 1; i <= 12; i++) monthTotals[i] = 0;
     // 按分类汇总
     var catTotals = {};
-    EXPENSE_CATEGORIES.forEach(function(c) { catTotals[c.key] = { iconPath: c.iconPath, name: c.name, color: c.color, total: 0 }; });
+    (this.data.categories || EXPENSE_CATEGORIES).forEach(function(c) {
+      catTotals[c.key] = { iconPath: c.iconPath, name: c.name, color: c.color, total: 0 };
+    });
     // 按宠物汇总
     var petTotals = {};
 
@@ -338,7 +362,7 @@ Page({
     var month = Number(e.currentTarget.dataset.month);
     var cm = this.data.currentYear + '-' + String(month).padStart(2, '0');
     this.setData({ viewMode: 'month', currentMonth: cm });
-    this.applyMonthFilter();
+    this.loadExpenseData();
   },
 
   // ════════════════════════════════════════════════════
@@ -376,6 +400,10 @@ Page({
     this.setData({ showDeleteModal: true, deleteTarget: e.currentTarget.dataset.id });
   },
 
+  editExpense(e) {
+    wx.navigateTo({ url: '/pages/expense-add/expense-add?id=' + e.currentTarget.dataset.id });
+  },
+
   closeDeleteModal() {
     this.setData({ showDeleteModal: false, deleteTarget: null });
   },
@@ -389,7 +417,7 @@ Page({
       await clouddb.deleteExpense(id);
       wx.showToast({ title: '已删除', icon: 'success' });
       this.setData({ showDeleteModal: false, deleteTarget: null });
-      this.loadYearData();
+      this.loadExpenseData();
     } catch (e) {
       wx.showToast({ title: '删除失败', icon: 'none' });
     }
@@ -400,7 +428,7 @@ Page({
   },
 
   async onPullDownRefresh() {
-    try { await this.loadYearData(); } finally { wx.stopPullDownRefresh(); }
+    try { await this.loadExpenseData(); } finally { wx.stopPullDownRefresh(); }
   },
 
   onShareAppMessage() {

@@ -2,14 +2,14 @@
 
 .page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--theme-bg, #F7F9FB);
   padding-bottom: 120rpx;
 }
 
 /* ── 地址卡片 ── */
 .addr-card {
   margin: 20rpx 24rpx;
-  background: #fff;
+  background: var(--theme-card, #FFFFFF);
   border-radius: 16rpx;
   padding: 28rpx 32rpx;
   position: relative;
@@ -37,36 +37,36 @@
 .addr-name {
   font-size: 30rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--theme-text, #243044);
 }
 
 .addr-phone {
   font-size: 26rpx;
-  color: #666;
+  color: var(--theme-text-secondary, #6E7A8A);
 }
 
 .addr-body {
   font-size: 26rpx;
-  color: #333;
+  color: var(--theme-text, #243044);
   line-height: 1.5;
 }
 
 .addr-actions {
   margin-top: 20rpx;
   padding-top: 20rpx;
-  border-top: 1rpx solid #f0f0f0;
+  border-top: 1rpx solid var(--theme-divider, #E8EEF4);
   display: flex;
   gap: 32rpx;
 }
 
 .addr-act-btn {
   font-size: 24rpx;
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   padding: 4rpx 0;
 }
 
 .addr-act-btn.danger {
-  color: #e74c3c;
+  color: var(--theme-danger, #F36B6B);
 }
 
 /* ── 空状态 ── */
@@ -76,7 +76,7 @@
   align-items: center;
   padding-top: 200rpx;
   font-size: 28rpx;
-  color: #999;
+  color: var(--theme-text-muted, #A5AFBC);
 }
 
 /* ── 添加按钮 ── */
@@ -89,7 +89,7 @@
   height: 88rpx;
   line-height: 88rpx;
   text-align: center;
-  background: #5BA7D8;
+  background: var(--theme-primary, #5BA7D8);
   color: #fff;
   font-size: 30rpx;
   font-weight: 600;
@@ -110,7 +110,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #fff;
+  background: var(--theme-card, #FFFFFF);
   border-radius: 32rpx 32rpx 0 0;
   padding: 20rpx 36rpx 60rpx;
   max-height: 85vh;
@@ -120,7 +120,7 @@
 .editor-bar {
   width: 80rpx;
   height: 8rpx;
-  background: #ddd;
+  background: var(--theme-divider, #E8EEF4);
   border-radius: 4rpx;
   margin: 0 auto 24rpx;
 }
@@ -128,7 +128,7 @@
 .editor-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--theme-text, #243044);
   display: block;
   text-align: center;
   margin-bottom: 32rpx;
@@ -141,25 +141,25 @@
 
 .form-label {
   font-size: 26rpx;
-  color: #666;
+  color: var(--theme-text-secondary, #6E7A8A);
   display: block;
   margin-bottom: 8rpx;
 }
 
 .form-input {
   height: 80rpx;
-  background: #f7f8fa;
+  background: var(--theme-surface-muted, #F5F9FC);
   border-radius: 12rpx;
   padding: 0 24rpx;
   font-size: 28rpx;
-  color: #1a1a1a;
+  color: var(--theme-text, #243044);
   box-sizing: border-box;
   display: flex;
   align-items: center;
 }
 
 .region-picker.placeholder {
-  color: #bbb;
+  color: var(--theme-text-muted, #A5AFBC);
 }
 
 .form-row {
@@ -187,16 +187,16 @@
 }
 
 .e-btn.cancel {
-  background: #f5f5f5;
-  color: #666;
+  background: var(--theme-surface-muted, #F5F9FC);
+  color: var(--theme-text-secondary, #6E7A8A);
 }
 
 .e-btn.confirm {
-  background: #5BA7D8;
+  background: var(--theme-primary, #5BA7D8);
   color: #fff;
 }
 
 .e-btn.confirm.disabled {
-  background: #a0c4e8;
+  background: var(--theme-divider, #E8EEF4);
   color: #fff;
 }

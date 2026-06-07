@@ -1,5 +1,5 @@
 <!-- pages/reminders/reminders.wxml -->
-<view class="page">
+<view class="page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero reminder-hero">
@@ -21,8 +21,14 @@
 
   <!-- 已登录：筛选区域 + 卡片列表 -->
   <view wx:if="{{isLoggedIn}}">
+    <view wx:if="{{loadError}}" class="load-error-state">
+      <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+      <text class="load-error-title">提醒加载失败</text>
+      <text class="load-error-desc">请检查网络后重新加载，已有提醒不会丢失</text>
+      <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+    </view>
 
-    <view class="smart-plan-entry" bindtap="goReminderPlan">
+    <view wx:else class="smart-plan-entry" bindtap="goReminderPlan">
       <view class="smart-plan-icon">
         <image class="ui-icon" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
       </view>
@@ -31,6 +37,22 @@
         <text class="smart-plan-desc">一键生成洗澡、驱虫、体检等常用提醒</text>
       </view>
       <text class="smart-plan-arrow">›</text>
+    </view>
+
+    <view class="notify-health-card">
+      <view class="notify-health-main" bindtap="onNotifyAction">
+        <view class="notify-health-icon {{notifyAuth.status}}">
+          <image class="notify-health-icon-img" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
+        </view>
+        <view class="notify-health-copy">
+          <text class="notify-health-title">{{notifyAuth.title}}</text>
+          <text class="notify-health-desc">{{latestNotify.text}} · 同日多项合并发送</text>
+        </view>
+        <view class="notify-health-action">
+          <text>{{notifyAuth.status === 'success' || notifyAuth.status === 'disabled' ? '设置' : '去开启'}}</text>
+          <view class="notify-action-chevron"></view>
+        </view>
+      </view>
     </view>
 
     <view class="reminder-filter-panel">
@@ -48,9 +70,19 @@
 
       <!-- 状态筛选标签栏 -->
       <view class="status-segment">
-        <view class="seg-item {{statusFilter === 'active' ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="active">进行中</view>
-        <view class="seg-item {{statusFilter === 'completed' ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="completed">已完成</view>
+        <view class="seg-item {{statusFilter === 'active' && !batchMode ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="active">进行中</view>
+        <view class="seg-item {{statusFilter === 'completed' && !batchMode ? 'seg-active' : ''}}" bindtap="onStatusFilterChange" data-status="completed">已完成</view>
+        <view wx:if="{{hasData}}" class="seg-item seg-manage {{batchMode ? 'seg-active' : ''}}" bindtap="toggleBatchMode">
+          {{batchMode ? '退出管理' : '批量管理'}}
+        </view>
       </view>
+    </view>
+
+    <view wx:if="{{hasData && batchMode}}" class="batch-toolbar active">
+      <text class="batch-summary">已选 {{selectedReminderIds.length}} 项</text>
+      <text class="batch-link" bindtap="selectAllVisible">全选当前</text>
+      <text wx:if="{{statusFilter !== 'completed'}}" class="batch-action complete" bindtap="batchCompleteReminders">完成</text>
+      <text class="batch-action delete" bindtap="batchDeleteReminders">删除</text>
     </view>
 
     <!-- 空状态 -->
@@ -69,14 +101,17 @@
       </view>
       <view wx:for="{{overdueList}}" wx:key="_id" class="card card-danger">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <view wx:if="{{batchMode}}" class="batch-check {{item._selected ? 'selected' : ''}}" bindtap="toggleReminderSelection" data-id="{{item._id}}">
+            <view class="batch-check-mark"></view>
+          </view>
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="card-header-actions">
             <view class="tag tag-danger">逾期 {{0 - item.daysUntil}} 天</view>
-            <text class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
+            <text wx:if="{{!batchMode}}" class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
           </view>
         </view>
         <view class="next-date-highlight">
@@ -92,7 +127,7 @@
         </view>
         <view class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
-          <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
+          <text class="action-btn delete {{deletingReminderId === item._id ? 'disabled' : ''}}" bindtap="deleteReminder" data-id="{{item._id}}">{{deletingReminderId === item._id ? '删除中' : '删除'}}</text>
         </view>
       </view>
     </view>
@@ -106,14 +141,17 @@
       </view>
       <view wx:for="{{upcomingList}}" wx:key="_id" class="card card-urgent">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <view wx:if="{{batchMode}}" class="batch-check {{item._selected ? 'selected' : ''}}" bindtap="toggleReminderSelection" data-id="{{item._id}}">
+            <view class="batch-check-mark"></view>
+          </view>
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="card-header-actions">
             <view class="tag tag-urgent">{{item.daysUntil}}天后</view>
-            <text class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
+            <text wx:if="{{!batchMode}}" class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
           </view>
         </view>
         <view class="next-date-highlight">
@@ -129,7 +167,7 @@
         </view>
         <view class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
-          <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
+          <text class="action-btn delete {{deletingReminderId === item._id ? 'disabled' : ''}}" bindtap="deleteReminder" data-id="{{item._id}}">{{deletingReminderId === item._id ? '删除中' : '删除'}}</text>
         </view>
       </view>
     </view>
@@ -142,13 +180,16 @@
       </view>
       <view wx:for="{{futureList}}" wx:key="_id" class="card card-normal">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <view wx:if="{{batchMode}}" class="batch-check {{item._selected ? 'selected' : ''}}" bindtap="toggleReminderSelection" data-id="{{item._id}}">
+            <view class="batch-check-mark"></view>
+          </view>
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="card-header-actions">
-            <text class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
+            <text wx:if="{{!batchMode}}" class="complete-chip" bindtap="markComplete" data-id="{{item._id}}">完成</text>
           </view>
         </view>
         <view class="next-date-highlight normal">
@@ -166,7 +207,7 @@
         </view>
         <view class="actions">
           <text class="action-btn edit" bindtap="editReminder" data-id="{{item._id}}">编辑</text>
-          <text class="action-btn delete" bindtap="deleteReminder" data-id="{{item._id}}">删除</text>
+          <text class="action-btn delete {{deletingReminderId === item._id ? 'disabled' : ''}}" bindtap="deleteReminder" data-id="{{item._id}}">{{deletingReminderId === item._id ? '删除中' : '删除'}}</text>
         </view>
       </view>
     </view>
@@ -180,10 +221,13 @@
       </view>
       <view wx:for="{{completedList}}" wx:key="_id" class="card card-completed">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <view wx:if="{{batchMode}}" class="batch-check {{item._selected ? 'selected' : ''}}" bindtap="toggleReminderSelection" data-id="{{item._id}}">
+            <view class="batch-check-mark"></view>
+          </view>
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="tag tag-completed">已完成</view>
         </view>
@@ -213,10 +257,10 @@
       </view>
       <view wx:for="{{overdueList}}" wx:key="_id" class="card card-danger">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="tag tag-danger">逾期 {{0 - item.daysUntil}} 天</view>
         </view>
@@ -239,10 +283,10 @@
       </view>
       <view wx:for="{{upcomingList}}" wx:key="_id" class="card card-urgent">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
           <view class="tag tag-urgent">{{item.daysUntil}}天后</view>
         </view>
@@ -264,10 +308,10 @@
       </view>
       <view wx:for="{{futureList}}" wx:key="_id" class="card card-normal">
         <view class="card-header">
-          <image class="type-icon ui-icon" src="{{item.type === 'bath' ? '/assets/icons/ui/bath.png' : item.type === 'deworm' ? '/assets/icons/ui/deworm.png' : item.type === 'vaccine' ? '/assets/icons/ui/vaccine.png' : item.type === 'checkup' ? '/assets/icons/ui/checkup.png' : '/assets/icons/ui/other.png'}}" mode="aspectFit" />
+          <image class="type-icon ui-icon theme-business-icon" src="{{item._typeIconPath}}" mode="aspectFit" />
           <view class="card-info">
             <text class="cat-name">{{item.catName}}</text>
-            <text class="type-label">{{item.type === 'bath' ? '洗澡' : item.type === 'deworm' ? '驱虫' : item.type === 'vaccine' ? '免疫' : item.type === 'checkup' ? '体检' : '其他'}}</text>
+            <text class="type-label">{{item._typeLabel}}</text>
           </view>
         </view>
         <view class="next-date-highlight normal">
@@ -285,7 +329,7 @@
   </view>
 
   <!-- 列表态悬浮添加按钮：已登录且当前有提醒卡片 -->
-  <movable-area wx:if="{{isLoggedIn && hasData}}" class="add-fab-area">
+  <movable-area wx:if="{{isLoggedIn && statusFilter === 'active' && hasData}}" class="add-fab-area">
     <movable-view
       class="add-fab"
       direction="all"
@@ -301,7 +345,7 @@
   </movable-area>
 
   <!-- 空状态添加按钮：已登录但当前没有提醒卡片 -->
-  <view wx:elif="{{isLoggedIn && !hasData}}" class="fab-wrap">
+  <view wx:elif="{{isLoggedIn && statusFilter === 'active' && !hasData}}" class="fab-wrap">
     <button class="fab-btn" bindtap="addReminder">+ 添加提醒</button>
   </view>
   <!-- 未登录底部引导 -->

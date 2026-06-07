@@ -1,5 +1,5 @@
 <!-- pages/cat-list/cat-list.wxml -->
-<view class="container">
+<view class="container {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="home-hero">
@@ -16,7 +16,7 @@
 
   <!-- 管理员公告 -->
   <view wx:if="{{announcement}}" class="announce-bar" bindtap="onAnnounceTap">
-    <image class="announce-icon ui-icon-sm" src="/assets/icons/ui/announce.png" mode="aspectFit" />
+    <image class="announce-icon ui-icon-sm theme-business-icon" src="/assets/icons/ui/announce.png" mode="aspectFit" />
     <view class="announce-wrap">
       <text class="announce-text">{{announcement.content}}</text>
     </view>
@@ -24,11 +24,11 @@
 
   <!-- 功能 Banner -->
   <view wx:if="{{banners.length > 0}}" class="banner-wrap">
-    <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(91,167,216,0.18)" indicator-active-color="#5BA7D8">
+    <swiper class="banner-swiper" autoplay interval="{{4000}}" circular indicator-dots indicator-color="rgba(110,122,138,0.18)" indicator-active-color="{{themePrimary || '#5BA7D8'}}">
       <swiper-item wx:for="{{banners}}" wx:key="title">
         <view class="banner-card">
           <view class="banner-icon-wrap">
-            <image class="banner-emoji banner-icon-img" src="{{item.iconPath}}" mode="aspectFit" />
+            <image class="banner-emoji banner-icon-img theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
           </view>
           <view class="banner-body">
             <view class="banner-header">
@@ -121,7 +121,7 @@
         data-catid="{{item.catId}}"
       >
         <view class="activity-icon-wrap">
-          <image class="activity-icon ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
+          <image class="activity-icon ui-icon-sm theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
         </view>
         <view class="activity-copy">
           <text class="activity-item-title">{{item.title}}</text>
@@ -156,8 +156,8 @@
           <image class="ui-icon-lg" src="{{item.species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png'}}" mode="aspectFit" />
         </view>
         <!-- 性别角标 -->
-        <view class="gender-badge gender-{{item.gender}}">
-          {{item.gender === 'male' ? '♂' : '♀'}}
+        <view wx:if="{{item.gender === 'male' || item.gender === 'female'}}" class="gender-badge gender-{{item.gender}}">
+          <text class="gender-symbol">{{item.gender === 'male' ? '♂' : '♀'}}</text>
         </view>
       </view>
       <!-- 文字信息 -->
@@ -269,7 +269,7 @@
       </view>
       <view class="quick-modal-btns">
         <view class="quick-btn-cancel" bindtap="closeQuickModal">取消</view>
-        <view class="quick-btn-confirm" bindtap="saveQuickRecord">保存</view>
+        <view class="quick-btn-confirm {{quickSaving ? 'disabled' : ''}}" bindtap="saveQuickRecord">{{quickSaving ? '保存中...' : '保存'}}</view>
       </view>
     </view>
   </view>

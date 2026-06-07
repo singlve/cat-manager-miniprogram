@@ -2,10 +2,13 @@
 const app = getApp();
 const clouddb = require('../../utils/clouddb.js');
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
   data: {
     addresses: [],
     loading: true,
+    loadError: false,
 
     // 编辑弹窗
     showEditor: false,
@@ -21,18 +24,23 @@ Page({
   },
 
   async onShow() {
+    syncPageTheme(this);
     await this.loadAddresses();
   },
 
   async loadAddresses() {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     try {
       const addresses = await clouddb.getShippingAddresses();
-      this.setData({ addresses: addresses || [], loading: false });
+      this.setData({ addresses: addresses || [], loading: false, loadError: false });
     } catch (e) {
       console.error('[shipping-address] load fail:', e);
-      this.setData({ addresses: [], loading: false });
+      this.setData({ addresses: [], loading: false, loadError: true });
     }
+  },
+
+  retryLoad() {
+    this.loadAddresses();
   },
 
   // ── 打开添加弹窗 ──

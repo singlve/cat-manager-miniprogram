@@ -1,0 +1,253 @@
+page {
+  background: var(--theme-bg, #F7F9FB);
+}
+
+.backup-page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx 72rpx;
+  box-sizing: border-box;
+}
+
+.backup-hero-shell {
+  padding: 0;
+}
+
+.backup-hero {
+  margin: 0 0 24rpx;
+}
+
+.backup-loading {
+  padding: 100rpx 0;
+  color: var(--theme-text-secondary, #6E7A8A);
+  font-size: 27rpx;
+  text-align: center;
+}
+
+.backup-card,
+.backup-note {
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91, 167, 216), .10);
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 10rpx 28rpx rgba(68, 92, 120, .07);
+}
+
+.backup-card {
+  padding: 30rpx 28rpx;
+}
+
+.backup-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-bottom: 24rpx;
+  border-bottom: 1rpx solid var(--theme-divider, #E8EEF4);
+}
+
+.backup-card-title,
+.backup-card-time,
+.backup-number,
+.backup-label,
+.backup-note-title,
+.backup-note-desc,
+.backup-help {
+  display: block;
+}
+
+.backup-card-title {
+  color: var(--theme-text, #243044);
+  font-size: 31rpx;
+  font-weight: 900;
+}
+
+.backup-card-time {
+  margin-top: 8rpx;
+  color: var(--theme-text-muted, #A5AFBC);
+  font-size: 23rpx;
+}
+
+.backup-ready {
+  padding: 8rpx 16rpx;
+  border-radius: 999rpx;
+  background: var(--theme-secondary-soft, #EAF7F5);
+  color: var(--theme-secondary-deep, #3F9E8B);
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.backup-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18rpx 12rpx;
+  padding-top: 26rpx;
+}
+
+.backup-stat {
+  min-height: 112rpx;
+  padding: 18rpx 8rpx;
+  border-radius: 18rpx;
+  background: var(--theme-primary-soft, #EAF4FB);
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.backup-number {
+  color: var(--theme-primary-deep, #2F8DB8);
+  font-size: 34rpx;
+  font-weight: 900;
+}
+
+.backup-label {
+  margin-top: 5rpx;
+  color: var(--theme-text-secondary, #6E7A8A);
+  font-size: 22rpx;
+  font-weight: 700;
+}
+
+.backup-note {
+  display: flex;
+  gap: 18rpx;
+  margin-top: 22rpx;
+  padding: 24rpx;
+}
+
+.backup-note-icon {
+  flex: 0 0 auto;
+  width: 46rpx;
+  height: 46rpx;
+}
+
+.backup-note-title {
+  color: var(--theme-text, #243044);
+  font-size: 27rpx;
+  font-weight: 900;
+}
+
+.backup-note-desc {
+  margin-top: 8rpx;
+  color: var(--theme-text-secondary, #6E7A8A);
+  font-size: 24rpx;
+  line-height: 1.55;
+}
+
+.backup-button {
+  margin-top: 30rpx;
+  color: #FFFFFF;
+  font-size: 30rpx;
+  font-weight: 900;
+  background: linear-gradient(110deg, var(--theme-primary, #5BA7D8), var(--theme-secondary, #6BC6B3));
+  box-shadow: 0 14rpx 28rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .20);
+}
+
+.backup-help {
+  margin-top: 18rpx;
+  color: var(--theme-text-muted, #A5AFBC);
+  font-size: 22rpx;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.diagnostic-card {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin-top: 28rpx;
+  padding: 24rpx;
+  border: 1rpx solid var(--theme-divider, #E8EEF4);
+  border-radius: 22rpx;
+  background: var(--theme-card, #FFFFFF);
+}
+
+.diagnostic-copy { flex: 1; min-width: 0; }
+.diagnostic-title,
+.diagnostic-desc { display: block; }
+.diagnostic-title { color: var(--theme-text, #243044); font-size: 27rpx; font-weight: 900; }
+.diagnostic-desc { margin-top: 7rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 22rpx; line-height: 1.5; }
+.diagnostic-button {
+  flex: 0 0 132rpx;
+  width: 132rpx;
+  margin: 0;
+  padding: 0;
+  color: var(--theme-primary-deep, #2F8DB8);
+  font-size: 24rpx;
+  font-weight: 900;
+  line-height: 68rpx;
+  background: var(--theme-primary-soft, #EAF4FB);
+}
+
+.restore-entry {
+  margin-top: 18rpx;
+  color: var(--theme-primary-deep, #2F8DB8);
+  font-size: 28rpx;
+  font-weight: 900;
+  background: var(--theme-primary-soft, #EAF4FB);
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .22);
+}
+
+.restore-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 34rpx;
+  box-sizing: border-box;
+  background: rgba(36,48,68,.5);
+}
+
+.restore-panel {
+  width: 100%;
+  max-height: 84vh;
+  overflow-y: auto;
+  padding: 32rpx;
+  box-sizing: border-box;
+  border-radius: 30rpx;
+  background: linear-gradient(180deg, var(--theme-secondary-soft, #EAF7F5), var(--theme-card, #FFFFFF));
+}
+
+.restore-title,
+.restore-version,
+.restore-mode-title,
+.restore-mode-desc { display: block; }
+.restore-title { color: var(--theme-text, #243044); font-size: 32rpx; font-weight: 900; }
+.restore-version { margin-top: 8rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 23rpx; }
+.restore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10rpx;
+  margin-top: 24rpx;
+}
+.restore-grid text {
+  padding: 14rpx 8rpx;
+  border-radius: 14rpx;
+  color: var(--theme-primary-deep, #2F8DB8);
+  font-size: 22rpx;
+  font-weight: 800;
+  text-align: center;
+  background: var(--theme-card, #FFFFFF);
+}
+.restore-modes { display: flex; flex-direction: column; gap: 14rpx; margin-top: 24rpx; }
+.restore-mode {
+  padding: 20rpx;
+  border: 2rpx solid var(--theme-divider, #E8EEF4);
+  border-radius: 20rpx;
+  background: var(--theme-card, #FFFFFF);
+}
+.restore-mode.active { border-color: var(--theme-primary, #5BA7D8); background: var(--theme-primary-soft, #EAF4FB); }
+.restore-mode.danger.active { border-color: var(--theme-danger, #F36B6B); background: #FFF5F5; }
+.restore-mode-title { color: var(--theme-text, #243044); font-size: 27rpx; font-weight: 900; }
+.restore-mode-desc { margin-top: 6rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 22rpx; line-height: 1.45; }
+.restore-actions { display: flex; gap: 14rpx; margin-top: 26rpx; }
+.restore-cancel,
+.restore-confirm {
+  flex: 1;
+  height: 78rpx;
+  line-height: 78rpx;
+  border-radius: 999rpx;
+  text-align: center;
+  font-size: 27rpx;
+  font-weight: 900;
+}
+.restore-cancel { color: var(--theme-text-secondary, #6E7A8A); background: var(--theme-surface-muted, #F5F9FC); }
+.restore-confirm { color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486)); }
+.restore-confirm.disabled { opacity: .58; pointer-events: none; }

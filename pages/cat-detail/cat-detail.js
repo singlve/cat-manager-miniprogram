@@ -1,7 +1,7 @@
 // pages/cat-detail/cat-detail.js
 // 宠物详情页：快速记录 + 健康时间轴
 const clouddb = require('../../utils/clouddb.js');
-const { calcAgeDetail, calcAgo, calcDaysBetween, parseDate } = require('../../utils/util.js');
+const { calcAgeDetail, calcAgo, calcDaysBetween, parseDate, todayStr } = require('../../utils/util.js');
 
 // ─── Demo 数据 ───
 const DEMO_CATS = {
@@ -21,12 +21,15 @@ const DEMO_RECORDS = {
   ]
 };
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
   data: {
     catId: '', cat: {}, records: [], recentRecords: [], healthSummary: [], careOverview: [], nowDate: '', isDemo: false,
-    weightRecords: [], latestWeight: null,
-    showWeightModal: false, deleting: false,
-    weightDate: new Date().toISOString().split('T')[0],
+    weightRecords: [], latestWeight: null, weightTrendText: '', weightTrendClass: 'stable',
+    reminders: [], nextReminder: null,
+    showWeightModal: false, deleting: false, weightSaving: false,
+    weightDate: todayStr(),
     weightTime: '',
     weightValue: '', weightNote: '',
     showSharePreview: false, shareImagePath: '', generatingShare: false
@@ -39,7 +42,7 @@ Page({
       return;
     }
     const isDemo = options.id && options.id.startsWith('demo_');
-    this.setData({ catId: options.id, nowDate: new Date().toISOString().split('T')[0], isDemo });
+    this.setData({ catId: options.id, nowDate: todayStr(), isDemo });
     if (isDemo) {
       var demoRecords = DEMO_RECORDS[options.id] || [];
       this.setData({
@@ -48,17 +51,26 @@ Page({
         healthSummary: _buildHealthSummary(demoRecords),
         careOverview: _buildCareOverview(demoRecords),
         weightRecords: [],
-        latestWeight: null
+        latestWeight: null,
+        weightTrendText: '',
+        nextReminder: null
       });
     } else {
       this.loadCat();
       this.loadRecords();
       this.loadWeightRecords();
+      this.loadReminders();
     }
   },
 
   onShow() {
-    if (this.data.catId && !this.data.isDemo) { this.loadCat(); this.loadRecords(); this.loadWeightRecords(); }
+    syncPageTheme(this);
+    if (this.data.catId && !this.data.isDemo) {
+      this.loadCat();
+      this.loadRecords();
+      this.loadWeightRecords();
+      this.loadReminders();
+    }
   },
 
   async loadCat() {
@@ -99,9 +111,47 @@ Page({
       const records = await clouddb.getWeightRecords({ catId: this.data.catId });
       records.sort((a, b) => parseDate(b.date) - parseDate(a.date));
       const latestWeight = records.length > 0 ? records[0].weight : null;
-      this.setData({ weightRecords: records, latestWeight });
+      let weightTrendText = '';
+      let weightTrendClass = 'stable';
+      if (records.length > 1) {
+        const difference = Number(records[0].weight) - Number(records[1].weight);
+        if (Math.abs(difference) < 0.01) {
+          weightTrendText = '与上次持平';
+        } else {
+          weightTrendText = `较上次${difference > 0 ? '增加' : '减少'} ${Math.abs(difference).toFixed(2)} kg`;
+          weightTrendClass = difference > 0 ? 'up' : 'down';
+        }
+      }
+      this.setData({ weightRecords: records, latestWeight, weightTrendText, weightTrendClass });
     } catch (e) {
       console.error('[cat-detail] loadWeightRecords error:', e);
+    }
+  },
+
+  async loadReminders() {
+    try {
+      const reminders = await clouddb.getReminders({ catId: this.data.catId });
+      const activeReminders = (reminders || [])
+        .filter(reminder => !reminder.completedAt && reminder.lastDate && Number(reminder.intervalDays) > 0)
+        .map(reminder => {
+          const nextDate = parseDate(reminder.lastDate);
+          nextDate.setDate(nextDate.getDate() + Number(reminder.intervalDays));
+          nextDate.setHours(0, 0, 0, 0);
+          return Object.assign({}, reminder, {
+            _nextTimestamp: nextDate.getTime(),
+            _nextDate: _formatDate(nextDate),
+            _typeLabel: _recordTypeLabel(reminder.type),
+            _scheduleText: _buildScheduleText(nextDate)
+          });
+        })
+        .filter(reminder => !Number.isNaN(reminder._nextTimestamp))
+        .sort((a, b) => a._nextTimestamp - b._nextTimestamp);
+      this.setData({
+        reminders: reminders || [],
+        nextReminder: activeReminders[0] || null
+      });
+    } catch (e) {
+      console.error('[cat-detail] loadReminders error:', e);
     }
   },
 
@@ -114,7 +164,7 @@ Page({
     const now = new Date();
     this.setData({
       showWeightModal: true,
-      weightDate: now.toISOString().split('T')[0],
+      weightDate: todayStr(),
       weightTime: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
       weightValue: '',
       weightNote: ''
@@ -131,6 +181,7 @@ Page({
   onWeightNoteInput(e)   { this.setData({ weightNote: e.detail.value }); },
 
   async saveWeightRecord() {
+    if (this.data.weightSaving) return;
     const { weightDate, weightTime, weightValue, weightNote } = this.data;
     const w = parseFloat(weightValue);
     if (!weightDate) { wx.showToast({ title: '请选择日期', icon: 'none' }); return; }
@@ -144,7 +195,8 @@ Page({
 
     const fullDate = `${weightDate} ${weightTime || '00:00'}:00`;
 
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ weightSaving: true });
+    wx.showLoading({ title: '保存中...', mask: true });
     try {
       await clouddb.addWeightRecord({
         catId: this.data.catId,
@@ -160,6 +212,7 @@ Page({
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
     } finally {
       wx.hideLoading();
+      this.setData({ weightSaving: false });
     }
   },
 
@@ -167,6 +220,10 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     wx.navigateTo({ url: '/pages/weight-records/weight-records?catId=' + this.data.catId });
+  },
+
+  goReminderList() {
+    wx.switchTab({ url: '/pages/reminders/reminders' });
   },
 
   // 统一登录提示
@@ -252,14 +309,16 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
     wx.showModal({
-      title: '确认删除',
-      content: '确定要删除这只宠物吗？相关记录也会一并删除',
+      title: '删除宠物档案',
+      content: '删除后，健康记录、体重记录、提醒和该宠物的记账数据也会一并清除。',
+      confirmText: '继续删除',
+      confirmColor: '#F36B6B',
       success: res => {
         if (!res.confirm) return;
         wx.showModal({
           title: '再次确认删除',
-          content: '删除后无法恢复。请再次确认是否删除这只宠物及相关记录。',
-          confirmText: '确认删除',
+          content: `请再次确认：永久删除“${this.data.cat.name || '该宠物'}”及全部关联数据后无法恢复。`,
+          confirmText: '永久删除',
           confirmColor: '#F36B6B',
           success: async secondRes => {
             if (!secondRes.confirm) return;
@@ -391,7 +450,7 @@ Page({
       ctx.arc(91, 167, 43, 0, Math.PI * 2);
       ctx.fillStyle = '#edf5ff';
       ctx.fill();
-      ctx.fillStyle = '#5BA7D8';
+      ctx.fillStyle = getApp().getTheme().primary;
       ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -441,7 +500,7 @@ Page({
         ctx.fillStyle = '#f5f8fc';
         _roundRect(ctx, 28, y - 14, W - 56, 36, 12);
         ctx.fill();
-        ctx.fillStyle = '#5BA7D8';
+        ctx.fillStyle = getApp().getTheme().primary;
         ctx.font = 'bold 14px sans-serif';
         _fillTextSingleLine(ctx, item.label, 44, y + 8, 112);
         ctx.fillStyle = '#5f6b7a';
@@ -508,6 +567,21 @@ function _recordTypeLabel(type) {
   return map[type] || type || '记录';
 }
 
+function _formatDate(date) {
+  var pad = function(value) { return String(value).padStart(2, '0'); };
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
+
+function _buildScheduleText(nextDate) {
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var days = Math.round((nextDate.getTime() - today.getTime()) / 86400000);
+  if (days < 0) return '已逾期 ' + Math.abs(days) + ' 天';
+  if (days === 0) return '就在今天';
+  if (days === 1) return '明天';
+  return days + ' 天后';
+}
+
 function _buildCareOverview(records) {
   var configs = [
     { type: 'bath', label: '洗澡', intervalDays: 60, iconPath: '/assets/icons/ui/bath.png' },
@@ -554,7 +628,7 @@ function _buildCareOverview(records) {
 }
 
 function _daysSince(dateStr) {
-  var date = new Date(String(dateStr).slice(0, 10));
+  var date = parseDate(String(dateStr).slice(0, 10));
   if (Number.isNaN(date.getTime())) return null;
   var today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -573,16 +647,17 @@ function _roundRect(ctx, x, y, w, h, r) {
 }
 
 function _drawPosterBackground(ctx, W, H) {
+  var theme = getApp().getTheme();
   var grad = ctx.createLinearGradient(0, 0, W, H);
-  grad.addColorStop(0, '#eaf5ff');
-  grad.addColorStop(0.48, '#fff8ef');
-  grad.addColorStop(1, '#f4fbf5');
+  grad.addColorStop(0, theme.soft);
+  grad.addColorStop(0.52, theme.background);
+  grad.addColorStop(1, theme.secondarySoft);
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
 
   var top = ctx.createLinearGradient(0, 0, W, 180);
-  top.addColorStop(0, '#5BA7D8');
-  top.addColorStop(1, '#67B3A5');
+  top.addColorStop(0, theme.primary);
+  top.addColorStop(1, theme.secondary);
   ctx.fillStyle = top;
   ctx.fillRect(0, 0, W, 190);
 }

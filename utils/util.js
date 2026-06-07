@@ -478,11 +478,35 @@ var ADMIN_OPENIDS = [
 function isAdmin() {
   try {
     var user = wx.getStorageSync('currentUser');
-    if (!user || !user._openid) return false;
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (!user._openid) return false;
     return ADMIN_OPENIDS.indexOf(user._openid) !== -1;
   } catch (e) {
     return false;
   }
+}
+
+async function confirmDangerousAction(options) {
+  options = options || {};
+  const first = await new Promise(resolve => wx.showModal({
+    title: options.title || '确认删除',
+    content: options.content || '确定要删除这项内容吗？',
+    confirmText: options.confirmText || '继续',
+    confirmColor: '#F36B6B',
+    success: result => resolve(!!result.confirm),
+    fail: () => resolve(false)
+  }));
+  if (!first) return false;
+
+  return await new Promise(resolve => wx.showModal({
+    title: options.secondTitle || '再次确认',
+    content: options.secondContent || '删除后无法恢复，请再次确认。',
+    confirmText: options.secondConfirmText || '确认删除',
+    confirmColor: '#F36B6B',
+    success: result => resolve(!!result.confirm),
+    fail: () => resolve(false)
+  }));
 }
 
 module.exports = {
@@ -509,5 +533,6 @@ module.exports = {
   recalcAllStreak,
   getWeekKey,
   isAdmin,
+  confirmDangerousAction,
   SHARE_IMAGE: '/assets/logo.png'
 };

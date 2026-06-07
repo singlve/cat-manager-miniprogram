@@ -1,5 +1,5 @@
 <!-- pages/register/register.wxml -->
-<view class="register-page">
+<view class="register-page {{themeClass}}">
   <view class="header">
     <image class="ui-empty-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFill" />
     <text class="title">注册账号</text>

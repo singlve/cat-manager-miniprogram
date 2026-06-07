@@ -1,11 +1,20 @@
 <!-- pages/feedback/feedback.wxml -->
-<view class="page">
-  <view class="ui-compact-hero">
-    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFit" />
-    <view class="ui-compact-hero-body">
-      <text class="ui-compact-kicker">COMMUNITY</text>
-      <text class="ui-compact-title">互动服务</text>
-      <text class="ui-compact-desc">把建议、问题和体验反馈集中到这里，方便一起把小程序变好。</text>
+<view class="page {{themeClass}}">
+  <view class="service-feature-hero-shell">
+    <view class="service-feature-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/feedback.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">COMMUNITY</text>
+        <text class="service-feature-title">互动服务</text>
+        <text class="service-feature-desc">集中查看建议、问题反馈和互动消息。</text>
+      </view>
     </view>
   </view>
 
@@ -25,12 +34,19 @@
   </view>
 
   <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="loading-box">
-    <text>加载中...</text>
+  <view wx:if="{{loading}}" class="ui-loading-state">
+    <view class="ui-loading-mark"></view>
+    <text class="ui-loading-text">正在加载互动内容</text>
+  </view>
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">互动内容加载失败</text>
+    <text class="load-error-desc">请检查网络后重新加载</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
   </view>
 
   <!-- 留言列表 -->
-  <view wx:else class="feedback-list">
+  <view wx:elif="{{!loadError}}" class="feedback-list">
     <view wx:if="{{filteredFeedbacks.length === 0}}" class="empty-state">
       <image class="ui-empty-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFill" />
       <text class="empty-text">还没有留言，来抢沙发吧</text>
@@ -114,7 +130,7 @@
   </view>
 
   <!-- 添加按钮 -->
-  <view class="add-section">
+  <view wx:if="{{!loading && !loadError}}" class="add-section">
     <button class="add-btn" bindtap="openPost">写留言</button>
   </view>
 

@@ -1,17 +1,33 @@
 <!--pages/shipping-address/shipping-address.wxml-->
-<view class="page">
-  <view class="ui-compact-hero">
-    <image class="ui-compact-hero-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFit" />
-    <view class="ui-compact-hero-body">
-      <text class="ui-compact-kicker">DELIVERY</text>
-      <text class="ui-compact-title">收货地址</text>
-      <text class="ui-compact-desc">用于积分商城实物商品发货，默认地址会优先使用。</text>
+<view class="page {{themeClass}}">
+  <view class="service-feature-hero-shell">
+    <view class="service-feature-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/address.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">DELIVERY</text>
+        <text class="service-feature-title">收货地址</text>
+        <text class="service-feature-desc">管理积分商城实物商品的收件信息与默认地址。</text>
+      </view>
     </view>
   </view>
 
   <!-- 加载中 -->
-  <view wx:if="{{loading}}" class="empty-tip">
-    <text>加载中...</text>
+  <view wx:if="{{loading}}" class="ui-loading-state">
+    <view class="ui-loading-mark"></view>
+    <text class="ui-loading-text">正在加载收货地址</text>
+  </view>
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">地址加载失败</text>
+    <text class="load-error-desc">请检查网络后重新加载，已有地址不会丢失</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
   </view>
 
   <!-- 地址列表 -->
@@ -35,14 +51,14 @@
   </block>
 
   <!-- 空状态 -->
-  <view wx:else class="empty-tip">
+  <view wx:elif="{{!loadError}}" class="empty-tip">
     <image class="ui-empty-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFill" />
     <text style="color:#999;margin-top:16rpx;">还没有收货地址</text>
     <text style="color:#bbb;font-size:22rpx;margin-top:8rpx;">点击下方按钮添加</text>
   </view>
 
   <!-- 添加按钮 -->
-  <view class="add-btn" bindtap="addAddress">+ 添加收货地址</view>
+  <view wx:if="{{!loading && !loadError}}" class="add-btn" bindtap="addAddress">+ 添加收货地址</view>
 
   <!-- ── 编辑弹窗 ── -->
   <view wx:if="{{showEditor}}" class="mask" catchtap="closeEditor">

@@ -1,15 +1,16 @@
 // pages/expense-add/expense-add.js
 const clouddb = require('../../utils/clouddb.js');
-const EXPENSE_CATEGORIES = [
-  { key: 'food', iconPath: '/assets/icons/expense/food.png', name: '食品', tone: 'orange' },
-  { key: 'medical', iconPath: '/assets/icons/expense/medical.png', name: '医疗', tone: 'red' },
-  { key: 'toys', iconPath: '/assets/icons/expense/toys.png', name: '玩具', tone: 'green' },
-  { key: 'grooming', iconPath: '/assets/icons/expense/grooming.png', name: '洗护', tone: 'blue' },
-  { key: 'supplies', iconPath: '/assets/icons/expense/supplies.png', name: '用品', tone: 'purple' },
-  { key: 'other', iconPath: '/assets/icons/expense/other.png', name: '其他', tone: 'gray' }
-];
+const { getExpenseCategories } = require('../../utils/expense-categories.js');
+const EXPENSE_CATEGORIES = getExpenseCategories('default');
+
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
+  onShow() {
+    var theme = syncPageTheme(this);
+    this.setData({ categories: getExpenseCategories(theme.key) });
+  },
+
   data: {
     cats: [],
     selectedCatIdx: 0,
@@ -19,12 +20,14 @@ Page({
     date: '',
     note: '',
     saving: false,
-    showPetPicker: false
+    showPetPicker: false,
+    isEdit: false,
+    editId: ''
   },
 
-  onLoad() {
+  async onLoad(options) {
     // 加载用户猫咪
-    clouddb.getCats().then(function(cats) {
+    await clouddb.getCats().then(function(cats) {
       cats = (cats || []).slice(); // 复制一份，避免污染缓存
       cats.unshift({ _id: null, name: '公共花销' });
       this.setData({ cats: cats });
@@ -37,6 +40,28 @@ Page({
     var now = new Date();
     var d = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
     this.setData({ date: d });
+    if (options && options.id) await this.loadExpense(options.id);
+  },
+
+  async loadExpense(id) {
+    const list = await clouddb.getExpenses();
+    const expense = (list || []).find(item => item._id === id);
+    if (!expense) {
+      wx.showToast({ title: '账目不存在', icon: 'none' });
+      return;
+    }
+    const catIndex = Math.max(0, this.data.cats.findIndex(cat => (cat._id || null) === (expense.petId || null)));
+    const categoryIndex = Math.max(0, this.data.categories.findIndex(category => category.key === expense.category));
+    this.setData({
+      isEdit: true,
+      editId: id,
+      selectedCatIdx: catIndex,
+      selectedCategoryIdx: categoryIndex,
+      amount: String(expense.amount || ''),
+      date: expense.date || this.data.date,
+      note: expense.note || ''
+    });
+    wx.setNavigationBarTitle({ title: '编辑账目' });
   },
 
   // 宠物选择
@@ -103,7 +128,7 @@ Page({
     var category = categories[selectedCategoryIdx];
 
     try {
-      await clouddb.addExpense({
+      const expenseData = {
         petId: cat._id || null,
         petName: catName,
         category: category.key,
@@ -112,10 +137,16 @@ Page({
         amount: Number(amount),
         date: date,
         note: note.trim(),
-        createdAt: new Date().toISOString()
-      });
+        updatedAt: new Date().toISOString()
+      };
+      if (this.data.isEdit) {
+        await clouddb.updateExpense(this.data.editId, expenseData);
+      } else {
+        expenseData.createdAt = new Date().toISOString();
+        await clouddb.addExpense(expenseData);
+      }
 
-      wx.showToast({ title: '记账成功', icon: 'success' });
+      wx.showToast({ title: this.data.isEdit ? '修改成功' : '记账成功', icon: 'success' });
       setTimeout(function() { wx.navigateBack(); }, 1000);
     } catch (e) {
       console.error('[expense-add] save fail:', e);

@@ -62,7 +62,11 @@ function withPreviewText(item) {
   };
 }
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: {
     cats: [],
     plans: decoratePlans({ species: 'cat' }),

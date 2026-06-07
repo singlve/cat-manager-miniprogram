@@ -1,7 +1,11 @@
 // pages/cat-list/cat-list.js
 // 宠物列表页
 const clouddb = require('../../utils/clouddb.js');
-const { calcAgeDetail, calcDaysBetween, formatBirthdayRow, parseDate } = require('../../utils/util.js');
+const { calcAgeDetail, calcDaysBetween, confirmDangerousAction, formatBirthdayRow, parseDate, todayStr } = require('../../utils/util.js');
+const { getInitialThemeData } = require('../../utils/themes.js');
+const { markPageLoaded, shouldRefreshPage } = require('../../utils/data-cache.js');
+const initialTheme = getInitialThemeData();
+const HOME_CACHE_TTL = 45 * 1000;
 
 // ─── Demo 数据（未登录时展示） ───
 function getDemoCats() {
@@ -54,12 +58,16 @@ function getDemoCats() {
 Page({
   data: {
     isOnline: true, loadError: false,
-    cats: [], displayCats: [], loading: false, isLoggedIn: false,
+    themeClass: initialTheme.themeClass,
+    themeKey: initialTheme.themeKey,
+    themePrimary: initialTheme.themePrimary,
+    themeSecondary: initialTheme.themeSecondary,
+    cats: [], displayCats: [], loading: false, isLoggedIn: false, deletingCatId: '',
     filterSpecies: 'all', sortBy: 'default',
     speciesCounts: { all: 0, cat: 0, dog: 0 },
     addFabX: 0, addFabY: 0, addFabMovingX: 0, addFabMovingY: 0,
     quickCatId: '', quickCatName: '', quickType: '', quickTypeName: '',
-    showQuickTypeModal: false, showQuickModal: false, quickDate: new Date().toISOString().split('T')[0],
+    showQuickTypeModal: false, showQuickModal: false, quickDate: todayStr(), quickSaving: false,
     quickTypeOptions: [
       { value: 'bath', label: '洗澡' },
       { value: 'deworm', label: '驱虫' },
@@ -102,22 +110,37 @@ Page({
         tag: '提醒'
       },
       {
-        iconPath: '/assets/icons/ui/expense.png',
+        iconPath: '/assets/icons/ui/record.png',
         title: '记账积分都能管理',
         desc: '记录宠物花销，签到攒积分兑换小奖励',
         tag: '日常'
+      },
+      {
+        iconPath: '/assets/icons/ui/gift.png',
+        title: '装扮你的专属主题',
+        desc: '使用积分兑换多套主题，随时切换喜欢的页面配色',
+        tag: '主题'
       }
     ]
   },
 
   onShow() {
-    this.setData({ isOnline: getApp().globalData.isOnline });
+    const app = getApp();
+    const activeTheme = app.applyTheme();
+    this.setData({
+      isOnline: app.globalData.isOnline,
+      themeClass: activeTheme.className,
+      themeKey: activeTheme.key,
+      themePrimary: activeTheme.primary,
+      themeSecondary: activeTheme.secondary
+    });
     this._initAddFabPosition();
     this._loadAnnouncement();
-    const app = getApp();
     this.setData({ isLoggedIn: app.isLoggedIn() });
     if (app.isLoggedIn()) {
-      this.loadAll();
+      if (shouldRefreshPage('tab.home', ['cats', 'records', 'reminders'], HOME_CACHE_TTL)) {
+        this.loadAll();
+      }
     } else {
       const demoCats = getDemoCats();
       this._rawCats = demoCats;
@@ -137,21 +160,18 @@ Page({
       this.setData({ loading: true, loadError: false });
     }
     try {
-      const [cats, allRecords, reminders] = await Promise.all([
-        clouddb.getCats(),
-        clouddb.getRecords(),
-        clouddb.getReminders()
-      ]);
+      const overview = await clouddb.getHomeOverview();
+      const cats = overview.cats || [];
+      const recentRecords = overview.recentRecords || [];
+      const reminders = overview.reminders || [];
+      const avatarUrls = await clouddb.getAvatarUrls(cats.map(function(cat) {
+        return cat.avatar;
+      }));
 
-      // 批量获取所有宠物的健康记录，按 catId 分组取最近日期
-      const latestRecordByCat = {};
-      for (const r of allRecords) {
-        const existing = latestRecordByCat[r.catId];
-        if (!existing || r.date > existing) latestRecordByCat[r.catId] = r.date;
-      }
+      const latestRecordByCat = overview.latestRecordByCat || {};
 
-      const catsWithExtras = await Promise.all(cats.map(async cat => {
-        const avatarUrl = cat.avatar ? await clouddb.getAvatarUrl(cat.avatar) : '';
+      const catsWithExtras = cats.map(cat => {
+        const avatarUrl = cat.avatar ? (avatarUrls[cat.avatar] || cat.avatar) : '';
 
         // 已离世 → 年龄冻结在 passedDate
         const isPassed = cat.status === 'passed_away';
@@ -197,7 +217,7 @@ Page({
           _birthdayHint: bday.hint,
           _isPassed: isPassed
         });
-      }));
+      });
 
       this._rawCats = catsWithExtras;
       const counts = { all: catsWithExtras.length, cat: 0, dog: 0 };
@@ -208,9 +228,10 @@ Page({
       });
       const catNameMap = {};
       catsWithExtras.forEach(cat => { catNameMap[cat._id] = cat.name; });
-      const recentActivities = this._buildRecentActivities(allRecords, reminders, catNameMap);
+      const recentActivities = this._buildRecentActivities(recentRecords, reminders, catNameMap);
       this.setData({ cats: catsWithExtras, loading: false, speciesCounts: counts, recentActivities });
       this._updateDisplay();
+      markPageLoaded('tab.home', ['cats', 'records', 'reminders']);
     } catch (e) {
       console.error('[cat-list] loadAll error:', e);
       this.setData({ loading: false, loadError: true });
@@ -346,7 +367,7 @@ Page({
     this.setData({
       quickType: type,
       quickTypeName: name,
-      quickDate: new Date().toISOString().split('T')[0],
+      quickDate: todayStr(),
       showQuickTypeModal: false,
       showQuickModal: true
     });
@@ -362,9 +383,11 @@ Page({
   onAnnounceTap() {},
 
   async saveQuickRecord() {
+    if (this.data.quickSaving) return;
     const { quickCatId, quickType, quickDate } = this.data;
     if (!quickType || !quickDate) return;
-    wx.showLoading({ title: '保存中...' });
+    this.setData({ quickSaving: true });
+    wx.showLoading({ title: '保存中...', mask: true });
     try {
       await clouddb.addRecord({
         catId: quickCatId,
@@ -372,34 +395,38 @@ Page({
         date: quickDate,
         note: ''
       });
-      wx.hideLoading();
       this.setData({ showQuickModal: false });
       wx.showToast({ title: this.data.quickTypeName + '已记录', icon: 'success' });
     } catch (e) {
-      wx.hideLoading();
       wx.showToast({ title: '记录失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ quickSaving: false });
     }
   },
 
   async deleteCat(e) {
     const app = getApp();
     if (!app.isLoggedIn()) { this._promptLogin(); return; }
-    const confirmed = await new Promise(r =>
-      wx.showModal({
-        title: '确认删除',
-        content: '确定要删除这只宠物的档案吗？相关记录也会一并删除。',
-        success: res => r(res.confirm)
-      })
-    );
+    const id = e.currentTarget.dataset.id;
+    if (!id || this.data.deletingCatId) return;
+    const confirmed = await confirmDangerousAction({
+      title: '删除宠物档案',
+      content: '宠物档案、健康记录、体重、提醒和关联花销都会一并删除。',
+      secondContent: '此操作不可恢复，确定永久删除这只宠物吗？'
+    });
     if (!confirmed) return;
-    wx.showLoading({ title: '删除中...' });
+    this.setData({ deletingCatId: id });
+    wx.showLoading({ title: '删除中...', mask: true });
     try {
-      await clouddb.deleteCat(e.currentTarget.dataset.id);
+      await clouddb.deleteCat(id);
       wx.showToast({ title: '已删除', icon: 'success' });
-      this.loadAll();
+      await this.loadAll();
     } catch (e) {
-      wx.hideLoading();
       wx.showToast({ title: '删除失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+      this.setData({ deletingCatId: '' });
     }
   },
 

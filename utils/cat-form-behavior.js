@@ -2,6 +2,7 @@
 // cat-add 和 cat-edit 页面的共享表单方法和数据默认值
 
 const { CAT_BREEDS, DOG_BREEDS } = require("./breeds.js");
+const { todayStr } = require("./util.js");
 
 const catFormDataDefaults = {
   name: "", gender: "male", breed: "", birthday: "",
@@ -44,7 +45,7 @@ const catFormMethods = {
   genderChange(e)      { this.setData({ gender: e.detail.value }); },
   bindBirthdayChange(e) {
     var birthday = e.detail.value;
-    if (birthday > new Date().toISOString().split("T")[0]) {
+    if (birthday > todayStr()) {
       this.setData({ birthday: birthday, birthdayError: "生日不能是未来日期" }); return;
     }
     this.setData({ birthday: birthday, birthdayError: "" });

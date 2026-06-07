@@ -14,18 +14,28 @@
     "pages/services/services",
     "pages/mine/mine",
     "pages/about/about",
-    "pages/inventory/inventory",
     "pages/expense/expense",
     "pages/expense-add/expense-add",
-    "pages/points-mall/points-mall",
-    "pages/admin-items/admin-items",
-    "pages/admin-data/admin-data",
     "pages/feedback/feedback",
     "pages/feedback-post/feedback-post",
-    "pages/admin-announcement/admin-announcement",
     "pages/webview/webview",
     "pages/shipping-address/shipping-address",
     "pages/bind-phone/bind-phone"
+  ],
+  "subPackages": [
+    {
+      "root": "packages/services",
+      "name": "serviceTools",
+      "pages": [
+        "points-mall/points-mall",
+        "inventory/inventory",
+        "theme-center/theme-center",
+        "data-backup/data-backup",
+        "admin-items/admin-items",
+        "admin-data/admin-data",
+        "admin-announcement/admin-announcement"
+      ]
+    }
   ],
   "window": {
     "backgroundTextStyle": "light",

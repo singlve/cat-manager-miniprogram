@@ -17,10 +17,16 @@ const TYPE_OPTIONS = [
 
 const PRESET_INTERVALS = [7, 14, 30, 60, 90, 180];
 
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   data: {
     isEdit: false,
     reminderId: '',
+    lockedCatId: '',
+    lockedCatName: '',
     cats: [],
     selectedCatId: '',
     selectedCatName: '',
@@ -35,7 +41,8 @@ Page({
     note: '',
     nextPreviewDate: '',
     noCatsAvailable: false,
-    showCatPickerModal: false
+    showCatPickerModal: false,
+    saving: false
   },
 
   async onLoad(options) {
@@ -87,6 +94,8 @@ Page({
       selectedCatId: reminder.catId,
       selectedCatName: cat ? cat.name : (reminder.catName || ''),
       selectedCatIndex: catIndex,
+      lockedCatId: reminder.catId,
+      lockedCatName: cat ? cat.name : (reminder.catName || ''),
       type: reminder.type,
       typeLabel: typeOption ? typeOption.label : '洗澡',
       lastDate: reminder.lastDate,
@@ -98,6 +107,7 @@ Page({
 
   // ─── 切换宠物时：自动查找该宠物最近一次「当前类型」的健康记录时间 ───
   async catChange(e) {
+    if (this.data.isEdit) return;
     const index = parseInt(e.detail.value);
     const cat = this.data.cats[index];
     if (!cat) return;
@@ -107,6 +117,7 @@ Page({
   },
 
   openCatPickerModal() {
+    if (this.data.isEdit) return;
     if (!this.data.cats.length) return;
     this.setData({ showCatPickerModal: true });
   },
@@ -116,6 +127,7 @@ Page({
   },
 
   async selectCatFromModal(e) {
+    if (this.data.isEdit) return;
     const index = parseInt(e.currentTarget.dataset.index);
     const cat = this.data.cats[index];
     if (!cat) return;
@@ -186,13 +198,13 @@ Page({
   },
 
   save() {
-    if (this._saving) return;
+    if (this.data.saving) return;
     const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, note } = this.data;
     const intervalDays = this._getIntervalDays();
     if (!selectedCatId) { wx.showToast({ title: '请先添加宠物', icon: 'none' }); return; }
     if (!lastDate) { wx.showToast({ title: '请选择上次时间', icon: 'none' }); return; }
 
-    this._saving = true;
+    this.setData({ saving: true });
 
     if (SUBSCRIBE_TMPL_ID) {
       wx.requestSubscribeMessage({
@@ -206,19 +218,20 @@ Page({
 
   async _doSave(params) {
     const { isEdit, reminderId, selectedCatId, selectedCatName, type, lastDate, intervalDays, note } = params;
+    let saved = false;
 
     wx.showLoading({ title: '保存中...' });
 
     try {
-      const data = { catId: selectedCatId, catName: selectedCatName, type, lastDate, intervalDays, note };
-
       if (isEdit) {
-        await clouddb.updateReminder(reminderId, data);
+        await clouddb.updateReminder(reminderId, { type, lastDate, intervalDays, note });
       } else {
+        const data = { catId: selectedCatId, catName: selectedCatName, type, lastDate, intervalDays, note };
         data._id = 'rem_' + Date.now();
         await clouddb.addReminder(data);
       }
 
+      saved = true;
       wx.showToast({ title: '保存成功', icon: 'success' });
       setTimeout(() => wx.navigateBack(), 1000);
     } catch (e) {
@@ -226,7 +239,7 @@ Page({
       wx.showToast({ title: '保存失败，请重试', icon: 'none' });
     } finally {
       wx.hideLoading();
-      this._saving = false;
+      if (!saved) this.setData({ saving: false });
     }
   },
 

@@ -3,14 +3,20 @@
 
 const clouddb = require("../../utils/clouddb.js");
 const { catFormMethods, catFormDataDefaults } = require("../../utils/cat-form-behavior.js");
+const { todayStr } = require("../../utils/util.js");
+const { syncPageTheme } = require("../../utils/themes.js");
 
 Page(Object.assign({}, catFormMethods, {
   data: Object.assign({}, catFormDataDefaults, {
     isEdit: false
   }),
 
+  onShow() {
+    syncPageTheme(this);
+  },
+
   onLoad() {
-    this.setData({ nowDate: new Date().toISOString().split("T")[0] });
+    this.setData({ nowDate: todayStr() });
   },
 
   async saveCat() {

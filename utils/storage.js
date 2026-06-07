@@ -41,9 +41,11 @@ function updateCat(id, updates) {
 
 function removeCat(id) {
   saveCats(getCats().filter(c => c._id !== id));
-  // 同时删除该猫的健康记录和提醒
+  // 同时删除该宠物产生的关联数据，避免形成无法再访问的孤立记录。
   saveRecords(getRecords().filter(r => r.catId !== id));
+  saveWeightRecords(getWeightRecords().filter(r => r.catId !== id));
   saveReminders(getReminders().filter(r => r.catId !== id));
+  saveExpenses(getAllExpenses().filter(e => e.petId !== id));
 }
 
 // ════════════════════════════════════════════════════
@@ -398,6 +400,15 @@ function deleteExpense(id) {
   var list = getAllExpenses().filter(function(e) { return e._id !== id; });
   saveExpenses(list);
 }
+function updateExpense(id, updates) {
+  var list = getAllExpenses();
+  var idx = list.findIndex(function(e) { return e._id === id; });
+  if (idx !== -1) {
+    list[idx] = Object.assign({}, list[idx], updates);
+    saveExpenses(list);
+  }
+  return list[idx] || null;
+}
 
 function clearUserRedeemRecords() {
   saveRedeemRecords([]);
@@ -420,7 +431,7 @@ module.exports = {
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
   // expenses
-  addExpense, getAllExpenses, getExpenses, deleteExpense,
+  addExpense, getAllExpenses, saveExpenses, getExpenses, updateExpense, deleteExpense,
   getAvatarFrames, saveAvatarFrames, DEFAULT_AVATAR_FRAMES, DEFAULT_REDEEM_ITEMS, addAvatarFrame, updateAvatarFrame, deleteAvatarFrame,
   // shipments
   getShipments, addShipment, updateShipment, deleteShipment

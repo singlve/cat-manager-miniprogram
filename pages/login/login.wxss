@@ -6,7 +6,7 @@
   box-sizing: border-box;
   background:
     radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.22) 0, rgba(255, 255, 255, 0) 240rpx),
-    linear-gradient(180deg, #5BA7D8 0%, #60B9CB 46%, #6BC6B3 100%);
+    linear-gradient(180deg, var(--theme-primary, #5BA7D8) 0%, var(--theme-secondary, #60B9CB) 46%, var(--theme-secondary, #6BC6B3) 100%);
 }
 
 .login-shell {
@@ -170,7 +170,7 @@
   height: 80rpx;
   padding: 0 26rpx;
   border-radius: 20rpx;
-  background: #F7F9FB;
+  background: var(--theme-bg, #F7F9FB);
   border: 2rpx solid #E8EEF4;
   color: #243044;
   font-size: 30rpx;
@@ -183,13 +183,13 @@
   width: 100%;
   padding: 22rpx 0;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #5BA7D8 0%, #6BC6B3 100%);
+  background: linear-gradient(135deg, var(--theme-primary, #5BA7D8) 0%, var(--theme-secondary, #6BC6B3) 100%);
   color: #FFFFFF;
   font-size: 32rpx;
   font-weight: 900;
   line-height: 1.4;
   text-align: center;
-  box-shadow: 0 14rpx 34rpx rgba(91, 167, 216, 0.24);
+  box-shadow: 0 14rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), 0.24);
 }
 
 .register-row {
@@ -204,7 +204,7 @@
 }
 
 .register-link {
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-weight: 900;
 }
 
@@ -237,7 +237,7 @@
   padding: 42rpx 42rpx 36rpx;
   border: 1rpx solid rgba(255, 255, 255, 0.78);
   border-radius: 32rpx;
-  background: linear-gradient(180deg, #F2FBFA 0%, #FFFFFF 46%);
+  background: linear-gradient(180deg, var(--theme-secondary-soft, #F2FBFA) 0%, #FFFFFF 46%);
   box-shadow: 0 30rpx 80rpx rgba(24, 76, 108, 0.26);
 }
 
@@ -246,7 +246,7 @@
   height: 8rpx;
   margin: 0 auto 24rpx;
   border-radius: 999rpx;
-  background: linear-gradient(90deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(90deg, var(--theme-primary, #5BA7D8), var(--theme-secondary, #6BC6B3));
 }
 
 .profile-setup-kicker,
@@ -257,7 +257,7 @@
 }
 
 .profile-setup-kicker {
-  color: #5BA7D8;
+  color: var(--theme-primary, #5BA7D8);
   font-size: 20rpx;
   font-weight: 900;
 }
@@ -320,7 +320,7 @@
   width: 176rpx;
   height: 176rpx;
   border-radius: 50%;
-  border: 4rpx dashed rgba(91, 167, 216, 0.38);
+  border: 4rpx dashed rgba(var(--theme-primary-rgb, 91, 167, 216), 0.38);
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -352,12 +352,12 @@
   margin-top: 24rpx;
   padding: 22rpx 0;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #5BA7D8, #6BC6B3);
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
   color: #FFFFFF;
   font-size: 30rpx;
   font-weight: 900;
   text-align: center;
-  box-shadow: 0 14rpx 34rpx rgba(91, 167, 216, 0.24);
+  box-shadow: 0 14rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), 0.24);
 }
 
 .profile-setup-skip {

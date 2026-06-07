@@ -1,0 +1,115 @@
+<view class="page backup-page {{themeClass}}">
+  <view class="service-feature-hero-shell backup-hero-shell">
+    <view class="service-feature-hero backup-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">DATA BACKUP</text>
+        <text class="service-feature-title">留一份安心备份</text>
+        <text class="service-feature-desc">汇总宠物档案、健康、提醒和记账数据。</text>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="backup-loading">正在整理数据...</view>
+
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <text class="load-error-title">数据整理失败</text>
+    <text class="load-error-desc">请检查网络后重新加载。</text>
+    <button class="load-error-retry" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <block wx:else>
+    <view class="backup-card">
+      <view class="backup-card-head">
+        <view>
+          <text class="backup-card-title">本次备份内容</text>
+          <text class="backup-card-time">整理于 {{exportedAtText}}</text>
+        </view>
+        <view class="backup-ready">可导出</view>
+      </view>
+
+      <view class="backup-grid">
+        <view class="backup-stat">
+          <text class="backup-number">{{counts.cats}}</text>
+          <text class="backup-label">宠物档案</text>
+        </view>
+        <view class="backup-stat">
+          <text class="backup-number">{{counts.healthRecords}}</text>
+          <text class="backup-label">健康记录</text>
+        </view>
+        <view class="backup-stat">
+          <text class="backup-number">{{counts.weightRecords}}</text>
+          <text class="backup-label">体重记录</text>
+        </view>
+        <view class="backup-stat">
+          <text class="backup-number">{{counts.reminders}}</text>
+          <text class="backup-label">提醒事项</text>
+        </view>
+        <view class="backup-stat">
+          <text class="backup-number">{{counts.expenses}}</text>
+          <text class="backup-label">记账数据</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="backup-note">
+      <image class="backup-note-icon" src="/assets/icons/ui/warning.png" mode="aspectFit" />
+      <view>
+        <text class="backup-note-title">请妥善保管</text>
+        <text class="backup-note-desc">备份中可能包含宠物资料与消费记录。复制后建议保存到自己的安全文档，不要发给陌生人。</text>
+      </view>
+    </view>
+
+    <button class="backup-button" loading="{{exporting}}" disabled="{{exporting}}" bindtap="copyBackupData">
+      {{exporting ? '正在导出...' : '复制备份数据'}}
+    </button>
+    <text class="backup-help">当前版本提供 JSON 文本备份，方便在需要时留存和核对。</text>
+
+    <button class="restore-entry" loading="{{readingImport}}" disabled="{{readingImport}}" bindtap="readBackupFromClipboard">
+      {{readingImport ? '正在读取...' : '从剪贴板导入备份'}}
+    </button>
+
+    <view class="diagnostic-card">
+      <view class="diagnostic-copy">
+        <text class="diagnostic-title">运行诊断</text>
+        <text class="diagnostic-desc">本机保留最近 {{diagnosticCount}} 条脱敏错误摘要，遇到问题时可复制给开发者。</text>
+      </view>
+      <button class="diagnostic-button" loading="{{copyingDiagnostics}}" disabled="{{copyingDiagnostics}}" bindtap="copyDiagnostics">复制</button>
+    </view>
+  </block>
+
+  <view wx:if="{{showRestoreModal && importPreview}}" class="restore-mask" catchtap="closeRestoreModal">
+    <view class="restore-panel" catchtap="">
+      <text class="restore-title">确认恢复内容</text>
+      <text class="restore-version">备份版本 {{importPreview.schemaVersion}} · 冲突 {{importPreview.conflicts}} 条</text>
+      <view class="restore-grid">
+        <text>宠物 {{importPreview.counts.cats}}</text>
+        <text>健康 {{importPreview.counts.healthRecords}}</text>
+        <text>体重 {{importPreview.counts.weightRecords}}</text>
+        <text>提醒 {{importPreview.counts.reminders}}</text>
+        <text>记账 {{importPreview.counts.expenses}}</text>
+      </view>
+      <view class="restore-modes">
+        <view class="restore-mode {{restoreMode === 'merge' ? 'active' : ''}}" data-mode="merge" bindtap="setRestoreMode">
+          <text class="restore-mode-title">合并恢复</text>
+          <text class="restore-mode-desc">保留当前数据，相同 ID 使用备份内容更新</text>
+        </view>
+        <view class="restore-mode danger {{restoreMode === 'replace' ? 'active' : ''}}" data-mode="replace" bindtap="setRestoreMode">
+          <text class="restore-mode-title">覆盖恢复</text>
+          <text class="restore-mode-desc">清空当前核心数据后完整恢复</text>
+        </view>
+      </view>
+      <view class="restore-actions">
+        <view class="restore-cancel" bindtap="closeRestoreModal">取消</view>
+        <view class="restore-confirm {{restoring ? 'disabled' : ''}}" bindtap="confirmRestore">{{restoring ? '恢复中...' : '开始恢复'}}</view>
+      </view>
+    </view>
+  </view>
+</view>

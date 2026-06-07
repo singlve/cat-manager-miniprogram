@@ -6,10 +6,15 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
 const _ = db.command;
 
-// 管理员 openid 白名单（需与 utils/util.js 中的 ADMIN_OPENIDS 保持一致）
-const ADMIN_OPENIDS = [
-  'oYBpx3ZRljxCk6pODSAyMShkyFJA'  // 主账号 openid
-];
+const LEGACY_ADMIN_OPENID = 'oYBpx3ZRljxCk6pODSAyMShkyFJA';
+
+async function isServerAdmin(openid) {
+  if (!openid) return false;
+  const configured = String(process.env.ADMIN_OPENIDS || '').split(',').map(value => value.trim()).filter(Boolean);
+  if (configured.indexOf(openid) !== -1 || openid === LEGACY_ADMIN_OPENID) return true;
+  const result = await db.collection('users').where({ _openid: openid, role: 'admin' }).limit(1).get();
+  return !!(result.data && result.data.length);
+}
 
 // 允许查询的集合白名单（防止通过 cloud function 读取敏感数据）
 const ALLOWED_COLLECTIONS = ['redeem_records', 'shipments'];
@@ -19,7 +24,7 @@ exports.main = async (event, context) => {
   const callerOpenid = wxContext.OPENID;
 
   // 服务端管理员校验
-  if (ADMIN_OPENIDS.indexOf(callerOpenid) === -1) {
+  if (!(await isServerAdmin(callerOpenid))) {
     return { code: -1, msg: '无管理员权限' };
   }
 

@@ -1,6 +1,24 @@
 <!--pages/expense/expense.wxml-->
-<view class="page">
+<view class="page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
+  <view class="service-feature-hero-shell">
+    <view class="service-feature-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/expense.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">PET EXPENSE</text>
+        <text class="service-feature-title">宠物记账本</text>
+        <text class="service-feature-desc">按月份、宠物和分类看清每一笔照护花销。</text>
+      </view>
+    </view>
+  </view>
+
   <!-- ═══════════════ 顶部导航栏：年份 + 视图切换 ═══════════════ -->
   <view class="nav-bar">
     <view class="nav-year-row">
@@ -22,11 +40,17 @@
   <view wx:if="{{loading}}" class="loading-box">
     <text>加载中...</text>
   </view>
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">记账数据加载失败</text>
+    <text class="load-error-desc">请检查网络后重新加载，已有账目不会丢失</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+  </view>
 
   <!-- ════════════════════════════════════════════════════════ -->
   <!-- 月度视图 -->
   <!-- ════════════════════════════════════════════════════════ -->
-  <block wx:elif="{{viewMode === 'month'}}">
+  <block wx:elif="{{!loadError && viewMode === 'month'}}">
 
     <!-- 月度统计卡片 -->
     <view class="month-card">
@@ -41,6 +65,20 @@
       </view>
       <text class="mc-total">¥{{stats.total}}</text>
     </view>
+    <view class="monthly-insights">
+      <view class="insight-item">
+        <text class="insight-label">月度变化</text>
+        <text class="insight-value {{monthlyInsights.changeClass}}">{{monthlyInsights.changeText}}</text>
+      </view>
+      <view class="insight-item">
+        <text class="insight-label">主要分类</text>
+        <text class="insight-value">{{monthlyInsights.topCategory}}</text>
+      </view>
+      <view class="insight-item">
+        <text class="insight-label">花销最多</text>
+        <text class="insight-value">{{monthlyInsights.topPet}}</text>
+      </view>
+    </view>
 
     <!-- 宠物筛选 -->
     <view wx:if="{{catFilterOptions.length > 1}}" class="filter-row">
@@ -52,7 +90,7 @@
 
     <!-- 空状态 -->
     <view wx:if="{{groupedExpenses.length === 0}}" class="empty-tip">
-      <image class="empty-icon-img ui-icon-xl" src="/assets/icons/ui/expense.png" mode="aspectFit" />
+      <image class="empty-icon-img ui-icon-xl" src="/assets/icons/ui/record.png" mode="aspectFit" />
       <text class="empty-text">本月还没有记账</text>
       <text class="empty-hint">点击下方按钮开始记录</text>
     </view>
@@ -67,12 +105,13 @@
         <view
           wx:for="{{group.items}}" wx:for-item="e" wx:key="_id"
           class="expense-item"
+          bindtap="editExpense"
           bindlongpress="onLongPress"
           data-id="{{e._id}}"
         >
           <view class="exp-left">
             <view class="exp-icon-wrap">
-              <image class="exp-icon-img ui-icon" src="{{e._categoryIconPath}}" mode="aspectFit" />
+              <image class="exp-icon-img ui-icon theme-business-icon" src="{{e._categoryIconPath}}" mode="aspectFit" />
             </view>
             <view class="exp-info">
               <text class="exp-cat">{{e.categoryName || e.category}}</text>
@@ -86,7 +125,7 @@
     </view>
 
     <view wx:if="{{groupedExpenses.length > 0}}" class="hint-box">
-      <text>长按任意记录可删除</text>
+      <text>点击记录可编辑，长按可删除</text>
     </view>
 
   </block>
@@ -94,7 +133,7 @@
   <!-- ════════════════════════════════════════════════════════ -->
   <!-- 年度视图 -->
   <!-- ════════════════════════════════════════════════════════ -->
-  <block wx:elif="{{viewMode === 'year'}}">
+  <block wx:elif="{{!loadError && viewMode === 'year'}}">
 
     <!-- 年总额卡片 -->
     <view class="year-summary-card">
@@ -144,7 +183,7 @@
       <view class="cat-rows">
         <view wx:for="{{annualStats.categories}}" wx:key="key" wx:if="{{item.total > 0}}" class="cat-row">
           <view class="cr-left">
-            <image class="cr-icon-img ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
+            <image class="cr-icon-img ui-icon-sm theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
             <text class="cr-name">{{item.name}}</text>
             <text class="cr-pct">{{item.pct}}%</text>
           </view>

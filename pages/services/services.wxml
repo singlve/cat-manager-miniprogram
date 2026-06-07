@@ -1,5 +1,5 @@
 <!-- pages/services/services.wxml -->
-<view class="page services-page">
+<view class="page services-page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero services-hero">
@@ -22,7 +22,7 @@
     <view class="desktop-grid">
       <view class="desktop-app" bindtap="goExpense">
         <view class="desktop-icon icon-teal">
-          <image class="desktop-icon-img" src="/assets/icons/ui/expense.png" mode="aspectFit" />
+          <image class="desktop-icon-img" src="/assets/icons/ui/record.png" mode="aspectFit" />
         </view>
         <text class="desktop-title">记账本</text>
       </view>
@@ -32,6 +32,24 @@
           <image class="desktop-icon-img" src="/assets/icons/ui/address.png" mode="aspectFit" />
         </view>
         <text class="desktop-title">收货地址</text>
+      </view>
+
+      <view class="desktop-app" bindtap="goThemeCenter">
+        <view class="desktop-icon icon-theme">
+          <view class="theme-palette">
+            <view class="theme-palette-dot dot-blue"></view>
+            <view class="theme-palette-dot dot-green"></view>
+            <view class="theme-palette-dot dot-orange"></view>
+          </view>
+        </view>
+        <text class="desktop-title">主题装扮</text>
+      </view>
+
+      <view class="desktop-app" bindtap="goDataBackup">
+        <view class="desktop-icon icon-purple">
+          <image class="desktop-icon-img" src="/assets/icons/ui/data.png" mode="aspectFit" />
+        </view>
+        <text class="desktop-title">数据备份</text>
       </view>
 
       <view wx:if="{{showFeedback}}" class="desktop-app" bindtap="goFeedback">

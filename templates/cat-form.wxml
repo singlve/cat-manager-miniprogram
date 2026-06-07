@@ -77,7 +77,7 @@
       <text class="label">是否已绝育</text>
       <view class="switch-row">
         <text class="switch-label">{{neutered ? '已绝育' : '未绝育'}}</text>
-        <switch checked="{{neutered}}" bindchange="onNeuteredChange" color="#5BA7D8" />
+        <switch checked="{{neutered}}" bindchange="onNeuteredChange" color="{{themePrimary || '#5BA7D8'}}" />
       </view>
     </view>
 

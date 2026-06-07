@@ -1,5 +1,9 @@
 // pages/about/about.js
+const { syncPageTheme } = require('../../utils/themes.js');
+
 Page({
+  onShow() { syncPageTheme(this); },
+
   goBack() { wx.navigateBack(); },
 
   onShareAppMessage() {

@@ -1,0 +1,9 @@
+{
+  "name": "getHomeOverview",
+  "version": "1.0.0",
+  "description": "首页宠物与近期动态精简查询",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.0"
+  }
+}

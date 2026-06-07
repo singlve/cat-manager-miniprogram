@@ -1,0 +1,64 @@
+<view class="page {{themeClass}}">
+  <view wx:if="{{!isAdmin}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">无权访问</text></view>
+
+  <block wx:else>
+    <view class="service-feature-hero-shell">
+      <view class="service-feature-hero admin">
+        <view class="service-feature-art">
+          <view class="service-feature-art-back"></view>
+          <view class="service-feature-art-mid"></view>
+          <view class="service-feature-art-front">
+            <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/announce.png" mode="aspectFit" />
+          </view>
+          <view class="service-feature-art-dot"></view>
+        </view>
+        <view class="service-feature-copy">
+          <text class="service-feature-kicker">ADMIN NOTICE</text>
+          <text class="service-feature-title">公告管理</text>
+          <text class="service-feature-desc">发布、启用和撤回首页公告。</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 发布 -->
+    <view class="post-box">
+      <view class="post-head">
+        <view>
+          <text class="post-title">发布新公告</text>
+          <text class="post-desc">启用后会同步展示在首页。</text>
+        </view>
+        <text class="post-count">{{content.length || 0}}/200</text>
+      </view>
+      <textarea class="post-input" placeholder="输入公告内容..." value="{{content}}" bindinput="onContentInput" maxlength="200" auto-height/>
+      <button class="post-btn {{posting ? 'disabled' : ''}}" bindtap="doPost">{{posting ? '发布中...' : '发布公告'}}</button>
+    </view>
+
+    <!-- 列表 -->
+    <view wx:if="{{loading}}" class="ui-loading-state">
+      <view class="ui-loading-mark"></view>
+      <text class="ui-loading-text">正在加载公告</text>
+    </view>
+    <view wx:elif="{{loadError}}" class="load-error-state">
+      <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+      <text class="load-error-title">公告加载失败</text>
+      <text class="load-error-desc">请检查网络或云函数状态后重试</text>
+      <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+    </view>
+    <view wx:else class="list">
+      <view wx:if="{{list.length === 0}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">暂无公告</text></view>
+      <view class="card" wx:for="{{list}}" wx:key="_id">
+        <view class="card-top">
+          <view class="status-chip {{item.isActive ? 'active' : ''}}">
+            <view class="status-dot"></view>
+            <text>{{item.isActive ? '展示中' : '已停用'}}</text>
+          </view>
+          <text class="card-content">{{item.content}}</text>
+        </view>
+        <view class="card-actions">
+          <text class="act {{item.isActive ? 'danger' : ''}}" catchtap="toggle" data-id="{{item._id}}">{{item.isActive ? '停用' : '启用'}}</text>
+          <text class="act danger" catchtap="doDelete" data-id="{{item._id}}">删除</text>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>
