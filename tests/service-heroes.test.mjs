@@ -12,7 +12,7 @@ const servicePages = [
   'packages/services/admin-announcement/admin-announcement.wxml',
   'packages/services/admin-items/admin-items.wxml',
   'packages/services/admin-data/admin-data.wxml',
-  'packages/services/data-backup/data-backup.wxml'
+  'pages/data-backup/data-backup.wxml'
 ];
 
 describe('service feature heroes', () => {

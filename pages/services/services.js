@@ -60,7 +60,7 @@ Page({
 
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
   goExpense() { wx.navigateTo({ url: '/pages/expense/expense' }); },
-  goDataBackup() { wx.navigateTo({ url: '/packages/services/data-backup/data-backup' }); },
+  goDataBackup() { wx.navigateTo({ url: '/pages/data-backup/data-backup' }); },
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
   goThemeCenter() { wx.navigateTo({ url: '/packages/services/theme-center/theme-center' }); },
   goFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },

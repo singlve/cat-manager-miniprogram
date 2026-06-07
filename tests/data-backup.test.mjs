@@ -5,14 +5,13 @@ describe('数据备份入口', () => {
   it('已注册页面路由和服务页入口', () => {
     const appConfig = JSON.parse(fs.readFileSync('app.json', 'utf8'));
     const services = fs.readFileSync('pages/services/services.wxml', 'utf8');
-    const servicePackage = appConfig.subPackages.find(item => item.root === 'packages');
-    expect(servicePackage.pages).toContain('services/data-backup/data-backup');
+    expect(appConfig.pages).toContain('pages/data-backup/data-backup');
     expect(services).toContain('bindtap="goDataBackup"');
     expect(services).toContain('数据备份');
   });
 
   it('备份覆盖核心用户数据', () => {
-    const source = fs.readFileSync('packages/services/data-backup/data-backup.js', 'utf8');
+    const source = fs.readFileSync('pages/data-backup/data-backup.js', 'utf8');
     const database = fs.readFileSync('utils/clouddb.js', 'utf8');
     expect(source).toContain('clouddb.getBackupSnapshot()');
     expect(database).toContain('_cloudQueryAll(CAT_COL');
@@ -23,8 +22,8 @@ describe('数据备份入口', () => {
   });
 
   it('支持版本校验、冲突预览、合并和覆盖恢复', () => {
-    const source = fs.readFileSync('packages/services/data-backup/data-backup.js', 'utf8');
-    const template = fs.readFileSync('packages/services/data-backup/data-backup.wxml', 'utf8');
+    const source = fs.readFileSync('pages/data-backup/data-backup.js', 'utf8');
+    const template = fs.readFileSync('pages/data-backup/data-backup.wxml', 'utf8');
     const database = fs.readFileSync('utils/clouddb.js', 'utf8');
 
     expect(source).toContain('validateBackup(parsed)');

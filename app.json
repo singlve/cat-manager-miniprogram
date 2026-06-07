@@ -20,7 +20,8 @@
     "pages/feedback-post/feedback-post",
     "pages/webview/webview",
     "pages/shipping-address/shipping-address",
-    "pages/bind-phone/bind-phone"
+    "pages/bind-phone/bind-phone",
+    "pages/data-backup/data-backup"
   ],
   "subPackages": [
     {
@@ -30,7 +31,6 @@
         "services/points-mall/points-mall",
         "services/inventory/inventory",
         "services/theme-center/theme-center",
-        "services/data-backup/data-backup",
         "services/admin-items/admin-items",
         "services/admin-data/admin-data",
         "services/admin-announcement/admin-announcement"

@@ -1,7 +1,7 @@
-const clouddb = require('../../../utils/clouddb.js');
-const { getErrorLogs, reportError } = require('../../../utils/error-log.js');
-const { confirmDangerousAction } = require('../../../utils/util.js');
-const { syncPageTheme } = require('../../../utils/themes.js');
+const clouddb = require('../../utils/clouddb.js');
+const { getErrorLogs, reportError } = require('../../utils/error-log.js');
+const { confirmDangerousAction } = require('../../utils/util.js');
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
   data: {
