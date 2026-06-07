@@ -5,8 +5,8 @@ describe('数据备份入口', () => {
   it('已注册页面路由和服务页入口', () => {
     const appConfig = JSON.parse(fs.readFileSync('app.json', 'utf8'));
     const services = fs.readFileSync('pages/services/services.wxml', 'utf8');
-    const servicePackage = appConfig.subPackages.find(item => item.root === 'packages/services');
-    expect(servicePackage.pages).toContain('data-backup/data-backup');
+    const servicePackage = appConfig.subPackages.find(item => item.root === 'packages');
+    expect(servicePackage.pages).toContain('services/data-backup/data-backup');
     expect(services).toContain('bindtap="goDataBackup"');
     expect(services).toContain('数据备份');
   });

@@ -8,13 +8,13 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 describe('非核心页面分包', () => {
   it('服务工具页面注册在独立分包', () => {
     const app = JSON.parse(read('app.json'));
-    const servicePackage = app.subPackages.find(item => item.root === 'packages/services');
+    const servicePackage = app.subPackages.find(item => item.root === 'packages');
 
     expect(servicePackage).toBeTruthy();
-    expect(servicePackage.pages).toContain('points-mall/points-mall');
-    expect(servicePackage.pages).toContain('inventory/inventory');
-    expect(servicePackage.pages).toContain('theme-center/theme-center');
-    expect(servicePackage.pages).toContain('admin-items/admin-items');
+    expect(servicePackage.pages).toContain('services/points-mall/points-mall');
+    expect(servicePackage.pages).toContain('services/inventory/inventory');
+    expect(servicePackage.pages).toContain('services/theme-center/theme-center');
+    expect(servicePackage.pages).toContain('services/admin-items/admin-items');
   });
 
   it('核心四个 Tab 仍处于主包', () => {

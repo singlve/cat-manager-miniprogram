@@ -24,16 +24,16 @@
   ],
   "subPackages": [
     {
-      "root": "packages/services",
+      "root": "packages",
       "name": "serviceTools",
       "pages": [
-        "points-mall/points-mall",
-        "inventory/inventory",
-        "theme-center/theme-center",
-        "data-backup/data-backup",
-        "admin-items/admin-items",
-        "admin-data/admin-data",
-        "admin-announcement/admin-announcement"
+        "services/points-mall/points-mall",
+        "services/inventory/inventory",
+        "services/theme-center/theme-center",
+        "services/data-backup/data-backup",
+        "services/admin-items/admin-items",
+        "services/admin-data/admin-data",
+        "services/admin-announcement/admin-announcement"
       ]
     }
   ],

@@ -171,8 +171,8 @@ describe('主题功能页面接线', () => {
     const servicesWxml = read('pages/services/services.wxml');
     const servicesJs = read('pages/services/services.js');
 
-    const servicePackage = app.subPackages.find(item => item.root === 'packages/services');
-    expect(servicePackage.pages).toContain('theme-center/theme-center');
+    const servicePackage = app.subPackages.find(item => item.root === 'packages');
+    expect(servicePackage.pages).toContain('services/theme-center/theme-center');
     expect(servicesWxml).toContain('bindtap="goThemeCenter"');
     expect(servicesJs).toContain("'/packages/services/theme-center/theme-center'");
   });
