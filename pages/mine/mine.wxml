@@ -285,7 +285,7 @@
 
       <view class="wheel-container">
         <view class="wheel-pointer"></view>
-        <view class="wheel" style="transform: rotate({{wheelAngle}}deg);">
+        <view class="wheel" style="transform: rotate({{wheelAngle}}deg); background: {{wheelBackground}};">
           <!-- 转盘文字标签（在 wheel 内部，跟随旋转） -->
           <view class="wheel-labels">
             <view class="wheel-label" wx:for="{{wheelLabels}}" wx:key="rotate"
@@ -303,6 +303,10 @@
 
       <view class="lottery-result" wx:if="{{lotteryResult}}" style="color:{{lotteryResultColor}};">
         <text class="lottery-result-label">{{lotteryResult}}</text>
+        <text class="lottery-result-hint">{{lotteryResultHint}}</text>
+        <view wx:if="{{lotteryResultType === 'physical' || lotteryResultType === 'theme'}}" class="lottery-result-action" bindtap="goLotteryReward">
+          {{lotteryResultType === 'physical' ? '前往我的背包' : '前往主题装扮'}}
+        </view>
       </view>
     </view>
   </view>

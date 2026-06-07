@@ -1,0 +1,10 @@
+{
+  "name": "drawLottery",
+  "version": "1.0.0",
+  "description": "签到抽奖事务发奖",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "~3.0.0"
+  }
+}

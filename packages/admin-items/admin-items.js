@@ -2,7 +2,15 @@
 const clouddb = require('../../utils/clouddb.js');
 const util = require('../../utils/util.js');
 
-const { syncPageTheme } = require('../../utils/themes.js');
+const { syncPageTheme, THEMES } = require('../../utils/themes.js');
+
+function emptyLotteryForm() {
+  return {
+    name: '', type: 'virtual', virtualType: 'points', virtualValue: 5,
+    linkedItemId: '', stock: 0, weight: 10, sort: 10,
+    color: '#5BA7D8', image: '', desc: '', enabled: true
+  };
+}
 
 Page({
   data: {
@@ -14,6 +22,14 @@ Page({
     records: [],
     rawRecords: [],       // 未过滤的原始兑换记录
     shipments: [],          // 发货单列表
+    lotteryPrizes: [],
+    lotteryTotalWeight: 0,
+    lotteryThemes: THEMES.filter(function(theme) { return theme.key !== 'default'; }),
+    physicalItems: [],
+    showLotteryEditor: false,
+    editingLotteryId: '',
+    lotteryForm: emptyLotteryForm(),
+    lotterySaving: false,
     // 商品编辑弹窗
     showEditor: false,
     editingId: null,
@@ -74,13 +90,14 @@ Page({
     }
 
     // 并行加载所有数据源，一个失败不影响其他
-    var [itemsResult, recordsResult, shipmentsResult, usersResult] = await Promise.allSettled([
+    var [itemsResult, recordsResult, shipmentsResult, usersResult, lotteryResult] = await Promise.allSettled([
       clouddb.getRedeemItems(),
       clouddb.getRedeemRecordsAdmin(),
       clouddb.getShipmentsAdmin(),
       clouddb.isCloudReady()
         ? wx.cloud.database().collection('users').limit(200).get()
-        : Promise.resolve({ data: [] })
+        : Promise.resolve({ data: [] }),
+      clouddb.getLotteryPrizes({ admin: true })
     ]);
 
     var primaryResults = [itemsResult, recordsResult, shipmentsResult];
@@ -105,6 +122,28 @@ Page({
       return Object.assign({}, item, {
         _typeLabel: typeLabel,
         _isSystemTheme: item.virtualType === 'theme'
+      });
+    });
+    var physicalItems = items.filter(function(item) { return item.type === 'physical'; });
+    var lotteryPrizes = lotteryResult.status === 'fulfilled' ? (lotteryResult.value || []) : [];
+    var lotteryTotalWeight = lotteryPrizes.filter(function(item) {
+      return item.enabled !== false
+        && (parseInt(item.weight, 10) || 0) > 0
+        && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0);
+    }).reduce(function(sum, item) {
+      return sum + (parseInt(item.weight, 10) || 0);
+    }, 0);
+    lotteryPrizes = lotteryPrizes.map(function(item) {
+      var typeLabel = item.type === 'physical'
+        ? '实物'
+        : ({ points: '积分', card: '补签卡', theme: '主题', none: '谢谢参与' }[item.virtualType] || '虚拟');
+      return Object.assign({}, item, {
+        _typeLabel: typeLabel,
+        _probability: item.enabled !== false
+          && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0)
+          && lotteryTotalWeight > 0
+          ? ((parseInt(item.weight, 10) || 0) * 100 / lotteryTotalWeight).toFixed(1)
+          : '0.0'
       });
     });
     records   = recordsResult.status  === 'fulfilled' ? (recordsResult.value || []) : [];
@@ -136,6 +175,9 @@ Page({
 
     this.setData({
       items: items,
+      physicalItems: physicalItems,
+      lotteryPrizes: lotteryPrizes,
+      lotteryTotalWeight: lotteryTotalWeight,
       records: mergedRecords,
       rawRecords: records,
       shipments: shipments,
@@ -197,6 +239,31 @@ Page({
       title = '选择虚拟类型';
       options = [{ label: '补签卡', value: 'card' }, { label: '积分', value: 'points' }];
       selected = this.data.form.virtualType;
+    } else if (kind === 'lotteryType') {
+      title = '选择奖品类型';
+      options = [{ label: '虚拟奖品', value: 'virtual' }, { label: '实物奖品', value: 'physical' }];
+      selected = this.data.lotteryForm.type;
+    } else if (kind === 'lotteryVirtualType') {
+      title = '选择虚拟奖励';
+      options = [
+        { label: '积分', value: 'points' },
+        { label: '补签卡', value: 'card' },
+        { label: '现有主题', value: 'theme' },
+        { label: '谢谢参与', value: 'none' }
+      ];
+      selected = this.data.lotteryForm.virtualType;
+    } else if (kind === 'lotteryTheme') {
+      title = '选择系统主题';
+      options = this.data.lotteryThemes.map(function(theme) {
+        return { label: theme.name, value: theme.key };
+      });
+      selected = String(this.data.lotteryForm.virtualValue || '');
+    } else if (kind === 'lotteryPhysicalItem') {
+      title = '选择实物商品';
+      options = this.data.physicalItems.map(function(item) {
+        return { label: item.name, value: item._id };
+      });
+      selected = this.data.lotteryForm.linkedItemId;
     } else if (kind === 'carrier') {
       title = '选择快递公司';
       options = this.data.carrierList.map(function(label, index) {
@@ -229,6 +296,28 @@ Page({
       updates['form.type'] = value;
     } else if (kind === 'virtualType') {
       updates['form.virtualType'] = value;
+    } else if (kind === 'lotteryType') {
+      updates['lotteryForm.type'] = value;
+      if (value === 'physical') updates['lotteryForm.virtualType'] = '';
+    } else if (kind === 'lotteryVirtualType') {
+      updates['lotteryForm.virtualType'] = value;
+      if (value === 'theme') {
+        updates['lotteryForm.virtualValue'] = this.data.lotteryThemes[0]
+          ? this.data.lotteryThemes[0].key : '';
+      } else if (value === 'none') {
+        updates['lotteryForm.virtualValue'] = 0;
+      }
+    } else if (kind === 'lotteryTheme') {
+      updates['lotteryForm.virtualValue'] = value;
+      var selectedTheme = this.data.lotteryThemes.find(function(theme) { return theme.key === value; });
+      if (selectedTheme && !this.data.lotteryForm.name) updates['lotteryForm.name'] = selectedTheme.name;
+    } else if (kind === 'lotteryPhysicalItem') {
+      var selectedItem = this.data.physicalItems.find(function(item) { return item._id === value; });
+      updates['lotteryForm.linkedItemId'] = value;
+      if (selectedItem) {
+        updates['lotteryForm.name'] = selectedItem.name;
+        updates['lotteryForm.image'] = selectedItem.image || '';
+      }
     } else if (kind === 'carrier') {
       var idx = parseInt(value);
       updates.shipCarrierIdx = idx;
@@ -237,6 +326,125 @@ Page({
 
     this.setData(updates);
     if (kind === 'searchType') this._applySearch();
+  },
+
+  openAddLotteryPrize() {
+    this.setData({
+      showLotteryEditor: true,
+      editingLotteryId: '',
+      lotteryForm: emptyLotteryForm()
+    });
+  },
+
+  openEditLotteryPrize(e) {
+    var item = e.currentTarget.dataset.item || {};
+    this.setData({
+      showLotteryEditor: true,
+      editingLotteryId: item._id,
+      lotteryForm: Object.assign(emptyLotteryForm(), {
+        name: item.name || '',
+        type: item.type || 'virtual',
+        virtualType: item.virtualType || 'points',
+        virtualValue: item.virtualValue === 0 ? 0 : (item.virtualValue || 1),
+        linkedItemId: item.linkedItemId || '',
+        stock: item.stock || 0,
+        weight: item.weight || 0,
+        sort: item.sort || 0,
+        color: item.color || '#5BA7D8',
+        image: item.image || '',
+        desc: item.desc || '',
+        enabled: item.enabled !== false
+      })
+    });
+  },
+
+  closeLotteryEditor() {
+    if (!this.data.lotterySaving) this.setData({ showLotteryEditor: false });
+  },
+
+  onLotteryFormInput(e) {
+    var updates = {};
+    updates['lotteryForm.' + e.currentTarget.dataset.key] = e.detail.value;
+    this.setData(updates);
+  },
+
+  onLotteryFormSwitch(e) {
+    this.setData({ 'lotteryForm.enabled': e.detail.value });
+  },
+
+  async toggleLotteryEnabled(e) {
+    var item = e.currentTarget.dataset.item;
+    try {
+      await clouddb.toggleLotteryPrize(item._id, item.enabled === false);
+      await this.loadAll();
+    } catch (error) {
+      wx.showToast({ title: error.message || '操作失败', icon: 'none' });
+    }
+  },
+
+  async deleteLotteryPrize(e) {
+    var item = e.currentTarget.dataset.item;
+    var ok = await this._confirmDeleteTwice({
+      title: '删除抽奖奖品',
+      content: '将从奖池删除「' + item.name + '」。',
+      secondTitle: '再次确认删除',
+      secondContent: '历史中奖记录会保留，但该奖品以后不能再被抽中。确认删除吗？'
+    });
+    if (!ok) return;
+    try {
+      await clouddb.deleteLotteryPrize(item._id);
+      wx.showToast({ title: '已删除', icon: 'success' });
+      await this.loadAll();
+    } catch (error) {
+      wx.showToast({ title: error.message || '删除失败', icon: 'none' });
+    }
+  },
+
+  async saveLotteryPrize() {
+    if (this.data.lotterySaving) return;
+    var form = this.data.lotteryForm;
+    if (!String(form.name || '').trim()) {
+      wx.showToast({ title: '请输入奖品名称', icon: 'none' });
+      return;
+    }
+    if ((parseInt(form.weight, 10) || 0) <= 0) {
+      wx.showToast({ title: '权重必须大于0', icon: 'none' });
+      return;
+    }
+    if (form.type === 'virtual' && form.virtualType === 'theme' && !form.virtualValue) {
+      wx.showToast({ title: '请选择主题', icon: 'none' });
+      return;
+    }
+    if (form.type === 'physical' && !form.linkedItemId) {
+      wx.showToast({ title: '请选择实物商品', icon: 'none' });
+      return;
+    }
+    this.setData({ lotterySaving: true });
+    try {
+      await clouddb.saveLotteryPrize(this.data.editingLotteryId, {
+        name: String(form.name).trim(),
+        type: form.type,
+        virtualType: form.type === 'virtual' ? form.virtualType : '',
+        virtualValue: form.type === 'virtual'
+          ? (form.virtualType === 'theme' ? form.virtualValue : (parseInt(form.virtualValue, 10) || 0))
+          : 0,
+        linkedItemId: form.type === 'physical' ? form.linkedItemId : '',
+        stock: form.type === 'physical' ? (parseInt(form.stock, 10) || 0) : 999999,
+        weight: parseInt(form.weight, 10) || 0,
+        sort: parseInt(form.sort, 10) || 0,
+        color: form.color || '#5BA7D8',
+        image: form.image || '',
+        desc: String(form.desc || '').trim(),
+        enabled: form.enabled !== false
+      });
+      this.setData({ showLotteryEditor: false });
+      wx.showToast({ title: '奖池已更新', icon: 'success' });
+      await this.loadAll();
+    } catch (error) {
+      wx.showToast({ title: error.message || '保存失败', icon: 'none' });
+    } finally {
+      this.setData({ lotterySaving: false });
+    }
   },
 
   onSearchInput(e) {

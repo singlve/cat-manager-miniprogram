@@ -455,6 +455,23 @@ page { background: #f0f2f7; }
 .lottery-result-label {
   display: block;
 }
+.lottery-result-hint {
+  display: block;
+  margin-top: 10rpx;
+  color: #7A8798;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+.lottery-result-action {
+  width: 280rpx;
+  margin: 20rpx auto 0;
+  padding: 18rpx 0;
+  border-radius: 999rpx;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
+  font-size: 25rpx;
+  font-weight: 800;
+}
 
 /* ─── 底部 ─── */
 .points-footer {

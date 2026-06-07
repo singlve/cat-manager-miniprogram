@@ -26,11 +26,12 @@
       </view>
     </view>
 
-    <!-- Tab 切换（三 Tab） -->
+    <!-- Tab 切换 -->
     <view class="tab-bar">
       <view class="tab-item {{activeTab==='items' ? 'active' : ''}}" bindtap="switchTab" data-tab="items">商品管理</view>
       <view class="tab-item {{activeTab==='records' ? 'active' : ''}}" bindtap="switchTab" data-tab="records">兑换记录</view>
       <view class="tab-item {{activeTab==='shipments' ? 'active' : ''}}" bindtap="switchTab" data-tab="shipments">发货管理</view>
+      <view class="tab-item {{activeTab==='lottery' ? 'active' : ''}}" bindtap="switchTab" data-tab="lottery">抽奖配置</view>
     </view>
 
     <!-- 加载中 -->
@@ -158,6 +159,41 @@
       </view>
     </block>
 
+    <!-- ═══ 抽奖配置 Tab ═══ -->
+    <block wx:elif="{{!loadError && activeTab==='lottery'}}">
+      <view class="lottery-summary">
+        <view>
+          <text class="lottery-summary-title">当前奖池</text>
+          <text class="lottery-summary-desc">权重换算为基础概率；已拥有主题和无库存实物会自动剔除</text>
+        </view>
+        <text class="lottery-summary-weight">总权重 {{lotteryTotalWeight}}</text>
+      </view>
+      <view class="add-btn" bindtap="openAddLotteryPrize">+ 添加奖品</view>
+      <view wx:if="{{lotteryPrizes.length === 0}}" class="empty-tip">
+        <text>暂无抽奖奖品</text>
+      </view>
+      <view wx:else class="lottery-prize-card" wx:for="{{lotteryPrizes}}" wx:key="_id">
+        <view class="lottery-color-dot" style="background:{{item.color || '#5BA7D8'}};"></view>
+        <view class="lottery-prize-main">
+          <view class="lottery-prize-title-row">
+            <text class="lottery-prize-name">{{item.name}}</text>
+            <text class="lottery-type-tag">{{item._typeLabel}}</text>
+          </view>
+          <text class="lottery-prize-meta">权重 {{item.weight || 0}} · 基础概率 {{item._probability}}%</text>
+          <text wx:if="{{item.type === 'physical'}}" class="lottery-prize-meta">奖池库存 {{item.stock || 0}}</text>
+          <text wx:elif="{{item.virtualType === 'theme'}}" class="lottery-prize-meta">主题标识 {{item.virtualValue}}</text>
+          <text wx:elif="{{item.virtualType !== 'none'}}" class="lottery-prize-meta">奖励数量 {{item.virtualValue}}</text>
+        </view>
+        <view class="lottery-prize-actions">
+          <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleLotteryEnabled" data-item="{{item}}"/>
+          <view class="lottery-action-row">
+            <text class="act-btn" bindtap="openEditLotteryPrize" data-item="{{item}}">编辑</text>
+            <text class="act-btn danger" bindtap="deleteLotteryPrize" data-item="{{item}}">删除</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
     <!-- 编辑商品弹窗 -->
     <view wx:if="{{showEditor}}" class="mask" catchtap="closeEditor">
       <view class="sheet" catchtap="stopBubble">
@@ -231,6 +267,92 @@
         <view class="sheet-btns">
           <view class="s-btn cancel" bindtap="closeEditor">取消</view>
           <view class="s-btn confirm {{saving ? 'disabled' : ''}}" bindtap="saveForm">{{saving ? '保存中...' : '保存'}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 抽奖奖品编辑弹窗 -->
+    <view wx:if="{{showLotteryEditor}}" class="mask" catchtap="closeLotteryEditor">
+      <view class="sheet lottery-editor-sheet" catchtap="stopBubble">
+        <view class="sheet-bar"></view>
+        <text class="sheet-title">{{editingLotteryId ? '编辑抽奖奖品' : '添加抽奖奖品'}}</text>
+
+        <view class="form-group">
+          <text class="form-label">奖品名称</text>
+          <input class="form-input" value="{{lotteryForm.name}}" placeholder="例如：20积分" data-key="name" bindinput="onLotteryFormInput" maxlength="20"/>
+        </view>
+
+        <view class="form-row">
+          <view class="form-group flex-1">
+            <text class="form-label">奖品类型</text>
+            <view class="form-picker" bindtap="openOptionPicker" data-kind="lotteryType">
+              <text>{{lotteryForm.type === 'physical' ? '实物奖品' : '虚拟奖品'}}</text>
+              <view class="select-chevron"></view>
+            </view>
+          </view>
+          <view wx:if="{{lotteryForm.type === 'virtual'}}" class="form-group flex-1">
+            <text class="form-label">虚拟奖励</text>
+            <view class="form-picker" bindtap="openOptionPicker" data-kind="lotteryVirtualType">
+              <text>{{lotteryForm.virtualType === 'points' ? '积分' : lotteryForm.virtualType === 'card' ? '补签卡' : lotteryForm.virtualType === 'theme' ? '现有主题' : '谢谢参与'}}</text>
+              <view class="select-chevron"></view>
+            </view>
+          </view>
+        </view>
+
+        <view wx:if="{{lotteryForm.type === 'virtual' && lotteryForm.virtualType === 'theme'}}" class="form-group">
+          <text class="form-label">选择主题</text>
+          <view class="form-picker" bindtap="openOptionPicker" data-kind="lotteryTheme">
+            <text>{{lotteryForm.virtualValue || '请选择主题'}}</text>
+            <view class="select-chevron"></view>
+          </view>
+        </view>
+
+        <view wx:if="{{lotteryForm.type === 'virtual' && lotteryForm.virtualType !== 'theme' && lotteryForm.virtualType !== 'none'}}" class="form-group">
+          <text class="form-label">奖励数量</text>
+          <input class="form-input" type="number" value="{{lotteryForm.virtualValue}}" data-key="virtualValue" bindinput="onLotteryFormInput"/>
+        </view>
+
+        <block wx:if="{{lotteryForm.type === 'physical'}}">
+          <view class="form-group">
+            <text class="form-label">关联实物商品</text>
+            <view class="form-picker" bindtap="openOptionPicker" data-kind="lotteryPhysicalItem">
+              <text>{{lotteryForm.linkedItemId ? lotteryForm.name : '请选择已上架实物商品'}}</text>
+              <view class="select-chevron"></view>
+            </view>
+          </view>
+          <view class="form-group">
+            <text class="form-label">抽奖库存</text>
+            <input class="form-input" type="number" value="{{lotteryForm.stock}}" data-key="stock" bindinput="onLotteryFormInput"/>
+          </view>
+        </block>
+
+        <view class="form-row">
+          <view class="form-group flex-1">
+            <text class="form-label">权重</text>
+            <input class="form-input" type="number" value="{{lotteryForm.weight}}" data-key="weight" bindinput="onLotteryFormInput"/>
+          </view>
+          <view class="form-group flex-1">
+            <text class="form-label">排序</text>
+            <input class="form-input" type="number" value="{{lotteryForm.sort}}" data-key="sort" bindinput="onLotteryFormInput"/>
+          </view>
+        </view>
+
+        <view class="form-group">
+          <text class="form-label">转盘颜色</text>
+          <input class="form-input" value="{{lotteryForm.color}}" placeholder="#5BA7D8" data-key="color" bindinput="onLotteryFormInput"/>
+        </view>
+        <view class="form-group">
+          <text class="form-label">奖品说明</text>
+          <input class="form-input" value="{{lotteryForm.desc}}" placeholder="可选" data-key="desc" bindinput="onLotteryFormInput"/>
+        </view>
+        <view class="form-group lottery-enable-row">
+          <text class="form-label">立即启用</text>
+          <switch checked="{{lotteryForm.enabled}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="onLotteryFormSwitch"/>
+        </view>
+
+        <view class="sheet-btns">
+          <view class="s-btn cancel" bindtap="closeLotteryEditor">取消</view>
+          <view class="s-btn confirm {{lotterySaving ? 'disabled' : ''}}" bindtap="saveLotteryPrize">{{lotterySaving ? '保存中...' : '保存奖品'}}</view>
         </view>
       </view>
     </view>

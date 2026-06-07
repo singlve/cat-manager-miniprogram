@@ -79,15 +79,11 @@ Page({
     wheelAngle: 0,
     lotteryResult: '',
     lotteryResultColor: '',
+    lotteryResultHint: '',
+    lotteryResultType: '',
+    wheelBackground: '',
     wheelLabels: [],
-    lotteryPrizes: [
-      { icon: '', name: '5积分', color: '#FF6B6B', type: 'points', value: 5 },
-      { icon: '', name: '1补签卡', color: '#4ECDC4', type: 'card', value: 1 },
-      { icon: '', name: '10积分', color: '#FFE66D', type: 'points', value: 10 },
-      { icon: '', name: '谢谢参与', color: '#A8E6CF', type: 'none', value: 0 },
-      { icon: '', name: '20积分', color: '#FF8B94', type: 'points', value: 20 },
-      { icon: '', name: '2补签卡', color: '#B8A9C9', type: 'card', value: 2 }
-    ],
+    lotteryPrizes: [],
     // 绑定手机（已改为独立页面 pages/bind-phone）
   },
 
@@ -495,12 +491,11 @@ Page({
   // 点击“可抽奖 xN次”文字触发抽奖
   openLotteryIfAvailable() {
     if (!this.data.canLottery) return;
-    var milestones = [7, 14, 21, 28];
     var drawn = this.data.drawnMilestones || [];
     var drawMilestone = 0;
-    for (var i = 0; i < milestones.length; i++) {
-      if (drawn.indexOf(milestones[i]) === -1) {
-        drawMilestone = milestones[i];
+    for (var day = 7; day <= (this.data.checkInStreak || 0); day += 7) {
+      if (drawn.indexOf(day) === -1) {
+        drawMilestone = day;
         break;
       }
     }
@@ -522,11 +517,10 @@ Page({
       // 如果 drawMilestone 为 0（周历通过 canLottery 触发），
       // 自动取下一个未抽过的里程碑
       if (drawMilestone === 0) {
-        var milestones = [7, 14, 21, 28];
         var drawn = this.data.drawnMilestones || [];
-        for (var j = 0; j < milestones.length; j++) {
-          if (drawn.indexOf(milestones[j]) === -1) {
-            drawMilestone = milestones[j];
+        for (var day = 7; day <= (this.data.checkInStreak || 0); day += 7) {
+          if (drawn.indexOf(day) === -1) {
+            drawMilestone = day;
             break;
           }
         }
@@ -720,16 +714,37 @@ Page({
     wx.showToast({ title: '+1补签卡', icon: 'success' });
   },
 
-  openLottery() {
-    var prizes = this.data.lotteryPrizes;
+  async openLottery() {
+    wx.showLoading({ title: '加载奖池...' });
+    var prizes = [];
+    try {
+      prizes = await clouddb.getLotteryPrizes();
+    } catch (error) {
+      wx.hideLoading();
+      wx.showToast({ title: error.message || '奖池加载失败', icon: 'none' });
+      return;
+    }
+    wx.hideLoading();
+    if (!prizes.length) {
+      wx.showToast({ title: '当前暂无可用奖品', icon: 'none' });
+      return;
+    }
     var labels = [];
+    var segmentAngle = 360 / prizes.length;
+    var gradients = [];
     for (var i = 0; i < prizes.length; i++) {
-      labels.push({ name: prizes[i].name, rotate: i * 60 + 30 });
+      labels.push({ name: prizes[i].name, rotate: i * segmentAngle + segmentAngle / 2 });
+      gradients.push(
+        (prizes[i].color || '#5BA7D8') + ' ' + (i * segmentAngle) + 'deg ' + ((i + 1) * segmentAngle) + 'deg'
+      );
     }
     this.setData({
       showLottery: true, spinning: false, hasSpun: false,
       wheelAngle: 0, lotteryResult: '', lotteryResultColor: '',
-      wheelLabels: labels
+      lotteryResultHint: '', lotteryResultType: '',
+      lotteryPrizes: prizes,
+      wheelLabels: labels,
+      wheelBackground: 'conic-gradient(' + gradients.join(',') + ')'
     });
   },
 
@@ -738,94 +753,78 @@ Page({
     this.setData({ showLottery: false, lotteryResult: '', lotteryResultColor: '' });
   },
 
-  spinWheel() {
+  async spinWheel() {
     var self = this;
     if (self.data.spinning || self.data.hasSpun) return;
 
     var prizes = self.data.lotteryPrizes;
-    var prizeIndex = Math.floor(Math.random() * prizes.length);
+    if (!prizes.length) return;
+    var currentUser = {};
+    try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+    var requestId = 'draw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
+    self.setData({ spinning: true, hasSpun: true, lotteryResult: '', lotteryResultHint: '' });
+    var result = null;
+    try {
+      result = await clouddb.drawLotteryAtomic({
+        userId: currentUser._id || 'local_user',
+        milestone: self.data.drawingMilestone,
+        requestId: requestId
+      });
+    } catch (error) {
+      self.setData({ spinning: false, hasSpun: false });
+      wx.showToast({ title: error.message || '抽奖失败，请重试', icon: 'none' });
+      return;
+    }
+    var prizeIndex = prizes.findIndex(function(prize) { return prize._id === result.prizeId; });
+    if (prizeIndex < 0) prizeIndex = 0;
     var segAngle = 360 / prizes.length;
     var targetAngle = 360 * 5 + 360 - (prizeIndex * segAngle + segAngle / 2);
 
-    self.setData({ spinning: true, hasSpun: true, wheelAngle: targetAngle });
+    self.setData({ wheelAngle: targetAngle });
 
     setTimeout(function() {
-      var prize = prizes[prizeIndex];
-      self._awardPrize(prize);
+      self._applyLotteryResult(result);
     }, 4200);
   },
 
-  async _awardPrize(prize) {
+  _applyLotteryResult(result) {
     var self = this;
     var currentUser = {};
     try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-    var today = todayStr();
-    var currentMonth = today.slice(0, 7);
-
-    // 记录抽过的里程碑 + 月度消费一次
-    var milestone = self.data.drawingMilestone;
-    var drawnMilestones = currentUser.drawnMilestones || [];
-    if (milestone && drawnMilestones.indexOf(milestone) === -1) {
-      drawnMilestones.push(milestone);
-    }
-    var lotteryUsedMonth = (currentUser.lotteryUsedMonth || 0) + 1;
-
-    currentUser.drawnMilestones = drawnMilestones;
-    currentUser.lotteryUsedMonth = lotteryUsedMonth;
-    currentUser.lotteryMonth = currentMonth;
-    currentUser.lotteryUsed = drawnMilestones.length;
-    currentUser._lastDrawDate = today;
-
-    var resultColor = getApp().getTheme().primary;
-    if (prize.type === 'points') {
-      currentUser.totalPoints = (currentUser.totalPoints || 0) + prize.value;
-      resultColor = getApp().getTheme().primary;
-    } else if (prize.type === 'card') {
-      currentUser.makeUpCards = (currentUser.makeUpCards || 0) + prize.value;
-      resultColor = '#5CB85C';
-    } else { resultColor = '#999'; }
-
+    currentUser.totalPoints = result.points;
+    currentUser.makeUpCards = result.makeUpCards;
+    currentUser.ownedThemes = result.ownedThemes || currentUser.ownedThemes || ['default'];
+    currentUser.drawnMilestones = result.drawnMilestones || currentUser.drawnMilestones || [];
+    currentUser.lotteryUsed = currentUser.drawnMilestones.length;
+    currentUser._lastDrawDate = todayStr();
     try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-
-    if (currentUser._id) {
-      var updates = {
-        drawnMilestones: drawnMilestones,
-        lotteryUsedMonth: lotteryUsedMonth,
-        lotteryMonth: currentMonth,
-        lotteryUsed: drawnMilestones.length,
-        _lastDrawDate: today
-      };
-      if (prize.type === 'points') updates.totalPoints = currentUser.totalPoints;
-      if (prize.type === 'card') updates.makeUpCards = currentUser.makeUpCards;
-      try {
-        await clouddb.updateUser(currentUser._id, updates);
-      } catch (e) {
-        console.error('[mine] awardPrize cloud update failed:', e);
-        // 本地已写，UI 已更新，仅日志记录
-      }
-    }
-
-    var newPoints = prize.type === 'points' ? currentUser.totalPoints : self.data.points;
-    var newCards = prize.type === 'card' ? currentUser.makeUpCards : self.data.makeUpCards;
+    var drawnMilestones = currentUser.drawnMilestones;
     var streak = currentUser.checkInStreak || 0;
     var lotteryEarned = getLotteryDrawsForStreak(streak);
     var newAvailableDraws = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var hint = '';
+    if (result.type === 'physical') hint = '奖品已放入我的背包，请选择地址兑换';
+    else if (result.virtualType === 'theme') hint = '主题已永久解锁，可前往主题装扮使用';
+    else if (result.virtualType === 'none') hint = '继续签到，下一次好运也许就在前面';
+    else hint = '奖励已经到账';
 
     self.setData({
       spinning: false,
-      lotteryResult: '恭喜获得 ' + prize.name + '！',
-      lotteryResultColor: resultColor,
+      lotteryResult: result.virtualType === 'none' ? result.name : '恭喜获得 ' + result.name + '！',
+      lotteryResultColor: result.color || getApp().getTheme().primary,
+      lotteryResultHint: hint,
+      lotteryResultType: result.type === 'physical' ? 'physical' : result.virtualType,
       canLottery: newAvailableDraws > 0,
       availableDraws: newAvailableDraws,
       drawnMilestones: drawnMilestones,
       hasSpun: true,
       drawnToday: true,
       hasDrawnBefore: newAvailableDraws <= 0 && drawnMilestones.length > 0,
-      points: newPoints,
-      makeUpCards: newCards
+      points: result.points,
+      makeUpCards: result.makeUpCards
     });
 
-    if (prize.type === 'card') {
+    if (result.virtualType === 'card') {
       var calendarWeek = buildCheckInWeek(
         currentUser.lastCheckInDate || '',
         currentUser.checkInStreak || 0,
@@ -843,8 +842,15 @@ Page({
       });
     }
 
-    if (prize.type === 'physical') {
-      // 预留：写入 user_inventory 集合
+  },
+
+  goLotteryReward() {
+    var type = this.data.lotteryResultType;
+    this.setData({ showLottery: false });
+    if (type === 'physical') {
+      wx.navigateTo({ url: '/packages/inventory/inventory' });
+    } else if (type === 'theme') {
+      wx.navigateTo({ url: '/packages/theme-center/theme-center' });
     }
   },
 

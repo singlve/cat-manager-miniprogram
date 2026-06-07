@@ -795,6 +795,144 @@ async function redeemItemAtomic(params) {
   };
 }
 
+async function getLotteryPrizes(options) {
+  options = options || {};
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'adminLottery',
+      data: { action: options.admin ? 'list' : 'listActive' }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '奖池加载失败');
+    return result.data || [];
+  }
+  const prizes = _storage().getLotteryPrizes() || [];
+  return options.admin ? prizes : prizes.filter(function(item) { return item.enabled !== false; });
+}
+
+async function saveLotteryPrize(id, prize) {
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'adminLottery',
+      data: { action: id ? 'update' : 'add', id: id || '', prize: prize }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '奖品保存失败');
+    return result;
+  }
+  return id ? _storage().updateLotteryPrize(id, prize) : _storage().addLotteryPrize(prize);
+}
+
+async function toggleLotteryPrize(id, enabled) {
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'adminLottery',
+      data: { action: 'toggle', id: id, enabled: enabled }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '状态更新失败');
+    return result;
+  }
+  return _storage().updateLotteryPrize(id, { enabled: enabled });
+}
+
+async function deleteLotteryPrize(id) {
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'adminLottery',
+      data: { action: 'delete', id: id }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '奖品删除失败');
+    return result;
+  }
+  return _storage().deleteLotteryPrize(id);
+}
+
+function selectLocalLotteryPrize(prizes) {
+  var total = prizes.reduce(function(sum, prize) {
+    return sum + Math.max(0, parseInt(prize.weight, 10) || 0);
+  }, 0);
+  if (!total) throw new Error('当前奖池没有可抽取奖品');
+  var cursor = Math.random() * total;
+  for (var i = 0; i < prizes.length; i++) {
+    cursor -= Math.max(0, parseInt(prizes[i].weight, 10) || 0);
+    if (cursor < 0) return prizes[i];
+  }
+  return prizes[prizes.length - 1];
+}
+
+async function drawLotteryAtomic(params) {
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({ name: 'drawLottery', data: params });
+    const result = res.result || {};
+    if (result.code !== 0) {
+      const error = new Error(result.msg || '抽奖失败');
+      error.code = result.code;
+      throw error;
+    }
+    return result.data;
+  }
+
+  const storage = _storage();
+  const user = wx.getStorageSync('currentUser') || {};
+  const streak = Math.max(0, parseInt(user.checkInStreak, 10) || 0);
+  const drawn = Array.isArray(user.drawnMilestones) ? user.drawnMilestones.slice() : [];
+  const legacyUsed = Math.max(0, parseInt(user.lotteryUsed, 10) || 0);
+  if (!drawn.length && legacyUsed > 0) {
+    for (let oldDay = 7; oldDay <= streak && drawn.length < legacyUsed; oldDay += 7) {
+      drawn.push(oldDay);
+    }
+  }
+  const available = [];
+  for (let day = 7; day <= streak; day += 7) {
+    if (drawn.indexOf(day) === -1) available.push(day);
+  }
+  if (!available.length) throw new Error('当前没有可用抽奖机会');
+  const milestone = available.indexOf(params.milestone) !== -1 ? params.milestone : available[0];
+  const ownedThemes = Array.from(new Set(['default'].concat(user.ownedThemes || [])));
+  const prizes = (storage.getLotteryPrizes() || []).filter(function(prize) {
+    if (prize.enabled === false || (parseInt(prize.weight, 10) || 0) <= 0) return false;
+    if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return false;
+    if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return false;
+    return true;
+  });
+  const prize = selectLocalLotteryPrize(prizes);
+  user.totalPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
+  user.makeUpCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
+  user.ownedThemes = ownedThemes;
+  if (prize.virtualType === 'points') user.totalPoints += parseInt(prize.virtualValue, 10) || 0;
+  if (prize.virtualType === 'card') user.makeUpCards += parseInt(prize.virtualValue, 10) || 0;
+  if (prize.virtualType === 'theme') user.ownedThemes = Array.from(new Set(ownedThemes.concat(prize.virtualValue)));
+  var inventoryId = '';
+  if (prize.type === 'physical') {
+    var record = storage.addRedeemRecord({
+      itemId: prize.linkedItemId || prize._id, itemName: prize.name, itemType: 'physical',
+      pointsSpent: 0, redeemedAt: new Date().toISOString(), status: 'in_backpack', source: 'lottery'
+    });
+    var inventory = storage.addToInventory({
+      itemId: prize.linkedItemId || prize._id, itemName: prize.name, itemType: 'physical',
+      image: prize.image || '', pointsSpent: 0, ownedAt: new Date().toISOString(),
+      status: 'in_backpack', source: 'lottery', redeemRecordId: record._id
+    });
+    inventoryId = inventory._id;
+    storage.updateLotteryPrize(prize._id, { stock: Math.max(0, (parseInt(prize.stock, 10) || 0) - 1) });
+  }
+  user.drawnMilestones = Array.from(new Set(drawn.concat(milestone))).sort(function(a, b) { return a - b; });
+  user.lotteryUsed = user.drawnMilestones.length;
+  user._lastDrawDate = new Date().toISOString().slice(0, 10);
+  wx.setStorageSync('currentUser', user);
+  const result = {
+    prizeId: prize._id, name: prize.name, type: prize.type,
+    virtualType: prize.virtualType || '', virtualValue: prize.virtualValue || 0,
+    image: prize.image || '', color: prize.color || '#5BA7D8',
+    milestone: milestone, points: user.totalPoints, makeUpCards: user.makeUpCards,
+    ownedThemes: user.ownedThemes, drawnMilestones: user.drawnMilestones, inventoryId: inventoryId
+  };
+  storage.addLotteryRecord(Object.assign({ drawnAt: new Date().toISOString() }, result));
+  return result;
+}
+
 // ════════════════════════════════════════════════════
 // 兑换记录
 // ════════════════════════════════════════════════════
@@ -1496,6 +1634,8 @@ module.exports = {
   getShippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, setDefaultAddress,
   // redeem items
   getRedeemItems, ensureThemeRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem, redeemItemAtomic,
+  // lottery
+  getLotteryPrizes, saveLotteryPrize, toggleLotteryPrize, deleteLotteryPrize, drawLotteryAtomic,
   // redeem records
   getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord, deleteRedeemRecordsAdmin,
   // inventory

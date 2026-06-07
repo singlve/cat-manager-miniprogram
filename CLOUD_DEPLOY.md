@@ -32,15 +32,24 @@ const envId = 'cat-health-xxxx';
 在开发者工具中：
 - 右键 `cloudfunctions/login` 文件夹 → **「上传并部署：云端安装依赖」**
 - 右键 `cloudfunctions/checkReminders` 文件夹 → **「上传并部署：云端安装依赖」**
+- 右键 `cloudfunctions/adminLottery` 文件夹 → **「上传并部署：云端安装依赖」**
+- 右键 `cloudfunctions/drawLottery` 文件夹 → **「上传并部署：云端安装依赖」**
 
 ### 5. 创建数据库集合
-在「云开发」控制台 → 数据库，创建以下 5 个集合：
+在「云开发」控制台 → 数据库，确认以下集合已经创建：
 - `cats`          猫咪档案
 - `health_records` 健康记录
 - `reminders`     提醒
 - `users`         用户
+- `lottery_prizes` 抽奖奖池配置
+- `lottery_records` 抽奖中奖记录
+- `lottery_requests` 抽奖幂等请求记录
+- `redeem_records` 积分/抽奖兑换记录
+- `user_inventory` 用户背包
 
 > 每个集合点击权限设置 → 选择 **「所有用户可读，仅创建者可写」**
+
+抽奖相关集合建议使用更严格权限：客户端不可直接写，读写通过 `adminLottery` / `drawLottery` 云函数完成。
 
 ### 6. 配置定时提醒（可选）
 在「云开发」控制台 → 云函数 → `checkReminders` → 触发器：

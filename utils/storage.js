@@ -190,6 +190,8 @@ const REDEEM_ITEM_KEY = 'redeem_items';
 const REDEEM_RECORD_KEY = 'redeem_records';
 const INVENTORY_KEY = 'user_inventory';
 const AVATAR_FRAME_KEY = 'avatar_frames';
+const LOTTERY_PRIZE_KEY = 'lottery_prizes';
+const LOTTERY_RECORD_KEY = 'lottery_records';
 
 // 默认头像框
 var DEFAULT_AVATAR_FRAMES = [
@@ -210,6 +212,15 @@ var DEFAULT_REDEEM_ITEMS = [
   { _id: 'item_pet_toy', name: '羽毛逗宠棒', type: 'physical', points: 300, stock: 50, enabled: true, image: '', desc: '可爱羽毛逗宠棒，让宠物动起来', category: '玩具' },
   { _id: 'item_pet_bowl', name: '宠物陶瓷碗', type: 'physical', points: 500, stock: 30, enabled: true, image: '', desc: '高颜值陶瓷宠物碗，安全健康', category: '餐具' },
   { _id: 'item_pet_bed', name: '宠物小窝', type: 'physical', points: 1000, stock: 10, enabled: true, image: '', desc: '柔软舒适的宠物小窝，给毛孩子一个温暖的家', category: '家居' }
+];
+
+var DEFAULT_LOTTERY_PRIZES = [
+  { _id: 'lottery_points_5', name: '5积分', type: 'virtual', virtualType: 'points', virtualValue: 5, weight: 30, color: '#E9857B', enabled: true, sort: 10, stock: 999999 },
+  { _id: 'lottery_points_10', name: '10积分', type: 'virtual', virtualType: 'points', virtualValue: 10, weight: 25, color: '#5BA7D8', enabled: true, sort: 20, stock: 999999 },
+  { _id: 'lottery_card_1', name: '1张补签卡', type: 'virtual', virtualType: 'card', virtualValue: 1, weight: 20, color: '#6BC6B3', enabled: true, sort: 30, stock: 999999 },
+  { _id: 'lottery_none', name: '谢谢参与', type: 'virtual', virtualType: 'none', virtualValue: 0, weight: 10, color: '#A5AFBC', enabled: true, sort: 40, stock: 999999 },
+  { _id: 'lottery_points_20', name: '20积分', type: 'virtual', virtualType: 'points', virtualValue: 20, weight: 10, color: '#FFB86B', enabled: true, sort: 50, stock: 999999 },
+  { _id: 'lottery_card_2', name: '2张补签卡', type: 'virtual', virtualType: 'card', virtualValue: 2, weight: 5, color: '#8F7CC3', enabled: true, sort: 60, stock: 999999 }
 ];
 
 var _seedDone = false;
@@ -239,6 +250,49 @@ function updateRedeemItem(id, updates) {
 
 function deleteRedeemItem(id) {
   saveRedeemItems(getRedeemItems().filter(function(i) { return i._id !== id; }));
+}
+
+function getLotteryPrizes() {
+  var prizes = _get(LOTTERY_PRIZE_KEY);
+  if (!prizes || prizes.length === 0) {
+    prizes = DEFAULT_LOTTERY_PRIZES.map(function(item) { return Object.assign({}, item); });
+    _set(LOTTERY_PRIZE_KEY, prizes);
+  }
+  return prizes.sort(function(a, b) { return (a.sort || 0) - (b.sort || 0); });
+}
+
+function saveLotteryPrizes(prizes) { _set(LOTTERY_PRIZE_KEY, prizes); }
+
+function addLotteryPrize(prize) {
+  if (!prize._id) prize._id = 'lottery_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  var prizes = getLotteryPrizes();
+  prizes.push(prize);
+  saveLotteryPrizes(prizes);
+  return prize;
+}
+
+function updateLotteryPrize(id, updates) {
+  var prizes = getLotteryPrizes();
+  var index = prizes.findIndex(function(item) { return item._id === id; });
+  if (index !== -1) {
+    prizes[index] = Object.assign({}, prizes[index], updates);
+    saveLotteryPrizes(prizes);
+  }
+  return prizes[index] || null;
+}
+
+function deleteLotteryPrize(id) {
+  saveLotteryPrizes(getLotteryPrizes().filter(function(item) { return item._id !== id; }));
+}
+
+function getLotteryRecords() { return _get(LOTTERY_RECORD_KEY) || []; }
+
+function addLotteryRecord(record) {
+  if (!record._id) record._id = 'lottery_record_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+  var records = getLotteryRecords();
+  records.unshift(record);
+  _set(LOTTERY_RECORD_KEY, records);
+  return record;
 }
 
 // ════════════════════════════════════════════════════
@@ -427,6 +481,8 @@ module.exports = {
   copyAvatarSync,
   getShippingAddresses, saveShippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, setDefaultAddress,
   getRedeemItems, saveRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem,
+  getLotteryPrizes, saveLotteryPrizes, addLotteryPrize, updateLotteryPrize, deleteLotteryPrize,
+  getLotteryRecords, addLotteryRecord, DEFAULT_LOTTERY_PRIZES,
   getRedeemRecords, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord,
   getUserInventory, addToInventory, updateInventoryItem, deleteInventoryItem,
   clearUserInventory, clearUserRedeemRecords,
