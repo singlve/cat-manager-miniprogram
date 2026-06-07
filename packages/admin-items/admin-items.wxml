@@ -172,26 +172,28 @@
       <view wx:if="{{lotteryPrizes.length === 0}}" class="empty-tip">
         <text>暂无抽奖奖品</text>
       </view>
-      <view wx:else class="lottery-prize-card" wx:for="{{lotteryPrizes}}" wx:key="_id">
-        <view class="lottery-color-dot" style="background:{{item.color || '#5BA7D8'}};"></view>
-        <view class="lottery-prize-main">
-          <view class="lottery-prize-title-row">
-            <text class="lottery-prize-name">{{item.name}}</text>
-            <text class="lottery-type-tag">{{item._typeLabel}}</text>
+      <block wx:else>
+        <view class="lottery-prize-card" wx:for="{{lotteryPrizes}}" wx:key="_id">
+          <view class="lottery-color-dot" style="background:{{item.color || '#5BA7D8'}};"></view>
+          <view class="lottery-prize-main">
+            <view class="lottery-prize-title-row">
+              <text class="lottery-prize-name">{{item.name}}</text>
+              <text class="lottery-type-tag">{{item._typeLabel}}</text>
+            </view>
+            <text class="lottery-prize-meta">权重 {{item.weight || 0}} · 基础概率 {{item._probability}}%</text>
+            <text wx:if="{{item.type === 'physical'}}" class="lottery-prize-meta">奖池库存 {{item.stock || 0}}</text>
+            <text wx:elif="{{item.virtualType === 'theme'}}" class="lottery-prize-meta">主题标识 {{item.virtualValue}}</text>
+            <text wx:elif="{{item.virtualType !== 'none'}}" class="lottery-prize-meta">奖励数量 {{item.virtualValue}}</text>
           </view>
-          <text class="lottery-prize-meta">权重 {{item.weight || 0}} · 基础概率 {{item._probability}}%</text>
-          <text wx:if="{{item.type === 'physical'}}" class="lottery-prize-meta">奖池库存 {{item.stock || 0}}</text>
-          <text wx:elif="{{item.virtualType === 'theme'}}" class="lottery-prize-meta">主题标识 {{item.virtualValue}}</text>
-          <text wx:elif="{{item.virtualType !== 'none'}}" class="lottery-prize-meta">奖励数量 {{item.virtualValue}}</text>
-        </view>
-        <view class="lottery-prize-actions">
-          <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleLotteryEnabled" data-item="{{item}}"/>
-          <view class="lottery-action-row">
-            <text class="act-btn" bindtap="openEditLotteryPrize" data-item="{{item}}">编辑</text>
-            <text class="act-btn danger" bindtap="deleteLotteryPrize" data-item="{{item}}">删除</text>
+          <view class="lottery-prize-actions">
+            <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleLotteryEnabled" data-item="{{item}}"/>
+            <view class="lottery-action-row">
+              <text class="act-btn" bindtap="openEditLotteryPrize" data-item="{{item}}">编辑</text>
+              <text class="act-btn danger" bindtap="deleteLotteryPrize" data-item="{{item}}">删除</text>
+            </view>
           </view>
         </view>
-      </view>
+      </block>
     </block>
 
     <!-- 编辑商品弹窗 -->

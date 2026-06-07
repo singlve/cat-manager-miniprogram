@@ -59,6 +59,7 @@ describe('可配置抽奖系统', () => {
     expect(template).toContain('基础概率 {{item._probability}}%');
     expect(template).toContain('data-kind="lotteryTheme"');
     expect(template).toContain('data-kind="lotteryPhysicalItem"');
+    expect(template).not.toMatch(/wx:else[^>]*wx:for|wx:for[^>]*wx:else/);
     expect(source).toContain('saveLotteryPrize');
     expect(source).toContain('toggleLotteryPrize');
     expect(source).toContain('deleteLotteryPrize');
