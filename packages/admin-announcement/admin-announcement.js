@@ -1,7 +1,7 @@
-const clouddb = require('../../../utils/clouddb.js');
-const { isAdmin } = require('../../../utils/util.js');
+const clouddb = require('../../utils/clouddb.js');
+const { isAdmin } = require('../../utils/util.js');
 
-const { syncPageTheme } = require('../../../utils/themes.js');
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
   onShow() { syncPageTheme(this); },

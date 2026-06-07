@@ -1,11 +1,11 @@
-const clouddb = require('../../../utils/clouddb.js');
-const { reportError } = require('../../../utils/error-log.js');
+const clouddb = require('../../utils/clouddb.js');
+const { reportError } = require('../../utils/error-log.js');
 const {
   getTheme,
   getThemeProducts,
   normalizeOwnedThemes,
   getInitialThemeData
-} = require('../../../utils/themes.js');
+} = require('../../utils/themes.js');
 const initialTheme = getInitialThemeData();
 
 Page({
@@ -128,7 +128,7 @@ Page({
   },
 
   goThemeCenter() {
-    wx.navigateTo({ url: '/packages/services/theme-center/theme-center' });
+    wx.navigateTo({ url: '/packages/theme-center/theme-center' });
   },
 
   switchFilter(e) {
@@ -330,7 +330,7 @@ Page({
     }
   },
 
-  goInventory() { wx.navigateTo({ url: '/packages/services/inventory/inventory' }); },
+  goInventory() { wx.navigateTo({ url: '/packages/inventory/inventory' }); },
   stopBubble() {},
 
   async onPullDownRefresh() {
@@ -338,7 +338,7 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 积分商城', path: '/packages/services/points-mall/points-mall' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 积分商城', path: '/packages/points-mall/points-mall' };
   },
 });
 

@@ -1,11 +1,11 @@
-const clouddb = require('../../../utils/clouddb.js');
+const clouddb = require('../../utils/clouddb.js');
 const {
   THEMES,
   getThemeProducts,
   getTheme,
   getInitialThemeData,
   normalizeOwnedThemes
-} = require('../../../utils/themes.js');
+} = require('../../utils/themes.js');
 const initialTheme = getInitialThemeData();
 
 function hexToRgb(hex) {
@@ -237,7 +237,7 @@ Page({
   },
 
   goMall() {
-    wx.navigateTo({ url: '/packages/services/points-mall/points-mall' });
+    wx.navigateTo({ url: '/packages/points-mall/points-mall' });
   },
 
   restoreDefaultTheme() {

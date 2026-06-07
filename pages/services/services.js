@@ -62,9 +62,9 @@ Page({
   goExpense() { wx.navigateTo({ url: '/pages/expense/expense' }); },
   goDataBackup() { wx.navigateTo({ url: '/pages/data-backup/data-backup' }); },
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
-  goThemeCenter() { wx.navigateTo({ url: '/packages/services/theme-center/theme-center' }); },
+  goThemeCenter() { wx.navigateTo({ url: '/packages/theme-center/theme-center' }); },
   goFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
-  goAdminAnnounce() { wx.navigateTo({ url: '/packages/services/admin-announcement/admin-announcement' }); },
-  goAdmin() { wx.navigateTo({ url: '/packages/services/admin-items/admin-items' }); },
-  goAdminData() { wx.navigateTo({ url: '/packages/services/admin-data/admin-data' }); }
+  goAdminAnnounce() { wx.navigateTo({ url: '/packages/admin-announcement/admin-announcement' }); },
+  goAdmin() { wx.navigateTo({ url: '/packages/admin-items/admin-items' }); },
+  goAdminData() { wx.navigateTo({ url: '/packages/admin-data/admin-data' }); }
 });

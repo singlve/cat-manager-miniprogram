@@ -1,7 +1,7 @@
 // pages/inventory/inventory.js
 // 我的背包 — 合并展示 + 数量选择 + 筛选
-const clouddb = require('../../../utils/clouddb.js');
-const { getInitialThemeData } = require('../../../utils/themes.js');
+const clouddb = require('../../utils/clouddb.js');
+const { getInitialThemeData } = require('../../utils/themes.js');
 const initialTheme = getInitialThemeData();
 
 Page({
@@ -443,7 +443,7 @@ Page({
 
   closeTracking() { this.setData({ showTracking: false }); },
 
-  goMall() { wx.navigateTo({ url: '/packages/services/points-mall/points-mall' }); },
+  goMall() { wx.navigateTo({ url: '/packages/points-mall/points-mall' }); },
 
   stopBubble() {},
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
@@ -453,6 +453,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 我的背包', path: '/packages/services/inventory/inventory' };
+    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 我的背包', path: '/packages/inventory/inventory' };
   },
 });

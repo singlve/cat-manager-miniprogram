@@ -1,7 +1,7 @@
 // pages/admin-data/admin-data.js
 // 管理员：搜索和编辑用户数据
-const clouddb = require('../../../utils/clouddb.js');
-const { isAdmin } = require('../../../utils/util.js');
+const clouddb = require('../../utils/clouddb.js');
+const { isAdmin } = require('../../utils/util.js');
 
 const SEARCH_TYPES = ['nickname', 'phone'];
 const SEARCH_LABELS = ['昵称', '手机号'];
@@ -19,7 +19,7 @@ const EDIT_FIELDS = [
   { key: 'drawnMilestones', label: '已抽里程碑(逗号分隔)', type: 'text' },
 ];
 
-const { syncPageTheme } = require('../../../utils/themes.js');
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
   onShow() { syncPageTheme(this); },

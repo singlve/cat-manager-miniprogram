@@ -9,9 +9,9 @@ const servicePages = [
   'pages/expense/expense.wxml',
   'pages/shipping-address/shipping-address.wxml',
   'pages/feedback/feedback.wxml',
-  'packages/services/admin-announcement/admin-announcement.wxml',
-  'packages/services/admin-items/admin-items.wxml',
-  'packages/services/admin-data/admin-data.wxml',
+  'packages/admin-announcement/admin-announcement.wxml',
+  'packages/admin-items/admin-items.wxml',
+  'packages/admin-data/admin-data.wxml',
   'pages/data-backup/data-backup.wxml'
 ];
 

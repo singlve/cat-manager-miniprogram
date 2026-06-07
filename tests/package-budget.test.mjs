@@ -43,7 +43,7 @@ function collectFiles(directory = root) {
 
 describe('main package budget', () => {
   const allFiles = collectFiles();
-  const files = allFiles.filter(file => !file.path.startsWith('packages/services/'));
+  const files = allFiles.filter(file => !file.path.startsWith('packages/'));
 
   it('keeps the estimated unpacked main package below the upload limit', () => {
     const total = files.reduce((sum, file) => sum + file.size, 0);
@@ -61,7 +61,7 @@ describe('main package budget', () => {
 
   it('keeps the service subpackage below its upload limit', () => {
     const serviceSize = allFiles
-      .filter(file => file.path.startsWith('packages/services/'))
+      .filter(file => file.path.startsWith('packages/'))
       .reduce((sum, file) => sum + file.size, 0);
 
     expect(serviceSize).toBeLessThan(1.95 * 1024 * 1024);

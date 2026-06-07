@@ -10,8 +10,8 @@ describe('small-screen layout safeguards', () => {
     'pages/reminders/reminders.wxss',
     'pages/health-records/health-records.wxss',
     'pages/services/services.wxss',
-    'packages/services/points-mall/points-mall.wxss',
-    'packages/services/inventory/inventory.wxss'
+    'packages/points-mall/points-mall.wxss',
+    'packages/inventory/inventory.wxss'
   ])('%s provides a compact layout', path => {
     expect(read(path)).toContain('@media (max-width: 340px)');
   });
@@ -24,7 +24,7 @@ describe('small-screen layout safeguards', () => {
   });
 
   it('lets inventory names shrink beside quantity and delete actions', () => {
-    const styles = read('packages/services/inventory/inventory.wxss');
+    const styles = read('packages/inventory/inventory.wxss');
 
     expect(styles).toMatch(/\.item-name\s*\{[\s\S]*?flex:\s*1/);
     expect(styles).toMatch(/\.item-name\s*\{[\s\S]*?min-width:\s*0/);

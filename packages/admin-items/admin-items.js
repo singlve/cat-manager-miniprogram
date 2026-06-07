@@ -1,8 +1,8 @@
 // pages/admin-items/admin-items.js
-const clouddb = require('../../../utils/clouddb.js');
-const util = require('../../../utils/util.js');
+const clouddb = require('../../utils/clouddb.js');
+const util = require('../../utils/util.js');
 
-const { syncPageTheme } = require('../../../utils/themes.js');
+const { syncPageTheme } = require('../../utils/themes.js');
 
 Page({
   data: {

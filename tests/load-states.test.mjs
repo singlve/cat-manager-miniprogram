@@ -8,10 +8,10 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 const retryPages = [
   'pages/shipping-address/shipping-address',
   'pages/feedback/feedback',
-  'packages/services/admin-announcement/admin-announcement',
-  'packages/services/admin-items/admin-items',
-  'packages/services/points-mall/points-mall',
-  'packages/services/inventory/inventory'
+  'packages/admin-announcement/admin-announcement',
+  'packages/admin-items/admin-items',
+  'packages/points-mall/points-mall',
+  'packages/inventory/inventory'
 ];
 
 describe('shared loading and failure states', () => {

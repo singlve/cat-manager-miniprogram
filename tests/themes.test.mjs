@@ -172,13 +172,13 @@ describe('主题功能页面接线', () => {
     const servicesJs = read('pages/services/services.js');
 
     const servicePackage = app.subPackages.find(item => item.root === 'packages');
-    expect(servicePackage.pages).toContain('services/theme-center/theme-center');
+    expect(servicePackage.pages).toContain('theme-center/theme-center');
     expect(servicesWxml).toContain('bindtap="goThemeCenter"');
-    expect(servicesJs).toContain("'/packages/services/theme-center/theme-center'");
+    expect(servicesJs).toContain("'/packages/theme-center/theme-center'");
   });
 
   it('积分商城写入主题权益和背包记录', () => {
-    const mallJs = read('packages/services/points-mall/points-mall.js');
+    const mallJs = read('packages/points-mall/points-mall.js');
     expect(mallJs).toContain("virtualType === 'theme'");
     expect(mallJs).toContain('ownedThemes');
     expect(mallJs).toContain('clouddb.redeemItemAtomic');
@@ -190,8 +190,8 @@ describe('主题功能页面接线', () => {
   });
 
   it('背包将主题视为已完成的永久虚拟商品', () => {
-    const inventoryJs = read('packages/services/inventory/inventory.js');
-    const inventoryWxml = read('packages/services/inventory/inventory.wxml');
+    const inventoryJs = read('packages/inventory/inventory.js');
+    const inventoryWxml = read('packages/inventory/inventory.wxml');
     expect(inventoryJs).toContain("item.status === 'completed'");
     expect(inventoryWxml).toContain('主题已解锁');
     expect(inventoryWxml).toContain("item.virtualType !== 'theme'");
@@ -199,8 +199,8 @@ describe('主题功能页面接线', () => {
 
   it('管理员可以维护主题积分和上下架状态，但不能误删主题定义', () => {
     const cloudDbJs = read('utils/clouddb.js');
-    const adminJs = read('packages/services/admin-items/admin-items.js');
-    const adminWxml = read('packages/services/admin-items/admin-items.wxml');
+    const adminJs = read('packages/admin-items/admin-items.js');
+    const adminWxml = read('packages/admin-items/admin-items.wxml');
 
     expect(cloudDbJs).toContain('async function ensureThemeRedeemItems()');
     expect(adminJs).toContain('await clouddb.ensureThemeRedeemItems()');
@@ -246,9 +246,9 @@ describe('主题功能页面接线', () => {
   });
 
   it('主题中心支持实时预览、取消和确认后再持久化', () => {
-    const centerJs = read('packages/services/theme-center/theme-center.js');
-    const centerWxml = read('packages/services/theme-center/theme-center.wxml');
-    const centerWxss = read('packages/services/theme-center/theme-center.wxss');
+    const centerJs = read('packages/theme-center/theme-center.js');
+    const centerWxml = read('packages/theme-center/theme-center.wxml');
+    const centerWxss = read('packages/theme-center/theme-center.wxss');
 
     expect(centerJs).toContain('previewThemeStyle(e)');
     expect(centerJs).toContain('confirmTheme()');
@@ -289,8 +289,8 @@ describe('主题功能页面接线', () => {
   });
 
   it('主题保存失败时同时恢复云端、本地缓存和原生主题', () => {
-    const centerJs = read('packages/services/theme-center/theme-center.js');
-    const mallJs = read('packages/services/points-mall/points-mall.js');
+    const centerJs = read('packages/theme-center/theme-center.js');
+    const mallJs = read('packages/points-mall/points-mall.js');
 
     [centerJs, mallJs].forEach(source => {
       expect(source).toContain("wx.setStorageSync('currentUser', oldUser)");
@@ -347,8 +347,8 @@ describe('主题功能页面接线', () => {
 
   it('限定主题已接入全局变量和商城预览', () => {
     const appWxss = read('app.wxss');
-    const mallWxss = read('packages/services/points-mall/points-mall.wxss');
-    const mallWxml = read('packages/services/points-mall/points-mall.wxml');
+    const mallWxss = read('packages/points-mall/points-mall.wxss');
+    const mallWxml = read('packages/points-mall/points-mall.wxml');
 
     ['lunar', 'birthday', 'christmas'].forEach(key => {
       expect(appWxss).toContain(`.theme-${key}`);
@@ -358,7 +358,7 @@ describe('主题功能页面接线', () => {
   });
 
   it('积分商城双列商品保持舒适的纵向间距', () => {
-    const mallWxss = read('packages/services/points-mall/points-mall.wxss');
+    const mallWxss = read('packages/points-mall/points-mall.wxss');
     expect(mallWxss).toContain('column-gap: 0 !important');
     expect(mallWxss).toContain('row-gap: 36rpx !important');
   expect(mallWxss).not.toMatch(/^\s*gap:\s*0\s*!important/m);

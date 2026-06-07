@@ -18,7 +18,7 @@ describe('atomic points redemption', () => {
   });
 
   it('uses an idempotent request id from the mall page', () => {
-    const source = read('packages/services/points-mall/points-mall.js');
+    const source = read('packages/points-mall/points-mall.js');
 
     expect(source).toContain('clouddb.redeemItemAtomic');
     expect(source).toContain('redeemRequestId');

@@ -11,10 +11,10 @@ describe('非核心页面分包', () => {
     const servicePackage = app.subPackages.find(item => item.root === 'packages');
 
     expect(servicePackage).toBeTruthy();
-    expect(servicePackage.pages).toContain('services/points-mall/points-mall');
-    expect(servicePackage.pages).toContain('services/inventory/inventory');
-    expect(servicePackage.pages).toContain('services/theme-center/theme-center');
-    expect(servicePackage.pages).toContain('services/admin-items/admin-items');
+    expect(servicePackage.pages).toContain('points-mall/points-mall');
+    expect(servicePackage.pages).toContain('inventory/inventory');
+    expect(servicePackage.pages).toContain('theme-center/theme-center');
+    expect(servicePackage.pages).toContain('admin-items/admin-items');
   });
 
   it('核心四个 Tab 仍处于主包', () => {
