@@ -2,8 +2,8 @@
 <view class="page services-page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
-  <view class="ui-compact-hero services-hero">
-    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFill" />
+  <view class="ui-compact-hero ui-tab-hero services-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">SERVICE</text>
       <text class="ui-compact-title">服务中心</text>

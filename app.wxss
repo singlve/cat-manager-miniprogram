@@ -701,6 +701,22 @@ textarea {
   min-width: 0;
 }
 
+.ui-tab-hero {
+  width: 100%;
+  min-height: 168rpx;
+  margin: 0 0 20rpx;
+  padding: 24rpx;
+  gap: 20rpx;
+  box-sizing: border-box;
+}
+
+.ui-tab-hero .ui-compact-hero-img {
+  width: 150rpx;
+  height: 120rpx;
+  margin-right: 0;
+  border-radius: 22rpx;
+}
+
 .ui-compact-kicker {
   display: block;
   font-size: 20rpx;

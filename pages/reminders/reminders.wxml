@@ -2,7 +2,7 @@
 <view class="page {{themeClass}}">
   <include src="../../templates/offline-tip.wxml" />
 
-  <view class="ui-compact-hero reminder-hero">
+  <view class="ui-compact-hero ui-tab-hero reminder-hero">
     <image class="ui-compact-hero-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">REMINDER</text>

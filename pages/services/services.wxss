@@ -8,8 +8,6 @@ page { background: var(--theme-bg, #F7F9FB); }
 }
 
 .services-hero {
-  margin-bottom: 24rpx;
-  padding: 24rpx;
   border-radius: 28rpx;
   background:
     radial-gradient(
@@ -27,16 +25,10 @@ page { background: var(--theme-bg, #F7F9FB); }
   box-shadow:
     0 14rpx 34rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .10),
     inset 0 1rpx 0 rgba(255, 255, 255, .72);
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
 }
 
 .services-hero .ui-compact-hero-img {
-  width: 150rpx;
-  height: 120rpx;
-  border-radius: 22rpx;
-  margin-right: 20rpx;
+  margin-right: 0;
 }
 
 .services-hero .ui-compact-title {
@@ -209,7 +201,7 @@ page { background: var(--theme-bg, #F7F9FB); }
   .services-hero .ui-compact-hero-img {
     width: 126rpx;
     height: 104rpx;
-    margin-right: 8rpx;
+    margin-right: 0;
   }
   .desktop-grid { row-gap: 28rpx; }
   .desktop-icon { width: 86rpx; height: 86rpx; border-radius: 24rpx; }
