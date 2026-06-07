@@ -51,18 +51,24 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('stock: Math.max(0');
   });
 
-  it('管理员可配置类型、主题、实物、权重和启停状态', () => {
+  it('管理员可配置奖品并用友好的概率、颜色和测试转盘完成预览', () => {
     const source = read('packages/admin-items/admin-items.js');
     const template = read('packages/admin-items/admin-items.wxml');
 
     expect(template).toContain('data-tab="lottery"');
-    expect(template).toContain('基础概率 {{item._probability}}%');
+    expect(template).toContain('预计中奖概率 {{item._probability}}%');
     expect(template).toContain('data-kind="lotteryTheme"');
     expect(template).toContain('data-kind="lotteryPhysicalItem"');
+    expect(template).toContain('bindtap="openLotteryTester"');
+    expect(template).toContain('仅模拟当前奖池，不发放奖励');
+    expect(template).toContain('lottery-color-option');
+    expect(template).not.toContain('data-key="sort"');
     expect(template).not.toMatch(/wx:else[^>]*wx:for|wx:for[^>]*wx:else/);
     expect(source).toContain('saveLotteryPrize');
     expect(source).toContain('toggleLotteryPrize');
     expect(source).toContain('deleteLotteryPrize');
+    expect(source).toContain('updateLotteryProbability');
+    expect(source).toContain('runLotteryTest');
   });
 
   it('默认奖池保留原有积分、补签卡和谢谢参与', () => {

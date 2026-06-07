@@ -164,11 +164,14 @@
       <view class="lottery-summary">
         <view>
           <text class="lottery-summary-title">当前奖池</text>
-          <text class="lottery-summary-desc">权重换算为基础概率；已拥有主题和无库存实物会自动剔除</text>
+          <text class="lottery-summary-desc">数字越大越容易抽中，卡片上的概率会自动计算</text>
         </view>
-        <text class="lottery-summary-weight">总权重 {{lotteryTotalWeight}}</text>
+        <text class="lottery-summary-weight">{{lotteryPrizes.length}} 项奖品</text>
       </view>
-      <view class="add-btn" bindtap="openAddLotteryPrize">+ 添加奖品</view>
+      <view class="lottery-toolbar">
+        <view class="lottery-tool-btn secondary" bindtap="openLotteryTester">测试转盘</view>
+        <view class="lottery-tool-btn primary" bindtap="openAddLotteryPrize">+ 添加奖品</view>
+      </view>
       <view wx:if="{{lotteryPrizes.length === 0}}" class="empty-tip">
         <text>暂无抽奖奖品</text>
       </view>
@@ -180,13 +183,17 @@
               <text class="lottery-prize-name">{{item.name}}</text>
               <text class="lottery-type-tag">{{item._typeLabel}}</text>
             </view>
-            <text class="lottery-prize-meta">权重 {{item.weight || 0}} · 基础概率 {{item._probability}}%</text>
+            <text class="lottery-prize-meta">预计中奖概率 {{item._probability}}%</text>
             <text wx:if="{{item.type === 'physical'}}" class="lottery-prize-meta">奖池库存 {{item.stock || 0}}</text>
             <text wx:elif="{{item.virtualType === 'theme'}}" class="lottery-prize-meta">主题标识 {{item.virtualValue}}</text>
             <text wx:elif="{{item.virtualType !== 'none'}}" class="lottery-prize-meta">奖励数量 {{item.virtualValue}}</text>
           </view>
           <view class="lottery-prize-actions">
             <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleLotteryEnabled" data-item="{{item}}"/>
+            <view class="lottery-order-actions">
+              <view class="lottery-order-btn {{index === 0 ? 'disabled' : ''}}" catchtap="moveLotteryPrize" data-index="{{index}}" data-direction="-1">↑</view>
+              <view class="lottery-order-btn {{index === lotteryPrizes.length - 1 ? 'disabled' : ''}}" catchtap="moveLotteryPrize" data-index="{{index}}" data-direction="1">↓</view>
+            </view>
             <view class="lottery-action-row">
               <text class="act-btn" bindtap="openEditLotteryPrize" data-item="{{item}}">编辑</text>
               <text class="act-btn danger" bindtap="deleteLotteryPrize" data-item="{{item}}">删除</text>
@@ -328,20 +335,29 @@
           </view>
         </block>
 
-        <view class="form-row">
-          <view class="form-group flex-1">
-            <text class="form-label">权重</text>
-            <input class="form-input" type="number" value="{{lotteryForm.weight}}" data-key="weight" bindinput="onLotteryFormInput"/>
+        <view class="form-group">
+          <view class="lottery-field-head">
+            <text class="form-label">中奖权重</text>
+            <text class="lottery-probability-preview">预计 {{lotteryForm.estimatedProbability}}%</text>
           </view>
-          <view class="form-group flex-1">
-            <text class="form-label">排序</text>
-            <input class="form-input" type="number" value="{{lotteryForm.sort}}" data-key="sort" bindinput="onLotteryFormInput"/>
-          </view>
+          <input class="form-input" type="number" value="{{lotteryForm.weight}}" data-key="weight" bindinput="onLotteryFormInput"/>
+          <text class="form-help">只需填写相对大小。例如权重 20 大约是权重 10 的两倍机会。</text>
         </view>
 
         <view class="form-group">
           <text class="form-label">转盘颜色</text>
-          <input class="form-input" value="{{lotteryForm.color}}" placeholder="#5BA7D8" data-key="color" bindinput="onLotteryFormInput"/>
+          <view class="lottery-color-grid">
+            <view
+              wx:for="{{lotteryColors}}"
+              wx:key="value"
+              class="lottery-color-option {{lotteryForm.color === item.value ? 'active' : ''}}"
+              data-color="{{item.value}}"
+              bindtap="selectLotteryColor"
+            >
+              <view class="lottery-color-swatch" style="background:{{item.value}};"></view>
+              <text>{{item.name}}</text>
+            </view>
+          </view>
         </view>
         <view class="form-group">
           <text class="form-label">奖品说明</text>
@@ -356,6 +372,33 @@
           <view class="s-btn cancel" bindtap="closeLotteryEditor">取消</view>
           <view class="s-btn confirm {{lotterySaving ? 'disabled' : ''}}" bindtap="saveLotteryPrize">{{lotterySaving ? '保存中...' : '保存奖品'}}</view>
         </view>
+      </view>
+    </view>
+
+    <!-- 管理员测试转盘：只模拟，不发奖、不消耗抽奖机会 -->
+    <view wx:if="{{showLotteryTester}}" class="mask" catchtap="closeLotteryTester">
+      <view class="sheet lottery-test-sheet" catchtap="stopBubble">
+        <view class="sheet-bar"></view>
+        <text class="sheet-title">测试转盘</text>
+        <text class="lottery-test-note">仅模拟当前奖池，不发放奖励，也不会消耗签到抽奖次数。</text>
+        <view class="admin-wheel-wrap">
+          <view class="admin-wheel-pointer"></view>
+          <view class="admin-wheel" style="transform:rotate({{testWheelAngle}}deg);background:{{testWheelBackground}};">
+            <view
+              class="admin-wheel-label"
+              wx:for="{{testWheelLabels}}"
+              wx:key="rotate"
+              style="transform:rotate({{item.rotate}}deg);"
+            >
+              <text style="transform:rotate({{item.counterRotate}}deg);">{{item.name}}</text>
+            </view>
+          </view>
+          <view class="admin-wheel-center {{testSpinning ? 'disabled' : ''}}" bindtap="runLotteryTest">
+            {{testSpinning ? '...' : '测试'}}
+          </view>
+        </view>
+        <text wx:if="{{testLotteryResult}}" class="lottery-test-result" style="color:{{testLotteryResultColor}};">{{testLotteryResult}}</text>
+        <view class="s-btn cancel lottery-test-close" bindtap="closeLotteryTester">关闭</view>
       </view>
     </view>
 

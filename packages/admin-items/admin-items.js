@@ -4,11 +4,23 @@ const util = require('../../utils/util.js');
 
 const { syncPageTheme, THEMES } = require('../../utils/themes.js');
 
+const LOTTERY_COLORS = [
+  { name: '天空蓝', value: '#5BA7D8' },
+  { name: '薄荷绿', value: '#6BC6B3' },
+  { name: '暖橙', value: '#FFB86B' },
+  { name: '蜜桃粉', value: '#E9857B' },
+  { name: '柔紫', value: '#8F7CC3' },
+  { name: '夜空蓝', value: '#5877A5' },
+  { name: '草木绿', value: '#5FA77E' },
+  { name: '雾灰', value: '#A5AFBC' }
+];
+
 function emptyLotteryForm() {
   return {
     name: '', type: 'virtual', virtualType: 'points', virtualValue: 5,
     linkedItemId: '', stock: 0, weight: 10, sort: 10,
-    color: '#5BA7D8', image: '', desc: '', enabled: true
+    color: '#5BA7D8', image: '', desc: '', enabled: true,
+    estimatedProbability: '0.0'
   };
 }
 
@@ -30,6 +42,15 @@ Page({
     editingLotteryId: '',
     lotteryForm: emptyLotteryForm(),
     lotterySaving: false,
+    lotteryColors: LOTTERY_COLORS,
+    showLotteryTester: false,
+    testLotteryPrizes: [],
+    testWheelLabels: [],
+    testWheelBackground: '',
+    testWheelAngle: 0,
+    testSpinning: false,
+    testLotteryResult: '',
+    testLotteryResultColor: '#5BA7D8',
     // 商品编辑弹窗
     showEditor: false,
     editingId: null,
@@ -329,11 +350,17 @@ Page({
   },
 
   openAddLotteryPrize() {
+    var maxSort = this.data.lotteryPrizes.reduce(function(max, item) {
+      return Math.max(max, parseInt(item.sort, 10) || 0);
+    }, 0);
+    var form = emptyLotteryForm();
+    form.sort = maxSort + 10;
     this.setData({
       showLotteryEditor: true,
       editingLotteryId: '',
-      lotteryForm: emptyLotteryForm()
+      lotteryForm: form
     });
+    this.updateLotteryProbability();
   },
 
   openEditLotteryPrize(e) {
@@ -356,6 +383,7 @@ Page({
         enabled: item.enabled !== false
       })
     });
+    this.updateLotteryProbability();
   },
 
   closeLotteryEditor() {
@@ -365,11 +393,143 @@ Page({
   onLotteryFormInput(e) {
     var updates = {};
     updates['lotteryForm.' + e.currentTarget.dataset.key] = e.detail.value;
-    this.setData(updates);
+    this.setData(updates, () => {
+      if (e.currentTarget.dataset.key === 'weight') this.updateLotteryProbability();
+    });
   },
 
   onLotteryFormSwitch(e) {
-    this.setData({ 'lotteryForm.enabled': e.detail.value });
+    this.setData({ 'lotteryForm.enabled': e.detail.value }, () => this.updateLotteryProbability());
+  },
+
+  selectLotteryColor(e) {
+    this.setData({ 'lotteryForm.color': e.currentTarget.dataset.color });
+  },
+
+  updateLotteryProbability() {
+    var editingId = this.data.editingLotteryId;
+    var form = this.data.lotteryForm;
+    var ownWeight = form.enabled === false ? 0 : Math.max(0, parseInt(form.weight, 10) || 0);
+    var otherWeight = (this.data.lotteryPrizes || []).reduce(function(sum, item) {
+      if (item._id === editingId || item.enabled === false) return sum;
+      if (item.type === 'physical' && (parseInt(item.stock, 10) || 0) <= 0) return sum;
+      return sum + Math.max(0, parseInt(item.weight, 10) || 0);
+    }, 0);
+    var total = ownWeight + otherWeight;
+    this.setData({
+      'lotteryForm.estimatedProbability': total > 0
+        ? (ownWeight * 100 / total).toFixed(1)
+        : '0.0'
+    });
+  },
+
+  async moveLotteryPrize(e) {
+    var index = parseInt(e.currentTarget.dataset.index, 10);
+    var direction = parseInt(e.currentTarget.dataset.direction, 10);
+    var targetIndex = index + direction;
+    var prizes = this.data.lotteryPrizes || [];
+    if (index < 0 || targetIndex < 0 || targetIndex >= prizes.length) return;
+    var current = prizes[index];
+    var target = prizes[targetIndex];
+    var currentSort = parseInt(current.sort, 10) || (index + 1) * 10;
+    var targetSort = parseInt(target.sort, 10) || (targetIndex + 1) * 10;
+    var toPayload = function(item, sort) {
+      return {
+        name: item.name,
+        type: item.type,
+        virtualType: item.virtualType,
+        virtualValue: item.virtualValue,
+        linkedItemId: item.linkedItemId || '',
+        stock: parseInt(item.stock, 10) || 0,
+        weight: parseInt(item.weight, 10) || 0,
+        sort: sort,
+        color: item.color || '#5BA7D8',
+        image: item.image || '',
+        desc: item.desc || '',
+        enabled: item.enabled !== false
+      };
+    };
+    wx.showLoading({ title: '调整中...' });
+    try {
+      await Promise.all([
+        clouddb.saveLotteryPrize(current._id, toPayload(current, targetSort)),
+        clouddb.saveLotteryPrize(target._id, toPayload(target, currentSort))
+      ]);
+      await this.loadAll();
+    } catch (error) {
+      wx.showToast({ title: error.message || '顺序调整失败', icon: 'none' });
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  openLotteryTester() {
+    var prizes = (this.data.lotteryPrizes || []).filter(function(item) {
+      return item.enabled !== false
+        && (parseInt(item.weight, 10) || 0) > 0
+        && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0);
+    });
+    if (!prizes.length) {
+      wx.showToast({ title: '请先启用至少一个奖品', icon: 'none' });
+      return;
+    }
+    var segmentAngle = 360 / prizes.length;
+    var labels = [];
+    var gradients = [];
+    prizes.forEach(function(item, index) {
+      var rotate = index * segmentAngle + segmentAngle / 2;
+      labels.push({ name: item.name, rotate: rotate, counterRotate: -rotate });
+      gradients.push(
+        (item.color || '#5BA7D8') + ' ' + (index * segmentAngle) + 'deg '
+        + ((index + 1) * segmentAngle) + 'deg'
+      );
+    });
+    this.setData({
+      showLotteryTester: true,
+      testLotteryPrizes: prizes,
+      testWheelLabels: labels,
+      testWheelBackground: 'conic-gradient(' + gradients.join(',') + ')',
+      testWheelAngle: 0,
+      testSpinning: false,
+      testLotteryResult: ''
+    });
+  },
+
+  closeLotteryTester() {
+    if (!this.data.testSpinning) this.setData({ showLotteryTester: false });
+  },
+
+  runLotteryTest() {
+    if (this.data.testSpinning) return;
+    var prizes = this.data.testLotteryPrizes || [];
+    var total = prizes.reduce(function(sum, item) {
+      return sum + Math.max(0, parseInt(item.weight, 10) || 0);
+    }, 0);
+    if (!total) return;
+    var cursor = Math.random() * total;
+    var prizeIndex = prizes.length - 1;
+    for (var i = 0; i < prizes.length; i++) {
+      cursor -= Math.max(0, parseInt(prizes[i].weight, 10) || 0);
+      if (cursor < 0) {
+        prizeIndex = i;
+        break;
+      }
+    }
+    var segmentAngle = 360 / prizes.length;
+    var targetAngle = 360 * 5 + 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
+    var prize = prizes[prizeIndex];
+    this.setData({
+      testSpinning: true,
+      testLotteryResult: '',
+      testWheelAngle: targetAngle
+    });
+    setTimeout(() => {
+      this.setData({
+        testSpinning: false,
+        testLotteryResult: '模拟抽中：' + prize.name,
+        testLotteryResultColor: prize.color || '#5BA7D8'
+      });
+    }, 2600);
   },
 
   async toggleLotteryEnabled(e) {
