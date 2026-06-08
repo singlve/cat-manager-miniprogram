@@ -63,6 +63,26 @@ function prizeSnapshot(prize) {
   };
 }
 
+function unavailableReason(prize, ownedThemes) {
+  if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return 'OUT_OF_STOCK';
+  if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return 'THEME_OWNED';
+  return '';
+}
+
+function noRewardSnapshot(prize, reason) {
+  return {
+    prizeId: prize._id,
+    name: '谢谢参与',
+    type: 'virtual',
+    virtualType: 'none',
+    virtualValue: 0,
+    image: '',
+    color: prize.color || '#A5AFBC',
+    configuredPrizeName: prize.name,
+    fallbackReason: reason
+  };
+}
+
 exports.main = async event => {
   const openid = cloud.getWXContext().OPENID;
   const userId = String(event.userId || '');
@@ -100,15 +120,11 @@ exports.main = async event => {
 
       const prizeResult = await transaction.collection(PRIZE_COL).where({ enabled: true }).get();
       const ownedThemes = normalizeThemes(user.ownedThemes);
-      const eligible = (prizeResult.data || []).filter(prize => {
-        if ((parseInt(prize.weight, 10) || 0) <= 0) return false;
-        if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return false;
-        if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return false;
-        return true;
-      });
-      const prize = selectWeighted(eligible);
+      const pool = (prizeResult.data || []).filter(prize => (parseInt(prize.weight, 10) || 0) > 0);
+      const prize = selectWeighted(pool);
+      const fallbackReason = unavailableReason(prize, ownedThemes);
       const now = new Date().toISOString();
-      const snapshot = prizeSnapshot(prize);
+      const snapshot = fallbackReason ? noRewardSnapshot(prize, fallbackReason) : prizeSnapshot(prize);
 
       let nextPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
       let nextCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
@@ -116,13 +132,13 @@ exports.main = async event => {
       let inventoryId = '';
       let redeemRecordId = '';
 
-      if (prize.virtualType === 'points') {
+      if (!fallbackReason && prize.virtualType === 'points') {
         nextPoints += Math.max(0, parseInt(prize.virtualValue, 10) || 0);
-      } else if (prize.virtualType === 'card') {
+      } else if (!fallbackReason && prize.virtualType === 'card') {
         nextCards += Math.max(0, parseInt(prize.virtualValue, 10) || 0);
-      } else if (prize.virtualType === 'theme') {
+      } else if (!fallbackReason && prize.virtualType === 'theme') {
         nextThemes = normalizeThemes(ownedThemes.concat(prize.virtualValue));
-      } else if (prize.type === 'physical') {
+      } else if (!fallbackReason && prize.type === 'physical') {
         redeemRecordId = buildId('lottery_rec');
         inventoryId = buildId('lottery_inv');
         await transaction.collection(REDEEM_RECORD_COL).doc(redeemRecordId).set({

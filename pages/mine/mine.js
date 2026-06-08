@@ -805,6 +805,8 @@ Page({
     var hint = '';
     if (result.type === 'physical') hint = '奖品已放入我的背包，请选择地址兑换';
     else if (result.virtualType === 'theme') hint = '主题已永久解锁，可前往主题装扮使用';
+    else if (result.fallbackReason === 'OUT_OF_STOCK') hint = '抽中的「' + (result.configuredPrizeName || '实物奖品') + '」已兑完，本次不发放奖励';
+    else if (result.fallbackReason === 'THEME_OWNED') hint = '抽中的「' + (result.configuredPrizeName || '主题') + '」已经拥有，本次不重复发放';
     else if (result.virtualType === 'none') hint = '继续签到，下一次好运也许就在前面';
     else hint = '奖励已经到账';
 

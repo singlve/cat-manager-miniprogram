@@ -28,17 +28,20 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('requestRef.set');
   });
 
-  it('主题重复和实物无库存不会进入用户可抽奖池', () => {
+  it('主题重复和实物无库存仍保留原权重，抽中后转为不发奖结果', () => {
     const source = read('cloudfunctions/drawLottery/index.js');
     const listSource = read('cloudfunctions/adminLottery/index.js');
+    const activeListBlock = listSource.slice(
+      listSource.indexOf("if (action === 'listActive')"),
+      listSource.indexOf('if (!(await isServerAdmin')
+    );
 
-    expect(source).toContain("prize.type === 'physical'");
-    expect(source).toContain("prize.virtualType === 'theme'");
-    expect(source).toContain('ownedThemes.indexOf(prize.virtualValue)');
-    expect(source).toContain('prize.stock');
-    expect(listSource).toContain("prize.type === 'physical'");
-    expect(listSource).toContain("prize.virtualType === 'theme'");
-    expect(listSource).toContain('ownedThemes.indexOf(prize.virtualValue)');
+    expect(source).toContain("return 'OUT_OF_STOCK'");
+    expect(source).toContain("return 'THEME_OWNED'");
+    expect(source).toContain('fallbackReason ? noRewardSnapshot');
+    expect(source).toContain('const pool = (prizeResult.data || []).filter');
+    expect(activeListBlock).not.toContain('ownedThemes');
+    expect(activeListBlock).not.toContain('prize.stock');
   });
 
   it('实物奖品写入背包与兑换记录并扣减奖池库存', () => {

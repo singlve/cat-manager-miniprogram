@@ -164,7 +164,7 @@
       <view class="lottery-summary">
         <view>
           <text class="lottery-summary-title">当前奖池</text>
-          <text class="lottery-summary-desc">数字越大越容易抽中，卡片上的概率会自动计算</text>
+          <text class="lottery-summary-desc">概率按所有启用奖品固定计算；无库存实物或已拥有主题抽中后转为谢谢参与</text>
         </view>
         <text class="lottery-summary-weight">{{lotteryPrizes.length}} 项奖品</text>
       </view>

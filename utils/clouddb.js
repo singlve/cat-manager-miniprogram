@@ -893,19 +893,20 @@ async function drawLotteryAtomic(params) {
   const ownedThemes = Array.from(new Set(['default'].concat(user.ownedThemes || [])));
   const prizes = (storage.getLotteryPrizes() || []).filter(function(prize) {
     if (prize.enabled === false || (parseInt(prize.weight, 10) || 0) <= 0) return false;
-    if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return false;
-    if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return false;
     return true;
   });
   const prize = selectLocalLotteryPrize(prizes);
+  const fallbackReason = prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0
+    ? 'OUT_OF_STOCK'
+    : (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1 ? 'THEME_OWNED' : '');
   user.totalPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
   user.makeUpCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
   user.ownedThemes = ownedThemes;
-  if (prize.virtualType === 'points') user.totalPoints += parseInt(prize.virtualValue, 10) || 0;
-  if (prize.virtualType === 'card') user.makeUpCards += parseInt(prize.virtualValue, 10) || 0;
-  if (prize.virtualType === 'theme') user.ownedThemes = Array.from(new Set(ownedThemes.concat(prize.virtualValue)));
+  if (!fallbackReason && prize.virtualType === 'points') user.totalPoints += parseInt(prize.virtualValue, 10) || 0;
+  if (!fallbackReason && prize.virtualType === 'card') user.makeUpCards += parseInt(prize.virtualValue, 10) || 0;
+  if (!fallbackReason && prize.virtualType === 'theme') user.ownedThemes = Array.from(new Set(ownedThemes.concat(prize.virtualValue)));
   var inventoryId = '';
-  if (prize.type === 'physical') {
+  if (!fallbackReason && prize.type === 'physical') {
     var record = storage.addRedeemRecord({
       itemId: prize.linkedItemId || prize._id, itemName: prize.name, itemType: 'physical',
       pointsSpent: 0, redeemedAt: new Date().toISOString(), status: 'in_backpack', source: 'lottery'
@@ -923,11 +924,16 @@ async function drawLotteryAtomic(params) {
   user._lastDrawDate = new Date().toISOString().slice(0, 10);
   wx.setStorageSync('currentUser', user);
   const result = {
-    prizeId: prize._id, name: prize.name, type: prize.type,
-    virtualType: prize.virtualType || '', virtualValue: prize.virtualValue || 0,
+    prizeId: prize._id,
+    name: fallbackReason ? '谢谢参与' : prize.name,
+    type: fallbackReason ? 'virtual' : prize.type,
+    virtualType: fallbackReason ? 'none' : (prize.virtualType || ''),
+    virtualValue: fallbackReason ? 0 : (prize.virtualValue || 0),
     image: prize.image || '', color: prize.color || '#5BA7D8',
     milestone: milestone, points: user.totalPoints, makeUpCards: user.makeUpCards,
-    ownedThemes: user.ownedThemes, drawnMilestones: user.drawnMilestones, inventoryId: inventoryId
+    ownedThemes: user.ownedThemes, drawnMilestones: user.drawnMilestones, inventoryId: inventoryId,
+    configuredPrizeName: fallbackReason ? prize.name : '',
+    fallbackReason: fallbackReason
   };
   storage.addLotteryRecord(Object.assign({ drawnAt: new Date().toISOString() }, result));
   return result;

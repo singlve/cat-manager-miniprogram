@@ -14,12 +14,6 @@ const DEFAULT_PRIZES = [
   { _id: 'lottery_card_2', name: '2张补签卡', type: 'virtual', virtualType: 'card', virtualValue: 2, weight: 5, color: '#8F7CC3', enabled: true, sort: 60 }
 ];
 
-function normalizeThemes(value) {
-  const themes = Array.isArray(value) ? value.slice() : [];
-  if (themes.indexOf('default') === -1) themes.unshift('default');
-  return Array.from(new Set(themes.filter(Boolean)));
-}
-
 async function isServerAdmin(openid) {
   if (!openid) return false;
   const configured = String(process.env.ADMIN_OPENIDS || '').split(',').map(value => value.trim()).filter(Boolean);
@@ -102,21 +96,9 @@ exports.main = async event => {
     if (action === 'listActive') {
       await ensureDefaults();
       const result = await db.collection(COLL).orderBy('sort', 'asc').limit(50).get();
-      let ownedThemes = ['default'];
-      if (wxContext.OPENID) {
-        const userResult = await db.collection('users')
-          .where({ _openid: wxContext.OPENID })
-          .limit(1)
-          .get();
-        if (userResult.data && userResult.data[0]) {
-          ownedThemes = normalizeThemes(userResult.data[0].ownedThemes);
-        }
-      }
       const prizes = (result.data || []).filter(prize => {
         if (prize.enabled === false) return false;
         if ((parseInt(prize.weight, 10) || 0) <= 0) return false;
-        if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return false;
-        if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return false;
         return true;
       });
       return { code: 0, data: prizes };

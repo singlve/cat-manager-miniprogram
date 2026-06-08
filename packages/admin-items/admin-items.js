@@ -149,9 +149,7 @@ Page({
     var physicalItems = items.filter(function(item) { return item.type === 'physical'; });
     var lotteryPrizes = lotteryResult.status === 'fulfilled' ? (lotteryResult.value || []) : [];
     var lotteryTotalWeight = lotteryPrizes.filter(function(item) {
-      return item.enabled !== false
-        && (parseInt(item.weight, 10) || 0) > 0
-        && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0);
+      return item.enabled !== false && (parseInt(item.weight, 10) || 0) > 0;
     }).reduce(function(sum, item) {
       return sum + (parseInt(item.weight, 10) || 0);
     }, 0);
@@ -162,7 +160,6 @@ Page({
       return Object.assign({}, item, {
         _typeLabel: typeLabel,
         _probability: item.enabled !== false
-          && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0)
           && lotteryTotalWeight > 0
           ? ((parseInt(item.weight, 10) || 0) * 100 / lotteryTotalWeight).toFixed(1)
           : '0.0'
@@ -413,7 +410,6 @@ Page({
     var ownWeight = form.enabled === false ? 0 : Math.max(0, parseInt(form.weight, 10) || 0);
     var otherWeight = (this.data.lotteryPrizes || []).reduce(function(sum, item) {
       if (item._id === editingId || item.enabled === false) return sum;
-      if (item.type === 'physical' && (parseInt(item.stock, 10) || 0) <= 0) return sum;
       return sum + Math.max(0, parseInt(item.weight, 10) || 0);
     }, 0);
     var total = ownWeight + otherWeight;
@@ -467,8 +463,7 @@ Page({
   openLotteryTester() {
     var prizes = (this.data.lotteryPrizes || []).filter(function(item) {
       return item.enabled !== false
-        && (parseInt(item.weight, 10) || 0) > 0
-        && (item.type !== 'physical' || (parseInt(item.stock, 10) || 0) > 0);
+        && (parseInt(item.weight, 10) || 0) > 0;
     });
     if (!prizes.length) {
       wx.showToast({ title: '请先启用至少一个奖品', icon: 'none' });
