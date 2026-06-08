@@ -21,6 +21,7 @@ Page({
     currentMonthLabel: '',    // '2026年5月'
     expenses: [],             // 当月过滤后的记录
     groupedExpenses: [],
+    hasVisibleExpenses: false,
     stats: { total: '0.00', cats: {}, catsByName: {} },
     monthlyInsights: { changeText: '暂无上月数据', changeClass: 'neutral', topCategory: '-', topPet: '-' },
     catFilter: 'all',
@@ -34,7 +35,11 @@ Page({
     categories: EXPENSE_CATEGORIES,
     showDeleteModal: false,
     deleteTarget: null,
-    cats: []
+    cats: [],
+    addFabX: 0,
+    addFabY: 0,
+    addFabMovingX: 0,
+    addFabMovingY: 0
   },
 
   onLoad() {
@@ -53,6 +58,7 @@ Page({
     var theme = syncPageTheme(this);
     this.setData({ categories: getExpenseCategories(theme.key) });
     this.setData({ isOnline: getApp().globalData.isOnline });
+    this._initAddFabPosition();
     this.loadExpenseData();
   },
 
@@ -205,7 +211,10 @@ Page({
     });
 
     groups.forEach(function(g) { g.dayTotalStr = g.dayTotal.toFixed(2); });
-    this.setData({ groupedExpenses: groups });
+    this.setData({
+      groupedExpenses: groups,
+      hasVisibleExpenses: groups.length > 0
+    });
   },
 
   // 月份切换
@@ -353,7 +362,8 @@ Page({
         months: months,
         categories: categories,
         cats: pets
-      }
+      },
+      hasVisibleExpenses: yearExpenses.length > 0
     });
   },
 
@@ -409,6 +419,40 @@ Page({
   },
 
   stopBubble() {},
+
+  _initAddFabPosition() {
+    if (this._addFabInited) return;
+    try {
+      var info = wx.getSystemInfoSync();
+      this._windowWidth = info.windowWidth || 375;
+      this._windowHeight = info.windowHeight || 667;
+      var x = Math.max(this._windowWidth - 74, 0);
+      var y = Math.max(this._windowHeight - 210, 120);
+      this.setData({
+        addFabX: x,
+        addFabY: y,
+        addFabMovingX: x,
+        addFabMovingY: y
+      });
+      this._addFabMovingX = x;
+      this._addFabMovingY = y;
+      this._addFabInited = true;
+    } catch (e) {}
+  },
+
+  onAddFabMove(e) {
+    if (!e.detail || e.detail.source !== 'touch') return;
+    this._addFabMovingX = e.detail.x;
+    this._addFabMovingY = e.detail.y;
+  },
+
+  onAddFabRelease() {
+    var windowWidth = this._windowWidth || 375;
+    var x = typeof this._addFabMovingX === 'number' ? this._addFabMovingX : (this.data.addFabX || 0);
+    var y = typeof this._addFabMovingY === 'number' ? this._addFabMovingY : (this.data.addFabY || 0);
+    var snappedX = x > windowWidth / 2 ? Math.max(windowWidth - 74, 0) : 16;
+    this.setData({ addFabX: snappedX, addFabY: y });
+  },
 
   async confirmDelete() {
     var id = this.data.deleteTarget;

@@ -212,10 +212,26 @@
 
   </block>
 
-  <!-- 添加按钮 -->
-  <view class="add-section">
+  <!-- 空状态保留明确的添加入口 -->
+  <view wx:if="{{!loading && !loadError && !hasVisibleExpenses}}" class="add-section">
     <button class="add-btn" bindtap="goAdd">+ 记一笔</button>
   </view>
+
+  <!-- 有账目时使用可拖动、吸附边缘的轻量入口 -->
+  <movable-area wx:if="{{!loading && !loadError && hasVisibleExpenses}}" class="add-fab-area">
+    <movable-view
+      class="add-fab"
+      direction="all"
+      inertia
+      x="{{addFabX}}"
+      y="{{addFabY}}"
+      bindchange="onAddFabMove"
+      bindtouchend="onAddFabRelease"
+      bindtap="goAdd"
+    >
+      <text class="add-fab-plus">+</text>
+    </movable-view>
+  </movable-area>
 
   <!-- 宠物筛选自定义弹层 -->
   <view wx:if="{{showCatFilterModal}}" class="cat-filter-modal-mask" bindtap="closeCatFilterModal">

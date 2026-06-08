@@ -335,8 +335,41 @@ page { background: var(--theme-bg, #F7F9FB); }
 .rk-bar { height: 100%; border-radius: 5rpx; transition: width .4s; }
 .rk-amt { font-size: 24rpx; color: #888; font-weight: 600; flex-shrink: 0; }
 
-/* ═══════════════ FAB ═══════════════ */
-/* ── 添加按钮（与 cat-list 统一风格）── */
+/* ═══════════════ 添加入口 ═══════════════ */
+/* ── 有记录时：与首页统一的可拖动吸边按钮 ── */
+.add-fab-area {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 60;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.add-fab {
+  width: 112rpx;
+  height: 112rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
+  box-shadow: 0 14rpx 36rpx rgba(var(--theme-primary-rgb, 91, 167, 216), .34);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.add-fab-plus {
+  color: #FFFFFF;
+  font-size: 56rpx;
+  font-weight: 800;
+  line-height: 1;
+  transform: translateY(-2rpx);
+}
+
+/* ── 无记录时：保留明确的“记一笔”按钮 ── */
 .add-section {
   position: fixed;
   bottom: calc(40rpx + env(safe-area-inset-bottom));
