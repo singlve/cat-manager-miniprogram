@@ -1,0 +1,86 @@
+<view class="page benefit-page {{themeClass}}">
+  <view class="benefit-hero">
+    <view class="benefit-hero-art">
+      <view class="ticket ticket-back"></view>
+      <view class="ticket ticket-front">
+        <image src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+      </view>
+      <view class="benefit-spark spark-one"></view>
+      <view class="benefit-spark spark-two"></view>
+    </view>
+    <view class="benefit-hero-copy">
+      <text class="benefit-kicker">PET BENEFITS</text>
+      <text class="benefit-title">福利中心</text>
+      <text class="benefit-desc">版本礼遇和节日惊喜，都会安静地收在这里。</text>
+    </view>
+  </view>
+
+  <view wx:if="{{loading}}" class="ui-loading-state">
+    <view class="ui-loading-mark"></view>
+    <text class="ui-loading-text">正在打开福利</text>
+  </view>
+
+  <view wx:elif="{{loadError}}" class="benefit-error">
+    <image src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="benefit-error-title">福利加载失败</text>
+    <text class="benefit-error-desc">下拉页面或点击按钮重新加载</text>
+    <button bindtap="loadBenefit">重新加载</button>
+  </view>
+
+  <block wx:elif="{{campaign}}">
+    <view class="voucher-balance">
+      <view>
+        <text class="voucher-balance-label">我的主题兑换券</text>
+        <text class="voucher-balance-desc">兑换后永久拥有对应主题</text>
+      </view>
+      <view class="voucher-balance-count">
+        <text>{{themeVouchers}}</text>
+        <text>张</text>
+      </view>
+    </view>
+
+    <view class="benefit-card {{claimed ? 'claimed' : ''}}">
+      <view class="benefit-card-top">
+        <view class="benefit-card-icon">
+          <image src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+        </view>
+        <view class="benefit-card-copy">
+          <view class="benefit-card-title-row">
+            <text class="benefit-card-title">{{campaign.title}}</text>
+            <text class="benefit-state">{{claimed ? '已领取' : '可领取'}}</text>
+          </view>
+          <text class="benefit-card-desc">{{campaign.desc}}</text>
+        </view>
+      </view>
+
+      <view class="voucher-face">
+        <view class="voucher-main">
+          <text class="voucher-name">主题兑换券</text>
+          <text class="voucher-limit">适用于 ≤ {{campaign.maxThemePoints}} 积分主题</text>
+        </view>
+        <view class="voucher-value">
+          <text class="voucher-value-num">1</text>
+          <text class="voucher-value-unit">张</text>
+        </view>
+      </view>
+
+      <button
+        wx:if="{{canClaim}}"
+        class="benefit-primary-btn"
+        loading="{{claiming}}"
+        disabled="{{claiming}}"
+        bindtap="claimBenefit"
+      >{{claiming ? '领取中' : '立即领取'}}</button>
+      <button wx:else class="benefit-secondary-btn" bindtap="goThemeMall">
+        {{themeVouchers > 0 ? '去选择主题' : '查看主题'}}
+      </button>
+    </view>
+
+    <view class="benefit-notes">
+      <text class="benefit-notes-title">使用说明</text>
+      <view class="benefit-note"><text>1</text><text>每位登录用户限领一次，今后新注册用户也可以领取。</text></view>
+      <view class="benefit-note"><text>2</text><text>主题可继续使用积分兑换，使用兑换券时不会扣除积分。</text></view>
+      <view class="benefit-note"><text>3</text><text>兑换券支持价格不超过 1000 积分且尚未拥有的主题。</text></view>
+    </view>
+  </block>
+</view>

@@ -140,6 +140,23 @@ page { background: var(--theme-bg, #F7F9FB); }
   background: linear-gradient(135deg, #FFF4E6, #FFE8CC);
 }
 
+.icon-benefit {
+  background: linear-gradient(135deg, #FFF1DF, var(--theme-primary-soft, #EAF4FB));
+  border: 1rpx solid rgba(255,184,107,.24);
+}
+
+.benefit-dot {
+  position: absolute;
+  top: -5rpx;
+  right: -5rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border: 4rpx solid var(--theme-card, #FFFFFF);
+  border-radius: 50%;
+  background: #F36B6B;
+  box-sizing: border-box;
+}
+
 .icon-theme {
   background: linear-gradient(145deg, #FFFFFF, #EEF7F8);
   border: 1rpx solid rgba(var(--theme-primary-rgb, 91, 167, 216), .14);

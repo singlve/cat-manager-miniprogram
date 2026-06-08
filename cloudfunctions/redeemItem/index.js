@@ -13,6 +13,7 @@ const ITEM_COL = 'redeem_items';
 const RECORD_COL = 'redeem_records';
 const INVENTORY_COL = 'user_inventory';
 const REQUEST_COL = 'redeem_requests';
+const THEME_VOUCHER_MAX_POINTS = 1000;
 
 function buildId(prefix) {
   return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
@@ -36,6 +37,7 @@ exports.main = async event => {
   const userId = String(event.userId || '');
   const itemId = String(event.itemId || '');
   const requestId = String(event.requestId || '');
+  const paymentMethod = String(event.paymentMethod || 'points');
   const quantity = Math.max(1, Math.min(20, parseInt(event.quantity, 10) || 1));
 
   if (!openid) return { code: 'NOT_LOGGED_IN', msg: '无法获取用户身份' };
@@ -81,7 +83,22 @@ exports.main = async event => {
         throw businessError('THEME_OWNED', '这个主题已经拥有');
       }
 
-      const unitPoints = Math.max(0, parseInt(item.points, 10) || 0);
+      const useThemeVoucher = paymentMethod === 'theme_voucher';
+      if (useThemeVoucher && item.virtualType !== 'theme') {
+        throw businessError('VOUCHER_NOT_APPLICABLE', '主题兑换券只能用于兑换主题');
+      }
+
+      const itemPoints = Math.max(0, parseInt(item.points, 10) || 0);
+      if (useThemeVoucher && itemPoints > THEME_VOUCHER_MAX_POINTS) {
+        throw businessError('VOUCHER_LIMIT_EXCEEDED', '这张兑换券仅支持 1000 积分以内的主题');
+      }
+
+      const currentThemeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
+      if (useThemeVoucher && currentThemeVouchers < 1) {
+        throw businessError('VOUCHER_NOT_ENOUGH', '主题兑换券不足');
+      }
+
+      const unitPoints = useThemeVoucher ? 0 : itemPoints;
       const totalCost = unitPoints * quantity;
       const currentPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
       if (currentPoints < totalCost) {
@@ -97,6 +114,7 @@ exports.main = async event => {
       let nextPoints = currentPoints - totalCost;
       let nextMakeUpCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
       let nextThemes = ownedThemes;
+      let nextThemeVouchers = currentThemeVouchers;
 
       if (item.virtualType === 'card') {
         nextMakeUpCards += (parseInt(item.virtualValue, 10) || 0) * quantity;
@@ -105,6 +123,7 @@ exports.main = async event => {
       } else if (item.virtualType === 'theme') {
         nextThemes = normalizeThemes(ownedThemes.concat(item.virtualValue));
       }
+      if (useThemeVoucher) nextThemeVouchers -= 1;
 
       for (let index = 0; index < quantity; index++) {
         const recordId = buildId('rec');
@@ -125,6 +144,7 @@ exports.main = async event => {
         };
         if (item.virtualType) record.virtualType = item.virtualType;
         if (item.virtualType === 'theme') record.themeKey = item.virtualValue;
+        if (useThemeVoucher) record.paymentMethod = 'theme_voucher';
         if (inventoryId) record.inventoryId = inventoryId;
 
         const { _id: recordDocId, ...recordData } = record;
@@ -156,7 +176,8 @@ exports.main = async event => {
         data: {
           totalPoints: nextPoints,
           makeUpCards: nextMakeUpCards,
-          ownedThemes: nextThemes
+          ownedThemes: nextThemes,
+          themeVouchers: nextThemeVouchers
         }
       });
 
@@ -170,9 +191,11 @@ exports.main = async event => {
         points: nextPoints,
         makeUpCards: nextMakeUpCards,
         ownedThemes: nextThemes,
+        themeVouchers: nextThemeVouchers,
         itemType: item.type,
         virtualType: item.virtualType || '',
         themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
+        paymentMethod: useThemeVoucher ? 'theme_voucher' : 'points',
         quantity,
         recordIds,
         inventoryIds

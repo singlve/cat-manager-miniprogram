@@ -1,0 +1,10 @@
+{
+  "name": "benefitCenter",
+  "version": "1.0.0",
+  "description": "全员福利领取与主题兑换券发放",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "~3.0.0"
+  }
+}

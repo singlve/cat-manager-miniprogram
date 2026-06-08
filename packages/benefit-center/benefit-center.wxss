@@ -1,0 +1,120 @@
+page { background: var(--theme-bg, #F7F9FB); }
+.benefit-page { min-height: 100vh; padding: 24rpx 24rpx 70rpx; box-sizing: border-box; }
+
+.benefit-hero {
+  min-height: 230rpx;
+  padding: 30rpx;
+  display: flex;
+  align-items: center;
+  gap: 26rpx;
+  border-radius: 28rpx;
+  background: linear-gradient(145deg, rgba(255,255,255,.96), var(--theme-primary-soft, #EAF4FB));
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .14);
+  box-shadow: 0 14rpx 34rpx rgba(68,92,120,.08);
+  box-sizing: border-box;
+}
+.benefit-hero-art { position: relative; width: 190rpx; height: 150rpx; flex-shrink: 0; }
+.ticket {
+  position: absolute;
+  width: 126rpx;
+  height: 86rpx;
+  border-radius: 20rpx;
+  border: 7rpx solid rgba(255,255,255,.94);
+  box-shadow: 0 10rpx 24rpx rgba(68,92,120,.12);
+}
+.ticket-back { left: 12rpx; top: 22rpx; background: var(--theme-secondary, #6BC6B3); transform: rotate(-10deg); opacity: .72; }
+.ticket-front { right: 8rpx; top: 42rpx; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--theme-primary, #5BA7D8), var(--theme-secondary, #6BC6B3)); transform: rotate(6deg); }
+.ticket-front image { width: 54rpx; height: 54rpx; }
+.benefit-spark { position: absolute; width: 14rpx; height: 14rpx; border-radius: 50%; background: #FFB86B; }
+.spark-one { right: 2rpx; top: 12rpx; }
+.spark-two { left: 18rpx; bottom: 4rpx; width: 9rpx; height: 9rpx; background: var(--theme-primary, #5BA7D8); }
+.benefit-hero-copy { flex: 1; min-width: 0; }
+.benefit-kicker { display: block; color: var(--theme-primary, #5BA7D8); font-size: 20rpx; font-weight: 900; }
+.benefit-title { display: block; margin-top: 5rpx; color: var(--theme-text, #243044); font-size: 36rpx; font-weight: 900; }
+.benefit-desc { display: block; margin-top: 8rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 24rpx; line-height: 1.55; font-weight: 600; }
+
+.voucher-balance {
+  margin-top: 20rpx;
+  padding: 24rpx 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70));
+  box-shadow: 0 14rpx 32rpx rgba(var(--theme-primary-rgb, 91,167,216), .2);
+}
+.voucher-balance-label { display: block; color: #FFFFFF; font-size: 28rpx; font-weight: 900; }
+.voucher-balance-desc { display: block; margin-top: 5rpx; color: rgba(255,255,255,.72); font-size: 21rpx; }
+.voucher-balance-count { display: flex; align-items: baseline; gap: 5rpx; color: #FFFFFF; }
+.voucher-balance-count text:first-child { font-size: 48rpx; font-weight: 900; }
+.voucher-balance-count text:last-child { font-size: 22rpx; font-weight: 700; }
+
+.benefit-card {
+  margin-top: 20rpx;
+  padding: 28rpx;
+  border-radius: 28rpx;
+  background: rgba(255,255,255,.96);
+  border: 2rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .22);
+  box-shadow: 0 12rpx 30rpx rgba(68,92,120,.08);
+}
+.benefit-card.claimed { border-color: rgba(var(--theme-secondary-rgb, 107,198,179), .24); }
+.benefit-card-top { display: flex; gap: 18rpx; }
+.benefit-card-icon { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--theme-primary-soft, #EAF4FB), var(--theme-secondary-soft, #EAF7F5)); }
+.benefit-card-icon image { width: 44rpx; height: 44rpx; }
+.benefit-card-copy { flex: 1; min-width: 0; }
+.benefit-card-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10rpx; }
+.benefit-card-title { color: var(--theme-text, #243044); font-size: 30rpx; font-weight: 900; }
+.benefit-state { padding: 5rpx 12rpx; border-radius: 999rpx; color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); font-size: 19rpx; font-weight: 900; }
+.benefit-card-desc { display: block; margin-top: 7rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 23rpx; line-height: 1.55; }
+
+.voucher-face {
+  position: relative;
+  margin: 24rpx 0;
+  min-height: 138rpx;
+  padding: 26rpx 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--theme-primary-soft, #EAF4FB), var(--theme-secondary-soft, #EAF7F5));
+  border: 2rpx dashed rgba(var(--theme-primary-rgb, 91,167,216), .34);
+  box-sizing: border-box;
+}
+.voucher-face::before,
+.voucher-face::after { content: ''; position: absolute; top: 50%; width: 24rpx; height: 24rpx; margin-top: -12rpx; border-radius: 50%; background: #FFFFFF; }
+.voucher-face::before { left: -13rpx; }
+.voucher-face::after { right: -13rpx; }
+.voucher-name { display: block; color: var(--theme-primary-deep, #2F8DB8); font-size: 32rpx; font-weight: 900; }
+.voucher-limit { display: block; margin-top: 8rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 21rpx; }
+.voucher-value { display: flex; align-items: baseline; color: var(--theme-primary-deep, #2F8DB8); }
+.voucher-value-num { font-size: 54rpx; font-weight: 900; }
+.voucher-value-unit { margin-left: 4rpx; font-size: 22rpx; font-weight: 800; }
+
+.benefit-primary-btn,
+.benefit-secondary-btn { height: 88rpx; line-height: 88rpx; border-radius: 44rpx; font-size: 29rpx; font-weight: 900; }
+.benefit-primary-btn { color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70)); box-shadow: 0 12rpx 28rpx rgba(var(--theme-primary-rgb, 91,167,216), .24); }
+.benefit-secondary-btn { color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); }
+.benefit-primary-btn::after,
+.benefit-secondary-btn::after { border: 0; }
+
+.benefit-notes { margin-top: 20rpx; padding: 26rpx 28rpx; border-radius: 24rpx; background: rgba(255,255,255,.88); border: 1rpx solid var(--theme-divider, #E8EEF4); }
+.benefit-notes-title { display: block; margin-bottom: 16rpx; color: var(--theme-text, #243044); font-size: 27rpx; font-weight: 900; }
+.benefit-note { display: flex; align-items: flex-start; gap: 14rpx; margin-top: 14rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 22rpx; line-height: 1.55; }
+.benefit-note:first-of-type { margin-top: 0; }
+.benefit-note text:first-child { width: 34rpx; height: 34rpx; flex-shrink: 0; line-height: 34rpx; border-radius: 50%; color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); text-align: center; font-size: 19rpx; font-weight: 900; }
+
+.benefit-error { margin-top: 90rpx; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.benefit-error image { width: 86rpx; height: 86rpx; }
+.benefit-error-title { margin-top: 18rpx; color: var(--theme-text, #243044); font-size: 29rpx; font-weight: 900; }
+.benefit-error-desc { margin-top: 6rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 23rpx; }
+.benefit-error button { width: 260rpx; margin-top: 24rpx; color: #FFFFFF; background: var(--theme-primary, #5BA7D8); border-radius: 40rpx; }
+.benefit-error button::after { border: 0; }
+
+@media (max-width: 340px) {
+  .benefit-page { padding-left: 18rpx; padding-right: 18rpx; }
+  .benefit-hero { padding: 22rpx; gap: 14rpx; }
+  .benefit-hero-art { width: 146rpx; transform: scale(.86); transform-origin: left center; margin-right: -18rpx; }
+  .benefit-title { font-size: 32rpx; }
+  .benefit-desc { font-size: 21rpx; }
+}

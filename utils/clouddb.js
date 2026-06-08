@@ -437,6 +437,57 @@ async function adminUpdateUser(userId, updates) {
   throw new Error((res.result && res.result.msg) || '更新失败');
 }
 
+async function getBenefitStatus() {
+  if (!isCloudReady()) {
+    const user = wx.getStorageSync('currentUser') || {};
+    const claimed = Array.isArray(user.claimedBenefits) &&
+      user.claimedBenefits.indexOf('theme_launch_2026') !== -1;
+    return {
+      campaign: {
+        id: 'theme_launch_2026',
+        title: '主题上线礼',
+        desc: '领取 1 张主题兑换券，可任选一套价格不超过 1000 积分的主题永久解锁。',
+        rewardType: 'theme_voucher',
+        rewardAmount: 1,
+        maxThemePoints: 1000,
+        active: true
+      },
+      claimed,
+      canClaim: !claimed,
+      themeVouchers: Math.max(0, parseInt(user.themeVouchers, 10) || 0)
+    };
+  }
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'status' }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利状态加载失败');
+  return result.data;
+}
+
+async function claimBenefit() {
+  if (!isCloudReady()) {
+    const user = wx.getStorageSync('currentUser') || {};
+    const claimedBenefits = Array.from(new Set(user.claimedBenefits || []));
+    const alreadyClaimed = claimedBenefits.indexOf('theme_launch_2026') !== -1;
+    if (!alreadyClaimed) {
+      claimedBenefits.push('theme_launch_2026');
+      user.claimedBenefits = claimedBenefits;
+      user.themeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0) + 1;
+      wx.setStorageSync('currentUser', user);
+    }
+    return Object.assign(await getBenefitStatus(), { alreadyClaimed });
+  }
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'claim' }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利领取失败');
+  return result.data;
+}
+
 // ════════════════════════════════════════════════════
 // 云存储：头像上传
 // ════════════════════════════════════════════════════
@@ -709,7 +760,8 @@ async function redeemItemAtomic(params) {
         userId: params.userId,
         itemId: params.itemId,
         quantity: params.quantity,
-        requestId: params.requestId
+        requestId: params.requestId,
+        paymentMethod: params.paymentMethod || 'points'
       }
     });
     const result = res.result || {};
@@ -726,10 +778,15 @@ async function redeemItemAtomic(params) {
     return row._id === params.itemId;
   });
   const quantity = Math.max(1, Math.min(20, parseInt(params.quantity, 10) || 1));
+  const paymentMethod = params.paymentMethod || 'points';
   const user = wx.getStorageSync('currentUser') || {};
   if (!item || item.enabled === false) throw new Error('商品不存在或已下架');
   if (item.type !== 'physical' && quantity !== 1) throw new Error('虚拟商品每次只能兑换一件');
-  const totalCost = (parseInt(item.points, 10) || 0) * quantity;
+  const useThemeVoucher = paymentMethod === 'theme_voucher';
+  if (useThemeVoucher && item.virtualType !== 'theme') throw new Error('主题兑换券只能用于兑换主题');
+  if (useThemeVoucher && (parseInt(item.points, 10) || 0) > 1000) throw new Error('这张兑换券仅支持 1000 积分以内的主题');
+  if (useThemeVoucher && (parseInt(user.themeVouchers, 10) || 0) < 1) throw new Error('主题兑换券不足');
+  const totalCost = useThemeVoucher ? 0 : (parseInt(item.points, 10) || 0) * quantity;
   if ((parseInt(user.totalPoints, 10) || 0) < totalCost) throw new Error('积分不足');
   if (item.type === 'physical' && (parseInt(item.stock, 10) || 0) < quantity) throw new Error('库存不足');
 
@@ -741,22 +798,25 @@ async function redeemItemAtomic(params) {
   let nextPoints = (parseInt(user.totalPoints, 10) || 0) - totalCost;
   let nextCards = parseInt(user.makeUpCards, 10) || 0;
   let nextThemes = ownedThemes;
+  let nextThemeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
   if (item.virtualType === 'card') nextCards += (parseInt(item.virtualValue, 10) || 0) * quantity;
   if (item.virtualType === 'points') nextPoints += (parseInt(item.virtualValue, 10) || 0) * quantity;
   if (item.virtualType === 'theme') nextThemes = Array.from(new Set(ownedThemes.concat(item.virtualValue)));
+  if (useThemeVoucher) nextThemeVouchers -= 1;
 
   for (let i = 0; i < quantity; i++) {
     const record = storage.addRedeemRecord({
       itemId: item._id,
       itemName: item.name,
       itemType: item.type,
-      pointsSpent: parseInt(item.points, 10) || 0,
+      pointsSpent: useThemeVoucher ? 0 : (parseInt(item.points, 10) || 0),
       userNickname: user.nickname || '',
       openid: user._openid || '',
       redeemedAt: new Date().toISOString(),
       status: item.type === 'physical' ? 'in_backpack' : 'completed',
       virtualType: item.virtualType || '',
-      themeKey: item.virtualType === 'theme' ? item.virtualValue : ''
+      themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
+      paymentMethod: useThemeVoucher ? 'theme_voucher' : 'points'
     });
     if (item.type === 'physical' || item.virtualType === 'theme') {
       const inventory = storage.addToInventory({
@@ -766,7 +826,7 @@ async function redeemItemAtomic(params) {
         virtualType: item.virtualType || '',
         themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
         image: item.image || '',
-        pointsSpent: parseInt(item.points, 10) || 0,
+        pointsSpent: useThemeVoucher ? 0 : (parseInt(item.points, 10) || 0),
         ownedAt: new Date().toISOString(),
         status: item.type === 'physical' ? 'in_backpack' : 'completed',
         redeemRecordId: record._id
@@ -781,13 +841,15 @@ async function redeemItemAtomic(params) {
   Object.assign(user, {
     totalPoints: nextPoints,
     makeUpCards: nextCards,
-    ownedThemes: nextThemes
+    ownedThemes: nextThemes,
+    themeVouchers: nextThemeVouchers
   });
   wx.setStorageSync('currentUser', user);
   return {
     points: nextPoints,
     makeUpCards: nextCards,
     ownedThemes: nextThemes,
+    themeVouchers: nextThemeVouchers,
     itemType: item.type,
     virtualType: item.virtualType || '',
     themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
@@ -1751,6 +1813,7 @@ module.exports = {
   getReminders, addReminder, updateReminder, deleteReminder,
   // users
   getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
+  getBenefitStatus, claimBenefit,
   searchUsers, adminUpdateUser,
   // feedback
   getFeedback, addFeedback, toggleFeedbackLike, addFeedbackComment, addCommentReply, toggleFeedbackAdopted, deleteFeedback,

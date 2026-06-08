@@ -20,6 +20,14 @@
 
   <block wx:else>
     <view class="desktop-grid">
+      <view class="desktop-app" bindtap="goBenefitCenter">
+        <view class="desktop-icon icon-benefit">
+          <image class="desktop-icon-img" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+          <view wx:if="{{benefitAvailable}}" class="benefit-dot"></view>
+        </view>
+        <text class="desktop-title">福利中心</text>
+      </view>
+
       <view class="desktop-app" bindtap="goExpense">
         <view class="desktop-icon icon-teal">
           <image class="desktop-icon-img" src="/assets/icons/ui/record.png" mode="aspectFit" />

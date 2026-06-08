@@ -12,6 +12,7 @@ Page({
     isAdmin: false,
     showFeedback: false,
     notifyCount: 0,
+    benefitAvailable: false,
     themeClass: initialTheme.themeClass,
     themeKey: initialTheme.themeKey,
     themePrimary: initialTheme.themePrimary,
@@ -28,6 +29,7 @@ Page({
       isAdmin: isAdmin(),
       showFeedback: false,
       notifyCount: 0,
+      benefitAvailable: false,
       themeClass: activeTheme.className,
       themeKey: activeTheme.key,
       themePrimary: activeTheme.primary,
@@ -37,6 +39,7 @@ Page({
     if (loggedIn) {
       this._checkFeedbackEntry();
       this._loadNotifyCount();
+      this._loadBenefitStatus();
     }
   },
 
@@ -58,11 +61,21 @@ Page({
     } catch (e) {}
   },
 
+  async _loadBenefitStatus() {
+    try {
+      const status = await clouddb.getBenefitStatus();
+      this.setData({ benefitAvailable: !!status.canClaim });
+    } catch (e) {
+      this.setData({ benefitAvailable: false });
+    }
+  },
+
   goLogin() { wx.navigateTo({ url: '/pages/login/login' }); },
   goExpense() { wx.navigateTo({ url: '/pages/expense/expense' }); },
   goDataBackup() { wx.navigateTo({ url: '/pages/data-backup/data-backup' }); },
   goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
   goThemeCenter() { wx.navigateTo({ url: '/packages/theme-center/theme-center' }); },
+  goBenefitCenter() { wx.navigateTo({ url: '/packages/benefit-center/benefit-center' }); },
   goFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   goAdminAnnounce() { wx.navigateTo({ url: '/packages/admin-announcement/admin-announcement' }); },
   goAdmin() { wx.navigateTo({ url: '/packages/admin-items/admin-items' }); },

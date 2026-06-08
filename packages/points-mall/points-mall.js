@@ -18,6 +18,7 @@ Page({
     filter: 'all',
     currentUser: null,
     points: 0,
+    themeVouchers: 0,
     ownedThemes: ['default'],
     themeClass: initialTheme.themeClass,
     themeKey: initialTheme.themeKey,
@@ -28,6 +29,8 @@ Page({
     redeemTarget: null,
     redeeming: false,
     redeemRequestId: '',
+    redeemMethod: 'points',
+    voucherEligible: false,
     // 数量选择
     redeemQty: 1,
     redeemMaxQty: 1,
@@ -36,6 +39,12 @@ Page({
     showRecordsModal: false,
     recordsLoading: false,
     redeemRecords: []
+  },
+
+  onLoad(options) {
+    if (options && options.filter) {
+      this.setData({ filter: options.filter });
+    }
   },
 
   async onShow() {
@@ -55,9 +64,24 @@ Page({
   async loadUser() {
     try {
       var user = wx.getStorageSync('currentUser');
+      if (user && user._id) {
+        try {
+          var cloudUser = await clouddb.getUserById(user._id);
+          if (cloudUser) {
+            user = Object.assign({}, user, cloudUser);
+            wx.setStorageSync('currentUser', user);
+          }
+        } catch (e) {}
+      }
       var points = (user && user.totalPoints) || 0;
       var ownedThemes = normalizeOwnedThemes(user && user.ownedThemes);
-      this.setData({ currentUser: user, points: points, ownedThemes: ownedThemes });
+      var themeVouchers = Math.max(0, parseInt(user && user.themeVouchers, 10) || 0);
+      this.setData({
+        currentUser: user,
+        points: points,
+        ownedThemes: ownedThemes,
+        themeVouchers: themeVouchers
+      });
     } catch (e) {}
   },
 
@@ -112,7 +136,10 @@ Page({
       records = (records || []).map(function(record) {
         return Object.assign({}, record, {
           _timeText: formatRedeemTime(record.redeemedAt),
-          _statusText: getRedeemStatusText(record)
+          _statusText: getRedeemStatusText(record),
+          _costText: record.paymentMethod === 'theme_voucher'
+            ? '主题券'
+            : '-' + (record.pointsSpent || 0)
         });
       });
       this.setData({ redeemRecords: records, recordsLoading: false });
@@ -155,18 +182,39 @@ Page({
       maxQty = Math.min(item.stock, Math.floor((this.data.points || 0) / Math.max(1, item.points)));
       if (maxQty < 1) maxQty = 1;
     }
+    var voucherEligible = item.virtualType === 'theme' &&
+      (parseInt(item.points, 10) || 0) <= 1000 &&
+      this.data.themeVouchers > 0;
     this.setData({
       showRedeemModal: true,
       redeemTarget: item,
       redeemRequestId: 'redeem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10),
       redeemQty: 1,
       redeemMaxQty: maxQty,
-      redeemTotalCost: item.points
+      redeemTotalCost: voucherEligible ? 0 : item.points,
+      voucherEligible: voucherEligible,
+      redeemMethod: voucherEligible ? 'theme_voucher' : 'points'
     });
   },
 
   closeRedeem() {
-    this.setData({ showRedeemModal: false, redeemTarget: null, redeemQty: 1, redeemRequestId: '' });
+    this.setData({
+      showRedeemModal: false,
+      redeemTarget: null,
+      redeemQty: 1,
+      redeemRequestId: '',
+      redeemMethod: 'points',
+      voucherEligible: false
+    });
+  },
+
+  selectRedeemMethod(e) {
+    var method = e.currentTarget.dataset.method;
+    if (method === 'theme_voucher' && !this.data.voucherEligible) return;
+    var cost = method === 'theme_voucher'
+      ? 0
+      : ((this.data.redeemTarget && this.data.redeemTarget.points) || 0) * this.data.redeemQty;
+    this.setData({ redeemMethod: method, redeemTotalCost: cost });
   },
 
   // ── 数量调节 ──
@@ -187,13 +235,15 @@ Page({
     this._updateQty(q);
   },
   _updateQty(q) {
-    var cost = (this.data.redeemTarget ? this.data.redeemTarget.points : 0) * q;
+    var cost = this.data.redeemMethod === 'theme_voucher'
+      ? 0
+      : (this.data.redeemTarget ? this.data.redeemTarget.points : 0) * q;
     this.setData({ redeemQty: q, redeemTotalCost: cost });
   },
 
   // ── 确认兑换（支持批量） ──
   async confirmRedeem() {
-    var { redeemTarget, points, redeeming, currentUser, redeemQty } = this.data;
+    var { redeemTarget, points, redeeming, currentUser, redeemQty, redeemMethod } = this.data;
     if (redeeming) return;
     if (!redeemTarget) return;
 
@@ -204,10 +254,10 @@ Page({
       return;
     }
 
-    var totalCost = redeemTarget.points * redeemQty;
+    var totalCost = redeemMethod === 'theme_voucher' ? 0 : redeemTarget.points * redeemQty;
 
     // 检查积分
-    if (points < totalCost) {
+    if (redeemMethod === 'points' && points < totalCost) {
       wx.showToast({ title: '积分不足', icon: 'none' }); return;
     }
 
@@ -228,11 +278,13 @@ Page({
         userId: currentUser && currentUser._id,
         itemId: redeemTarget._id,
         quantity: redeemQty,
-        requestId: requestId
+        requestId: requestId,
+        paymentMethod: redeemMethod
       });
       user.totalPoints = result.points;
       user.makeUpCards = result.makeUpCards;
       user.ownedThemes = normalizeOwnedThemes(result.ownedThemes);
+      user.themeVouchers = Math.max(0, parseInt(result.themeVouchers, 10) || 0);
       wx.setStorageSync('currentUser', user);
 
       var msg = result.virtualType === 'theme'
@@ -246,10 +298,13 @@ Page({
       this.setData({
         points: result.points,
         ownedThemes: normalizeOwnedThemes(user.ownedThemes),
+        themeVouchers: user.themeVouchers,
         currentUser: user,
         showRedeemModal: false,
         redeemTarget: null,
-        redeemRequestId: ''
+        redeemRequestId: '',
+        redeemMethod: 'points',
+        voucherEligible: false
       });
       await this.loadItems();
       if (redeemedThemeKey) {
