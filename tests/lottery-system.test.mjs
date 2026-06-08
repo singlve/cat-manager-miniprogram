@@ -40,6 +40,7 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('stockReserved = stock > 0');
     expect(source).toContain("action === 'reservePhysical'");
     expect(source).toContain("action === 'releasePhysical'");
+    expect(source).toContain("action === 'cancelPhysical'");
     expect(source).not.toContain('noRewardSnapshot');
     expect(activeListBlock).not.toContain('ownedThemes');
     expect(activeListBlock).not.toContain('prize.stock');
@@ -54,6 +55,19 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain("source: 'lottery'");
     expect(source).toContain('stockReserved');
     expect(source).toContain('stock: stock - 1');
+  });
+
+  it('抽奖实物取消需二次确认并折算积分，直接删除不返积分', () => {
+    const inventorySource = read('packages/inventory/inventory.js');
+    const cloudSource = read('cloudfunctions/drawLottery/index.js');
+
+    expect(inventorySource).toContain("title: '取消并兑换积分'");
+    expect(inventorySource).toContain("secondTitle: '再次确认取消'");
+    expect(inventorySource).toContain('cancelLotteryPhysicalInventory');
+    expect(inventorySource).toContain('也不会返还任何积分');
+    expect(cloudSource).toContain("action === 'cancelPhysical'");
+    expect(cloudSource).toContain('compensationPoints += points');
+    expect(cloudSource).toContain('totalPoints: nextPoints');
   });
 
   it('管理员可配置奖品并用友好的概率、颜色和测试转盘完成预览', () => {

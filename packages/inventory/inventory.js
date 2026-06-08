@@ -287,65 +287,80 @@ Page({
 
   // ── 取消全部待确认 ──
   async cancelAll(e) {
-    var self = this;
     var item = e.currentTarget.dataset.item;
     if (!item || item.inBackpackQty < 1) return;
 
-    var res = await new Promise(function(r) {
-      wx.showModal({
-        title: '取消兑换',
-        content: '取消 "' + item.name + '" 全部 ' + item.inBackpackQty + ' 件？\n积分将返还，库存恢复。',
-        confirmColor: '#e74c3c',
-        success: r
-      });
+    var toCancel = item.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
+    var lotteryItems = toCancel.filter(function(i) { return i.source === 'lottery'; });
+    var normalItems = toCancel.filter(function(i) { return i.source !== 'lottery'; });
+    var redeemItems = await clouddb.getRedeemItems();
+    var targetItem = (redeemItems || []).find(function(product) { return product._id === item.itemId; });
+    var lotteryCompensation = lotteryItems.reduce(function(sum, raw) {
+      var points = Math.max(0, parseInt(raw.compensationPoints, 10) || 0);
+      if (!points) points = Math.max(0, parseInt(targetItem && targetItem.points, 10) || 0);
+      return sum + points;
+    }, 0);
+    var normalRefund = normalItems.reduce(function(sum, raw) {
+      return sum + Math.max(0, parseInt(raw.pointsSpent, 10) || item.points || 0);
+    }, 0);
+    var totalPoints = lotteryCompensation + normalRefund;
+
+    var confirmed = await this._confirmDeleteTwice({
+      title: '取消并兑换积分',
+      content: '将取消「' + item.name + '」共 ' + toCancel.length + ' 件，预计获得 ' + totalPoints + ' 积分。',
+      confirmText: '继续',
+      secondTitle: '再次确认取消',
+      secondContent: '确认后商品会从背包移除，已预留库存将释放，并获得 ' + totalPoints + ' 积分。此操作不可恢复。',
+      secondConfirmText: '确认取消'
     });
-    if (!res.confirm) return;
+    if (!confirmed) return;
 
     this.setData({ loading: true });
     try {
-      var toCancel = item.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
-      var totalPoints = toCancel.length * item.points;
-      var lotteryInventoryIds = toCancel.filter(function(i) {
-        return i.source === 'lottery' && i.stockReserved === true;
-      }).map(function(i) { return i._id; });
-      if (lotteryInventoryIds.length) {
-        await clouddb.releaseLotteryPhysicalInventory(lotteryInventoryIds);
+      var currentUser = null;
+      try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (err) {}
+
+      if (lotteryItems.length) {
+        var lotteryResult = await clouddb.cancelLotteryPhysicalInventory(
+          currentUser && currentUser._id,
+          lotteryItems.map(function(raw) { return raw._id; })
+        );
+        lotteryCompensation = lotteryResult.compensationPoints || 0;
+        if (currentUser) {
+          currentUser.totalPoints = lotteryResult.points;
+          try { wx.setStorageSync('currentUser', currentUser); } catch (err) {}
+        }
       }
 
-      // 返还积分
-      if (totalPoints > 0) {
-        var currentUser = null;
-        try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
+      // 普通商城商品沿用原兑换积分返还逻辑。
+      if (normalRefund > 0) {
         if (currentUser && currentUser._id) {
           await clouddb.updateUser(currentUser._id, {
-            totalPoints: (currentUser.totalPoints || 0) + totalPoints
+            totalPoints: (currentUser.totalPoints || 0) + normalRefund
           });
-          currentUser.totalPoints = (currentUser.totalPoints || 0) + totalPoints;
-          try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+          currentUser.totalPoints = (currentUser.totalPoints || 0) + normalRefund;
+          try { wx.setStorageSync('currentUser', currentUser); } catch (err) {}
         }
       }
 
-      // 恢复库存
-      var normalCancelCount = toCancel.filter(function(i) { return i.source !== 'lottery'; }).length;
-      if (item.itemId && normalCancelCount > 0) {
-        var redeemItems = await clouddb.getRedeemItems();
-        var targetItem = (redeemItems || []).find(function(ri) { return ri._id === item.itemId; });
+      if (item.itemId && normalItems.length > 0) {
         if (targetItem) {
           await clouddb.updateRedeemItem(item.itemId, {
-            stock: (targetItem.stock || 0) + normalCancelCount
+            stock: (targetItem.stock || 0) + normalItems.length
           });
         }
       }
 
-      // 删除对应兑换记录 + 删除背包条目
-      for (var j = 0; j < toCancel.length; j++) {
-        if (toCancel[j].redeemRecordId) {
-          await clouddb.deleteRedeemRecord(toCancel[j].redeemRecordId).catch(function(e) { console.error('[inventory] deleteRedeemRecord fail:', e); });
+      for (var j = 0; j < normalItems.length; j++) {
+        if (normalItems[j].redeemRecordId) {
+          await clouddb.deleteRedeemRecord(normalItems[j].redeemRecordId).catch(function(error) {
+            console.error('[inventory] deleteRedeemRecord fail:', error);
+          });
         }
-        await clouddb.deleteInventoryItem(toCancel[j]._id);
+        await clouddb.deleteInventoryItem(normalItems[j]._id);
       }
 
-      wx.showToast({ title: '已取消 ' + toCancel.length + ' 件，积分已返还', icon: 'success' });
+      wx.showToast({ title: '已取消，获得 ' + (lotteryCompensation + normalRefund) + ' 积分', icon: 'success' });
       await this.loadAll();
     } catch (e) {
       console.error('[inventory] cancel fail:', e);
@@ -365,8 +380,10 @@ Page({
     var first = await this._confirmDeleteTwice({
       title: '删除背包商品',
       content: '将从背包删除「' + item.name + '」共 ' + item.rawItems.length + ' 件。此操作只移除背包展示，不会返还积分。',
+      confirmText: '继续',
       secondTitle: '再次确认删除',
-      secondContent: '删除后不可恢复。若待确认商品需要返还积分，请使用“取消”操作。确认继续删除吗？'
+      secondContent: '删除后不可恢复，也不会返还任何积分。若希望把抽奖实物兑换成积分，请返回并使用“取消”。',
+      secondConfirmText: '确认删除'
     });
     if (!first) return;
 
@@ -395,7 +412,7 @@ Page({
       wx.showModal({
         title: options.title || '确认删除',
         content: options.content || '删除后不可恢复',
-        confirmText: '继续',
+        confirmText: options.confirmText || '继续',
         confirmColor: '#F36B6B',
         success: r
       });
@@ -406,7 +423,7 @@ Page({
       wx.showModal({
         title: options.secondTitle || '再次确认',
         content: options.secondContent || '请再次确认是否删除',
-        confirmText: '删除',
+        confirmText: options.secondConfirmText || '删除',
         confirmColor: '#F36B6B',
         success: r
       });

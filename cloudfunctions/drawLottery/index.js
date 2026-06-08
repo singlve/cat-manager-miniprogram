@@ -10,6 +10,7 @@ const PRIZE_COL = 'lottery_prizes';
 const RECORD_COL = 'lottery_records';
 const REQUEST_COL = 'lottery_requests';
 const REDEEM_RECORD_COL = 'redeem_records';
+const REDEEM_ITEM_COL = 'redeem_items';
 const INVENTORY_COL = 'user_inventory';
 
 function buildId(prefix) {
@@ -162,6 +163,88 @@ exports.main = async event => {
     }
   }
 
+  if (action === 'cancelPhysical') {
+    const userId = String(event.userId || '');
+    const inventoryIds = Array.isArray(event.inventoryIds)
+      ? Array.from(new Set(event.inventoryIds.map(String).filter(Boolean))).slice(0, 20)
+      : [];
+    if (!openid) return { code: 'NOT_LOGGED_IN', msg: '无法获取用户身份' };
+    if (!userId || !inventoryIds.length) return { code: 'INVALID_ARGUMENT', msg: '取消参数不完整' };
+    try {
+      const cancelResult = await db.runTransaction(async transaction => {
+        const userRef = transaction.collection(USER_COL).doc(userId);
+        const userResult = await userRef.get();
+        const user = userResult && userResult.data;
+        if (!user || user._openid !== openid) throw businessError('USER_NOT_FOUND', '用户信息不存在或无权操作');
+
+        const releaseByPrize = new Map();
+        const cancelItems = [];
+        let compensationPoints = 0;
+        for (const inventoryId of inventoryIds) {
+          const inventoryRef = transaction.collection(INVENTORY_COL).doc(inventoryId);
+          const inventoryResult = await inventoryRef.get();
+          const inventory = inventoryResult && inventoryResult.data;
+          if (!inventory || inventory._openid !== openid || inventory.source !== 'lottery') {
+            throw businessError('INVALID_INVENTORY', '奖品不存在或无权操作');
+          }
+          if (inventory.status !== 'in_backpack') {
+            throw businessError('INVALID_STATUS', '只有背包中待确认的奖品可以取消');
+          }
+
+          let points = Math.max(0, parseInt(inventory.compensationPoints, 10) || 0);
+          if (!points && inventory.itemId) {
+            try {
+              const redeemItemResult = await transaction.collection(REDEEM_ITEM_COL).doc(inventory.itemId).get();
+              points = Math.max(0, parseInt(redeemItemResult && redeemItemResult.data && redeemItemResult.data.points, 10) || 0);
+            } catch (error) {
+              points = 0;
+            }
+          }
+          compensationPoints += points;
+
+          if (inventory.stockReserved === true && inventory.lotteryPrizeId) {
+            releaseByPrize.set(
+              inventory.lotteryPrizeId,
+              (releaseByPrize.get(inventory.lotteryPrizeId) || 0) + 1
+            );
+          }
+          cancelItems.push({
+            inventoryRef,
+            redeemRecordId: String(inventory.redeemRecordId || '')
+          });
+        }
+
+        for (const [prizeId, quantity] of releaseByPrize.entries()) {
+          const prizeRef = transaction.collection(PRIZE_COL).doc(prizeId);
+          const prizeResult = await prizeRef.get();
+          const prize = prizeResult && prizeResult.data;
+          if (!prize) continue;
+          await prizeRef.update({
+            data: {
+              stock: Math.max(0, parseInt(prize.stock, 10) || 0) + quantity,
+              updatedAt: Date.now()
+            }
+          });
+        }
+
+        for (const item of cancelItems) {
+          if (item.redeemRecordId) {
+            await transaction.collection(REDEEM_RECORD_COL).doc(item.redeemRecordId).remove();
+          }
+          await item.inventoryRef.remove();
+        }
+
+        const nextPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0) + compensationPoints;
+        await userRef.update({ data: { totalPoints: nextPoints } });
+        return { cancelled: cancelItems.length, compensationPoints, points: nextPoints };
+      });
+      return { code: 0, data: cancelResult && cancelResult.result ? cancelResult.result : cancelResult };
+    } catch (error) {
+      console.error('[drawLottery] cancel physical failed:', error);
+      return { code: error.businessCode || 'CANCEL_FAILED', msg: error.message || '取消奖品失败' };
+    }
+  }
+
   const userId = String(event.userId || '');
   const requestId = String(event.requestId || '');
   const requestedMilestone = parseInt(event.milestone, 10) || 0;
@@ -220,6 +303,18 @@ exports.main = async event => {
       } else if (prize.type === 'physical') {
         const stock = Math.max(0, parseInt(prize.stock, 10) || 0);
         stockReserved = stock > 0;
+        let compensationPoints = 0;
+        if (prize.linkedItemId) {
+          try {
+            const redeemItemResult = await transaction.collection(REDEEM_ITEM_COL).doc(prize.linkedItemId).get();
+            compensationPoints = Math.max(
+              0,
+              parseInt(redeemItemResult && redeemItemResult.data && redeemItemResult.data.points, 10) || 0
+            );
+          } catch (error) {
+            compensationPoints = 0;
+          }
+        }
         redeemRecordId = buildId('lottery_rec');
         inventoryId = buildId('lottery_inv');
         await transaction.collection(REDEEM_RECORD_COL).doc(redeemRecordId).set({
@@ -236,6 +331,7 @@ exports.main = async event => {
             source: 'lottery',
             lotteryPrizeId: prize._id,
             stockReserved,
+            compensationPoints,
             inventoryId
           }
         });
@@ -252,6 +348,7 @@ exports.main = async event => {
             source: 'lottery',
             lotteryPrizeId: prize._id,
             stockReserved,
+            compensationPoints,
             redeemRecordId
           }
         });

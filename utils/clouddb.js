@@ -1020,6 +1020,53 @@ async function releaseLotteryPhysicalInventory(inventoryIds) {
   return { released: releasing.length };
 }
 
+async function cancelLotteryPhysicalInventory(userId, inventoryIds) {
+  inventoryIds = Array.from(new Set((inventoryIds || []).filter(Boolean)));
+  if (!inventoryIds.length) return { cancelled: 0, compensationPoints: 0 };
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'drawLottery',
+      data: { action: 'cancelPhysical', userId: userId, inventoryIds: inventoryIds }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) {
+      const error = new Error(result.msg || '取消奖品失败');
+      error.code = result.code;
+      throw error;
+    }
+    return result.data || { cancelled: 0, compensationPoints: 0 };
+  }
+
+  const storage = _storage();
+  const inventory = storage.getUserInventory() || [];
+  const cancelling = inventory.filter(function(item) {
+    return inventoryIds.indexOf(item._id) !== -1
+      && item.source === 'lottery'
+      && item.status === 'in_backpack';
+  });
+  const redeemItems = storage.getRedeemItems() || [];
+  var compensationPoints = 0;
+  const reservedIds = [];
+  cancelling.forEach(function(item) {
+    var points = Math.max(0, parseInt(item.compensationPoints, 10) || 0);
+    if (!points) {
+      var linked = redeemItems.find(function(product) { return product._id === item.itemId; });
+      points = Math.max(0, parseInt(linked && linked.points, 10) || 0);
+    }
+    compensationPoints += points;
+    if (item.stockReserved === true) reservedIds.push(item._id);
+  });
+  if (reservedIds.length) await releaseLotteryPhysicalInventory(reservedIds);
+  cancelling.forEach(function(item) {
+    if (item.redeemRecordId) storage.deleteRedeemRecord(item.redeemRecordId);
+    storage.deleteInventoryItem(item._id);
+  });
+  const user = wx.getStorageSync('currentUser') || {};
+  user.totalPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0) + compensationPoints;
+  wx.setStorageSync('currentUser', user);
+  return { cancelled: cancelling.length, compensationPoints: compensationPoints, points: user.totalPoints };
+}
+
 // ════════════════════════════════════════════════════
 // 兑换记录
 // ════════════════════════════════════════════════════
@@ -1723,7 +1770,7 @@ module.exports = {
   getRedeemItems, ensureThemeRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem, redeemItemAtomic,
   // lottery
   getLotteryPrizes, saveLotteryPrize, toggleLotteryPrize, deleteLotteryPrize, drawLotteryAtomic,
-  reserveLotteryPhysicalInventory, releaseLotteryPhysicalInventory,
+  reserveLotteryPhysicalInventory, releaseLotteryPhysicalInventory, cancelLotteryPhysicalInventory,
   // redeem records
   getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord, deleteRedeemRecordsAdmin,
   // inventory
