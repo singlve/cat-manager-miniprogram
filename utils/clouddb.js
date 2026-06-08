@@ -896,28 +896,32 @@ async function drawLotteryAtomic(params) {
     return true;
   });
   const prize = selectLocalLotteryPrize(prizes);
-  const fallbackReason = prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0
-    ? 'OUT_OF_STOCK'
-    : (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1 ? 'THEME_OWNED' : '');
+  const themeAlreadyOwned = prize.virtualType === 'theme'
+    && ownedThemes.indexOf(prize.virtualValue) !== -1;
   user.totalPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
   user.makeUpCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
   user.ownedThemes = ownedThemes;
-  if (!fallbackReason && prize.virtualType === 'points') user.totalPoints += parseInt(prize.virtualValue, 10) || 0;
-  if (!fallbackReason && prize.virtualType === 'card') user.makeUpCards += parseInt(prize.virtualValue, 10) || 0;
-  if (!fallbackReason && prize.virtualType === 'theme') user.ownedThemes = Array.from(new Set(ownedThemes.concat(prize.virtualValue)));
+  if (prize.virtualType === 'points') user.totalPoints += parseInt(prize.virtualValue, 10) || 0;
+  if (prize.virtualType === 'card') user.makeUpCards += parseInt(prize.virtualValue, 10) || 0;
+  if (prize.virtualType === 'theme') user.ownedThemes = Array.from(new Set(ownedThemes.concat(prize.virtualValue)));
   var inventoryId = '';
-  if (!fallbackReason && prize.type === 'physical') {
+  var stockReserved = false;
+  if (prize.type === 'physical') {
+    var stock = Math.max(0, parseInt(prize.stock, 10) || 0);
+    stockReserved = stock > 0;
     var record = storage.addRedeemRecord({
       itemId: prize.linkedItemId || prize._id, itemName: prize.name, itemType: 'physical',
-      pointsSpent: 0, redeemedAt: new Date().toISOString(), status: 'in_backpack', source: 'lottery'
+      pointsSpent: 0, redeemedAt: new Date().toISOString(), status: 'in_backpack', source: 'lottery',
+      lotteryPrizeId: prize._id, stockReserved: stockReserved
     });
     var inventory = storage.addToInventory({
       itemId: prize.linkedItemId || prize._id, itemName: prize.name, itemType: 'physical',
       image: prize.image || '', pointsSpent: 0, ownedAt: new Date().toISOString(),
-      status: 'in_backpack', source: 'lottery', redeemRecordId: record._id
+      status: 'in_backpack', source: 'lottery', redeemRecordId: record._id,
+      lotteryPrizeId: prize._id, stockReserved: stockReserved
     });
     inventoryId = inventory._id;
-    storage.updateLotteryPrize(prize._id, { stock: Math.max(0, (parseInt(prize.stock, 10) || 0) - 1) });
+    if (stockReserved) storage.updateLotteryPrize(prize._id, { stock: stock - 1 });
   }
   user.drawnMilestones = Array.from(new Set(drawn.concat(milestone))).sort(function(a, b) { return a - b; });
   user.lotteryUsed = user.drawnMilestones.length;
@@ -925,18 +929,95 @@ async function drawLotteryAtomic(params) {
   wx.setStorageSync('currentUser', user);
   const result = {
     prizeId: prize._id,
-    name: fallbackReason ? '谢谢参与' : prize.name,
-    type: fallbackReason ? 'virtual' : prize.type,
-    virtualType: fallbackReason ? 'none' : (prize.virtualType || ''),
-    virtualValue: fallbackReason ? 0 : (prize.virtualValue || 0),
+    name: prize.name,
+    type: prize.type,
+    virtualType: prize.virtualType || '',
+    virtualValue: prize.virtualValue || 0,
     image: prize.image || '', color: prize.color || '#5BA7D8',
     milestone: milestone, points: user.totalPoints, makeUpCards: user.makeUpCards,
     ownedThemes: user.ownedThemes, drawnMilestones: user.drawnMilestones, inventoryId: inventoryId,
-    configuredPrizeName: fallbackReason ? prize.name : '',
-    fallbackReason: fallbackReason
+    stockReserved: stockReserved, themeAlreadyOwned: themeAlreadyOwned
   };
   storage.addLotteryRecord(Object.assign({ drawnAt: new Date().toISOString() }, result));
   return result;
+}
+
+async function reserveLotteryPhysicalInventory(inventoryIds) {
+  inventoryIds = Array.from(new Set((inventoryIds || []).filter(Boolean)));
+  if (!inventoryIds.length) return { reserved: 0 };
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'drawLottery',
+      data: { action: 'reservePhysical', inventoryIds: inventoryIds }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) {
+      const error = new Error(result.msg || '奖品暂时缺货');
+      error.code = result.code;
+      throw error;
+    }
+    return result.data || { reserved: 0 };
+  }
+  const storage = _storage();
+  const inventory = storage.getUserInventory ? (storage.getUserInventory() || []) : [];
+  const pending = inventory.filter(function(item) {
+    return inventoryIds.indexOf(item._id) !== -1
+      && item.source === 'lottery'
+      && item.stockReserved !== true;
+  });
+  const counts = {};
+  pending.forEach(function(item) {
+    counts[item.lotteryPrizeId] = (counts[item.lotteryPrizeId] || 0) + 1;
+  });
+  const prizes = storage.getLotteryPrizes() || [];
+  Object.keys(counts).forEach(function(prizeId) {
+    const prize = prizes.find(function(item) { return item._id === prizeId; });
+    if (!prize || (parseInt(prize.stock, 10) || 0) < counts[prizeId]) {
+      throw new Error('奖品暂时缺货，请等待管理员补充库存');
+    }
+  });
+  Object.keys(counts).forEach(function(prizeId) {
+    const prize = prizes.find(function(item) { return item._id === prizeId; });
+    storage.updateLotteryPrize(prizeId, { stock: (parseInt(prize.stock, 10) || 0) - counts[prizeId] });
+  });
+  pending.forEach(function(item) {
+    storage.updateInventoryItem(item._id, { stockReserved: true, stockReservedAt: new Date().toISOString() });
+  });
+  return { reserved: pending.length };
+}
+
+async function releaseLotteryPhysicalInventory(inventoryIds) {
+  inventoryIds = Array.from(new Set((inventoryIds || []).filter(Boolean)));
+  if (!inventoryIds.length) return { released: 0 };
+  if (isCloudReady()) {
+    const res = await wx.cloud.callFunction({
+      name: 'drawLottery',
+      data: { action: 'releasePhysical', inventoryIds: inventoryIds }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '库存释放失败');
+    return result.data || { released: 0 };
+  }
+  const storage = _storage();
+  const inventory = storage.getUserInventory() || [];
+  const releasing = inventory.filter(function(item) {
+    return inventoryIds.indexOf(item._id) !== -1
+      && item.source === 'lottery'
+      && item.stockReserved === true;
+  });
+  const counts = {};
+  releasing.forEach(function(item) {
+    counts[item.lotteryPrizeId] = (counts[item.lotteryPrizeId] || 0) + 1;
+  });
+  const prizes = storage.getLotteryPrizes() || [];
+  Object.keys(counts).forEach(function(prizeId) {
+    const prize = prizes.find(function(item) { return item._id === prizeId; });
+    if (prize) storage.updateLotteryPrize(prizeId, { stock: (parseInt(prize.stock, 10) || 0) + counts[prizeId] });
+  });
+  releasing.forEach(function(item) {
+    storage.updateInventoryItem(item._id, { stockReserved: false, stockReleasedAt: new Date().toISOString() });
+  });
+  return { released: releasing.length };
 }
 
 // ════════════════════════════════════════════════════
@@ -1642,6 +1723,7 @@ module.exports = {
   getRedeemItems, ensureThemeRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem, redeemItemAtomic,
   // lottery
   getLotteryPrizes, saveLotteryPrize, toggleLotteryPrize, deleteLotteryPrize, drawLotteryAtomic,
+  reserveLotteryPhysicalInventory, releaseLotteryPhysicalInventory,
   // redeem records
   getRedeemRecords, getRedeemRecordsAdmin, addRedeemRecord, updateRedeemRecord, deleteRedeemRecord, deleteRedeemRecordsAdmin,
   // inventory

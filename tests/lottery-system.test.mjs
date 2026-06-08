@@ -28,7 +28,7 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('requestRef.set');
   });
 
-  it('主题重复和实物无库存仍保留原权重，抽中后转为不发奖结果', () => {
+  it('主题重复和实物无库存仍按原权重中奖并保留奖品结果', () => {
     const source = read('cloudfunctions/drawLottery/index.js');
     const listSource = read('cloudfunctions/adminLottery/index.js');
     const activeListBlock = listSource.slice(
@@ -36,10 +36,11 @@ describe('可配置抽奖系统', () => {
       listSource.indexOf('if (!(await isServerAdmin')
     );
 
-    expect(source).toContain("return 'OUT_OF_STOCK'");
-    expect(source).toContain("return 'THEME_OWNED'");
-    expect(source).toContain('fallbackReason ? noRewardSnapshot');
     expect(source).toContain('const pool = (prizeResult.data || []).filter');
+    expect(source).toContain('stockReserved = stock > 0');
+    expect(source).toContain("action === 'reservePhysical'");
+    expect(source).toContain("action === 'releasePhysical'");
+    expect(source).not.toContain('noRewardSnapshot');
     expect(activeListBlock).not.toContain('ownedThemes');
     expect(activeListBlock).not.toContain('prize.stock');
   });
@@ -51,7 +52,8 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain("const REDEEM_RECORD_COL = 'redeem_records'");
     expect(source).toContain("status: 'in_backpack'");
     expect(source).toContain("source: 'lottery'");
-    expect(source).toContain('stock: Math.max(0');
+    expect(source).toContain('stockReserved');
+    expect(source).toContain('stock: stock - 1');
   });
 
   it('管理员可配置奖品并用友好的概率、颜色和测试转盘完成预览', () => {

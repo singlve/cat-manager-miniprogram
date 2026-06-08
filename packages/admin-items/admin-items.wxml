@@ -164,7 +164,7 @@
       <view class="lottery-summary">
         <view>
           <text class="lottery-summary-title">当前奖池</text>
-          <text class="lottery-summary-desc">概率按所有启用奖品固定计算；无库存实物或已拥有主题抽中后转为谢谢参与</text>
+          <text class="lottery-summary-desc">概率按所有启用奖品固定计算；实物缺货仍可中奖并等待补货，重复主题也正常中奖</text>
         </view>
         <text class="lottery-summary-weight">{{lotteryPrizes.length}} 项奖品</text>
       </view>

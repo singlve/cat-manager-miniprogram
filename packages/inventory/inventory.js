@@ -75,6 +75,7 @@ Page({
             shippedQty: 0,
             receivedQty: 0,
             completedQty: 0,
+            waitingStockQty: 0,
             rawItems: [],
             // 各状态下明细
             inBackpackItems: [],
@@ -87,6 +88,9 @@ Page({
         var g = groups[key];
         g.totalQty++;
         g.rawItems.push(item);
+        if (item.source === 'lottery' && item.stockReserved !== true && item.status === 'in_backpack') {
+          g.waitingStockQty++;
+        }
         if (item.status === 'pending') {
           g.pendingQty++;
           g.pendingItems.push(item);
@@ -211,6 +215,13 @@ Page({
       // 拿前 confirmQty 件 in_backpack 的原始条目
       var available = confirmTarget.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
       var toConfirm = available.slice(0, confirmQty);
+      var unreservedLotteryIds = toConfirm.filter(function(item) {
+        return item.source === 'lottery' && item.stockReserved !== true;
+      }).map(function(item) { return item._id; });
+
+      if (unreservedLotteryIds.length) {
+        await clouddb.reserveLotteryPhysicalInventory(unreservedLotteryIds);
+      }
 
       var shippingAddr = addr ? {
         name: addr.name, phone: addr.phone,
@@ -268,7 +279,7 @@ Page({
       await this.loadAll();
     } catch (e) {
       console.error('[inventory] confirm fail:', e);
-      wx.showToast({ title: '操作失败，请重试', icon: 'none' });
+      wx.showToast({ title: e.message || '操作失败，请重试', icon: 'none' });
     } finally {
       this.setData({ saving: false });
     }
@@ -294,6 +305,12 @@ Page({
     try {
       var toCancel = item.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
       var totalPoints = toCancel.length * item.points;
+      var lotteryInventoryIds = toCancel.filter(function(i) {
+        return i.source === 'lottery' && i.stockReserved === true;
+      }).map(function(i) { return i._id; });
+      if (lotteryInventoryIds.length) {
+        await clouddb.releaseLotteryPhysicalInventory(lotteryInventoryIds);
+      }
 
       // 返还积分
       if (totalPoints > 0) {
@@ -309,12 +326,13 @@ Page({
       }
 
       // 恢复库存
-      if (item.itemId) {
+      var normalCancelCount = toCancel.filter(function(i) { return i.source !== 'lottery'; }).length;
+      if (item.itemId && normalCancelCount > 0) {
         var redeemItems = await clouddb.getRedeemItems();
         var targetItem = (redeemItems || []).find(function(ri) { return ri._id === item.itemId; });
         if (targetItem) {
           await clouddb.updateRedeemItem(item.itemId, {
-            stock: (targetItem.stock || 0) + toCancel.length
+            stock: (targetItem.stock || 0) + normalCancelCount
           });
         }
       }
@@ -354,6 +372,12 @@ Page({
 
     this.setData({ loading: true });
     try {
+      var reservedLotteryIds = item.rawItems.filter(function(raw) {
+        return raw.source === 'lottery' && raw.stockReserved === true && raw.status === 'in_backpack';
+      }).map(function(raw) { return raw._id; });
+      if (reservedLotteryIds.length) {
+        await clouddb.releaseLotteryPhysicalInventory(reservedLotteryIds);
+      }
       for (var i = 0; i < item.rawItems.length; i++) {
         await clouddb.deleteInventoryItem(item.rawItems[i]._id);
       }

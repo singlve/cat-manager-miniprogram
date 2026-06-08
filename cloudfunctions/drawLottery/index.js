@@ -63,28 +63,105 @@ function prizeSnapshot(prize) {
   };
 }
 
-function unavailableReason(prize, ownedThemes) {
-  if (prize.type === 'physical' && (parseInt(prize.stock, 10) || 0) <= 0) return 'OUT_OF_STOCK';
-  if (prize.virtualType === 'theme' && ownedThemes.indexOf(prize.virtualValue) !== -1) return 'THEME_OWNED';
-  return '';
-}
-
-function noRewardSnapshot(prize, reason) {
-  return {
-    prizeId: prize._id,
-    name: '谢谢参与',
-    type: 'virtual',
-    virtualType: 'none',
-    virtualValue: 0,
-    image: '',
-    color: prize.color || '#A5AFBC',
-    configuredPrizeName: prize.name,
-    fallbackReason: reason
-  };
-}
-
 exports.main = async event => {
   const openid = cloud.getWXContext().OPENID;
+  const action = String(event.action || 'draw');
+
+  if (action === 'reservePhysical') {
+    const inventoryIds = Array.isArray(event.inventoryIds)
+      ? Array.from(new Set(event.inventoryIds.map(String).filter(Boolean))).slice(0, 20)
+      : [];
+    if (!openid) return { code: 'NOT_LOGGED_IN', msg: '无法获取用户身份' };
+    if (!inventoryIds.length) return { code: 'INVALID_ARGUMENT', msg: '缺少待兑换奖品' };
+    try {
+      const reserveResult = await db.runTransaction(async transaction => {
+        const pendingByPrize = new Map();
+        const pendingItems = [];
+        for (const inventoryId of inventoryIds) {
+          const inventoryRef = transaction.collection(INVENTORY_COL).doc(inventoryId);
+          const inventoryResult = await inventoryRef.get();
+          const inventory = inventoryResult && inventoryResult.data;
+          if (!inventory || inventory._openid !== openid || inventory.source !== 'lottery') {
+            throw businessError('INVALID_INVENTORY', '奖品不存在或无权操作');
+          }
+          if (inventory.status !== 'in_backpack') {
+            throw businessError('INVALID_STATUS', '奖品当前状态不能兑换');
+          }
+          if (inventory.stockReserved === true) continue;
+          const prizeId = String(inventory.lotteryPrizeId || '');
+          if (!prizeId) throw businessError('INVALID_PRIZE', '奖品缺少库存关联信息');
+          pendingByPrize.set(prizeId, (pendingByPrize.get(prizeId) || 0) + 1);
+          pendingItems.push({ inventoryRef, inventory });
+        }
+
+        for (const [prizeId, quantity] of pendingByPrize.entries()) {
+          const prizeRef = transaction.collection(PRIZE_COL).doc(prizeId);
+          const prizeResult = await prizeRef.get();
+          const prize = prizeResult && prizeResult.data;
+          const stock = Math.max(0, parseInt(prize && prize.stock, 10) || 0);
+          if (!prize || stock < quantity) {
+            throw businessError('STOCK_NOT_ENOUGH', '奖品暂时缺货，请等待管理员补充库存');
+          }
+          await prizeRef.update({ data: { stock: stock - quantity, updatedAt: Date.now() } });
+        }
+
+        for (const item of pendingItems) {
+          await item.inventoryRef.update({ data: { stockReserved: true, stockReservedAt: new Date().toISOString() } });
+        }
+        return { reserved: pendingItems.length };
+      });
+      return { code: 0, data: reserveResult && reserveResult.result ? reserveResult.result : reserveResult };
+    } catch (error) {
+      console.error('[drawLottery] reserve physical failed:', error);
+      return { code: error.businessCode || 'RESERVE_FAILED', msg: error.message || '库存预留失败' };
+    }
+  }
+
+  if (action === 'releasePhysical') {
+    const inventoryIds = Array.isArray(event.inventoryIds)
+      ? Array.from(new Set(event.inventoryIds.map(String).filter(Boolean))).slice(0, 20)
+      : [];
+    if (!openid) return { code: 'NOT_LOGGED_IN', msg: '无法获取用户身份' };
+    if (!inventoryIds.length) return { code: 0, data: { released: 0 } };
+    try {
+      const releaseResult = await db.runTransaction(async transaction => {
+        const releaseByPrize = new Map();
+        const releaseItems = [];
+        for (const inventoryId of inventoryIds) {
+          const inventoryRef = transaction.collection(INVENTORY_COL).doc(inventoryId);
+          const inventoryResult = await inventoryRef.get();
+          const inventory = inventoryResult && inventoryResult.data;
+          if (!inventory || inventory._openid !== openid || inventory.source !== 'lottery') continue;
+          if (inventory.status !== 'in_backpack' || inventory.stockReserved !== true) continue;
+          const prizeId = String(inventory.lotteryPrizeId || '');
+          if (!prizeId) continue;
+          releaseByPrize.set(prizeId, (releaseByPrize.get(prizeId) || 0) + 1);
+          releaseItems.push(inventoryRef);
+        }
+        for (const [prizeId, quantity] of releaseByPrize.entries()) {
+          const prizeRef = transaction.collection(PRIZE_COL).doc(prizeId);
+          const prizeResult = await prizeRef.get();
+          const prize = prizeResult && prizeResult.data;
+          if (!prize) continue;
+          await prizeRef.update({
+            data: {
+              stock: Math.max(0, parseInt(prize.stock, 10) || 0) + quantity,
+              updatedAt: Date.now()
+            }
+          });
+        }
+        for (const inventoryRef of releaseItems) {
+          await inventoryRef.update({ data: { stockReserved: false, stockReleasedAt: new Date().toISOString() } });
+        }
+        return { released: releaseItems.length };
+      });
+      return { code: 0, data: releaseResult && releaseResult.result ? releaseResult.result : releaseResult };
+    } catch (error) {
+      console.error('[drawLottery] release physical failed:', error);
+      return { code: error.businessCode || 'RELEASE_FAILED', msg: error.message || '库存释放失败' };
+    }
+  }
+
   const userId = String(event.userId || '');
   const requestId = String(event.requestId || '');
   const requestedMilestone = parseInt(event.milestone, 10) || 0;
@@ -122,23 +199,27 @@ exports.main = async event => {
       const ownedThemes = normalizeThemes(user.ownedThemes);
       const pool = (prizeResult.data || []).filter(prize => (parseInt(prize.weight, 10) || 0) > 0);
       const prize = selectWeighted(pool);
-      const fallbackReason = unavailableReason(prize, ownedThemes);
       const now = new Date().toISOString();
-      const snapshot = fallbackReason ? noRewardSnapshot(prize, fallbackReason) : prizeSnapshot(prize);
+      const snapshot = prizeSnapshot(prize);
 
       let nextPoints = Math.max(0, parseInt(user.totalPoints, 10) || 0);
       let nextCards = Math.max(0, parseInt(user.makeUpCards, 10) || 0);
       let nextThemes = ownedThemes;
       let inventoryId = '';
       let redeemRecordId = '';
+      let stockReserved = false;
+      const themeAlreadyOwned = prize.virtualType === 'theme'
+        && ownedThemes.indexOf(prize.virtualValue) !== -1;
 
-      if (!fallbackReason && prize.virtualType === 'points') {
+      if (prize.virtualType === 'points') {
         nextPoints += Math.max(0, parseInt(prize.virtualValue, 10) || 0);
-      } else if (!fallbackReason && prize.virtualType === 'card') {
+      } else if (prize.virtualType === 'card') {
         nextCards += Math.max(0, parseInt(prize.virtualValue, 10) || 0);
-      } else if (!fallbackReason && prize.virtualType === 'theme') {
+      } else if (prize.virtualType === 'theme') {
         nextThemes = normalizeThemes(ownedThemes.concat(prize.virtualValue));
-      } else if (!fallbackReason && prize.type === 'physical') {
+      } else if (prize.type === 'physical') {
+        const stock = Math.max(0, parseInt(prize.stock, 10) || 0);
+        stockReserved = stock > 0;
         redeemRecordId = buildId('lottery_rec');
         inventoryId = buildId('lottery_inv');
         await transaction.collection(REDEEM_RECORD_COL).doc(redeemRecordId).set({
@@ -153,6 +234,8 @@ exports.main = async event => {
             redeemedAt: now,
             status: 'in_backpack',
             source: 'lottery',
+            lotteryPrizeId: prize._id,
+            stockReserved,
             inventoryId
           }
         });
@@ -167,12 +250,16 @@ exports.main = async event => {
             ownedAt: now,
             status: 'in_backpack',
             source: 'lottery',
+            lotteryPrizeId: prize._id,
+            stockReserved,
             redeemRecordId
           }
         });
-        await transaction.collection(PRIZE_COL).doc(prize._id).update({
-          data: { stock: Math.max(0, (parseInt(prize.stock, 10) || 0) - 1), updatedAt: Date.now() }
-        });
+        if (stockReserved) {
+          await transaction.collection(PRIZE_COL).doc(prize._id).update({
+            data: { stock: stock - 1, updatedAt: Date.now() }
+          });
+        }
       }
 
       const nextDrawn = Array.from(new Set(drawn.concat(milestone))).sort((a, b) => a - b);
@@ -210,7 +297,9 @@ exports.main = async event => {
         makeUpCards: nextCards,
         ownedThemes: nextThemes,
         drawnMilestones: nextDrawn,
-        inventoryId
+        inventoryId,
+        stockReserved,
+        themeAlreadyOwned
       }, snapshot);
 
       await requestRef.set({

@@ -65,6 +65,7 @@
           <!-- 状态标签行（紧凑） -->
           <view class="status-row" wx:if="{{item.inBackpackQty > 0 || item.pendingQty > 0 || item.shippedQty > 0 || item.receivedQty > 0 || item.completedQty > 0}}">
             <text wx:if="{{item.inBackpackQty > 0}}" class="st st-wait">待确认 {{item.inBackpackQty}}</text>
+            <text wx:if="{{item.waitingStockQty > 0}}" class="st st-pend">等待补货 {{item.waitingStockQty}}</text>
             <text wx:if="{{item.pendingQty > 0}}" class="st st-pend">待发货 {{item.pendingQty}}</text>
             <text wx:if="{{item.shippedQty > 0}}" class="st st-ship">已发货 {{item.shippedQty}}</text>
             <text wx:if="{{item.receivedQty > 0}}" class="st st-recv">已签收 {{item.receivedQty}}</text>
@@ -93,7 +94,7 @@
 
       <!-- 待确认操作区 -->
       <view wx:if="{{item.inBackpackItems.length > 0}}" class="action-row">
-        <text class="action-hint">{{item.inBackpackQty}}件待确认，确认后创建发货单</text>
+        <text class="action-hint">{{item.waitingStockQty > 0 ? item.waitingStockQty + '件等待补货，可稍后重试' : item.inBackpackQty + '件待确认，确认后创建发货单'}}</text>
         <view class="action-btns">
           <view class="abtn abtn-main" catchtap="openConfirmModal" data-item="{{item}}">确认兑换</view>
           <view class="abtn abtn-sub" catchtap="cancelAll" data-item="{{item}}">取消</view>
