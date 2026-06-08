@@ -71,6 +71,15 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('runLotteryTest');
   });
 
+  it('首次使用时云函数会自动创建奖池集合并填充默认奖品', () => {
+    const source = read('cloudfunctions/adminLottery/index.js');
+
+    expect(source).toContain('db.createCollection(COLL)');
+    expect(source).toContain('isCollectionMissing');
+    expect(source).toContain('await ensureCollection()');
+    expect(source).toMatch(/if \(action === 'add'\) \{\s+await ensureDefaults\(\)/);
+  });
+
   it('默认奖池保留原有积分、补签卡和谢谢参与', () => {
     const source = read('utils/storage.js');
 

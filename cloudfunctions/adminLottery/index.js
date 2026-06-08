@@ -28,7 +28,34 @@ async function isServerAdmin(openid) {
   return !!(result.data && result.data.length);
 }
 
+function isCollectionMissing(error) {
+  const text = [
+    error && error.errCode,
+    error && error.code,
+    error && error.message,
+    error && error.errMsg
+  ].filter(Boolean).join(' ');
+  return /DATABASE_COLLECTION_NOT_EXIST|COLLECTION_NOT_EXIST|collection not exists|Db or Table not exist|ResourceNotFound/i.test(text);
+}
+
+async function ensureCollection() {
+  try {
+    await db.collection(COLL).limit(1).get();
+  } catch (error) {
+    if (!isCollectionMissing(error)) throw error;
+    try {
+      await db.createCollection(COLL);
+    } catch (createError) {
+      // 两个首次请求可能同时创建集合；若另一请求已创建成功，可继续使用。
+      if (!/already exists|DATABASE_COLLECTION_EXIST|COLLECTION_EXIST/i.test(String(createError && (createError.message || createError.errMsg) || ''))) {
+        throw createError;
+      }
+    }
+  }
+}
+
 async function ensureDefaults() {
+  await ensureCollection();
   const existing = await db.collection(COLL).limit(1).get();
   if (existing.data && existing.data.length) return;
   for (const prize of DEFAULT_PRIZES) {
@@ -106,6 +133,7 @@ exports.main = async event => {
     }
 
     if (action === 'add') {
+      await ensureDefaults();
       const prize = normalizePrize(event.prize || {});
       if (!prize.name) return { code: 'INVALID_NAME', msg: '请输入奖品名称' };
       if (prize.type === 'virtual' && prize.virtualType === 'theme' && !prize.virtualValue) {
@@ -117,6 +145,7 @@ exports.main = async event => {
     }
 
     if (action === 'update') {
+      await ensureCollection();
       if (!event.id) return { code: 'INVALID_ID', msg: '缺少奖品ID' };
       const prize = normalizePrize(event.prize || {});
       if (!prize.name) return { code: 'INVALID_NAME', msg: '请输入奖品名称' };
@@ -125,6 +154,7 @@ exports.main = async event => {
     }
 
     if (action === 'toggle') {
+      await ensureCollection();
       if (!event.id) return { code: 'INVALID_ID', msg: '缺少奖品ID' };
       await db.collection(COLL).doc(event.id).update({
         data: { enabled: !!event.enabled, updatedAt: Date.now() }
@@ -133,6 +163,7 @@ exports.main = async event => {
     }
 
     if (action === 'delete') {
+      await ensureCollection();
       if (!event.id) return { code: 'INVALID_ID', msg: '缺少奖品ID' };
       await db.collection(COLL).doc(event.id).remove();
       return { code: 0 };
