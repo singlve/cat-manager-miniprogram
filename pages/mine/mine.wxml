@@ -286,12 +286,13 @@
       <view class="wheel-container">
         <view class="wheel-pointer"></view>
         <view class="wheel" style="transform: rotate({{wheelAngle}}deg); background: {{wheelBackground}};">
-          <!-- 转盘文字标签（在 wheel 内部，跟随旋转） -->
-          <view class="wheel-labels">
-            <view class="wheel-label" wx:for="{{wheelLabels}}" wx:key="rotate"
-              style="transform: rotate({{item.rotate}}deg) translateY(-170rpx);">
-              {{item.name}}
-            </view>
+          <view
+            class="wheel-label"
+            wx:for="{{wheelLabels}}"
+            wx:key="key"
+            style="left:{{item.x}}%;top:{{item.y}}%;"
+          >
+            <text style="transform:rotate({{wheelCounterAngle}}deg);">{{item.name}}</text>
           </view>
         </view>
         <view class="wheel-center {{spinning || hasSpun ? 'disabled' : ''}}" bindtap="spinWheel">

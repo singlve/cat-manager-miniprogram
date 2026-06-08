@@ -77,6 +77,7 @@ Page({
     showLottery: false,
     spinning: false,
     wheelAngle: 0,
+    wheelCounterAngle: 0,
     lotteryResult: '',
     lotteryResultColor: '',
     lotteryResultHint: '',
@@ -733,14 +734,21 @@ Page({
     var segmentAngle = 360 / prizes.length;
     var gradients = [];
     for (var i = 0; i < prizes.length; i++) {
-      labels.push({ name: prizes[i].name, rotate: i * segmentAngle + segmentAngle / 2 });
+      var rotate = i * segmentAngle + segmentAngle / 2;
+      var radians = rotate * Math.PI / 180;
+      labels.push({
+        key: prizes[i]._id || String(i),
+        name: prizes[i].name,
+        x: (50 + Math.sin(radians) * 31).toFixed(2),
+        y: (50 - Math.cos(radians) * 31).toFixed(2)
+      });
       gradients.push(
         (prizes[i].color || '#5BA7D8') + ' ' + (i * segmentAngle) + 'deg ' + ((i + 1) * segmentAngle) + 'deg'
       );
     }
     this.setData({
       showLottery: true, spinning: false, hasSpun: false,
-      wheelAngle: 0, lotteryResult: '', lotteryResultColor: '',
+      wheelAngle: 0, wheelCounterAngle: 0, lotteryResult: '', lotteryResultColor: '',
       lotteryResultHint: '', lotteryResultType: '',
       lotteryPrizes: prizes,
       wheelLabels: labels,
@@ -780,11 +788,14 @@ Page({
     var segAngle = 360 / prizes.length;
     var targetAngle = 360 * 5 + 360 - (prizeIndex * segAngle + segAngle / 2);
 
-    self.setData({ wheelAngle: targetAngle });
+    self.setData({
+      wheelAngle: targetAngle,
+      wheelCounterAngle: -targetAngle
+    });
 
     setTimeout(function() {
       self._applyLotteryResult(result);
-    }, 4200);
+    }, 5700);
   },
 
   _applyLotteryResult(result) {

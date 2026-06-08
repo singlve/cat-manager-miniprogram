@@ -8,10 +8,17 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 describe('可配置抽奖系统', () => {
   it('前端转盘只展示云端结果，不再自行随机发奖', () => {
     const source = read('pages/mine/mine.js');
+    const template = read('pages/mine/mine.wxml');
+    const styles = read('pages/mine/mine.wxss');
 
     expect(source).toContain('clouddb.getLotteryPrizes()');
     expect(source).toContain('clouddb.drawLotteryAtomic');
     expect(source).toContain('_applyLotteryResult(result)');
+    expect(source).toContain('Math.sin(radians)');
+    expect(source).toContain('wheelCounterAngle: -targetAngle');
+    expect(source).toContain('}, 5700)');
+    expect(template).toContain('left:{{item.x}}%;top:{{item.y}}%;');
+    expect(styles).toContain('transition: transform 5.6s');
     expect(source).not.toContain('Math.floor(Math.random() * prizes.length)');
     expect(source).not.toContain('_awardPrize(prize)');
   });

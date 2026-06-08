@@ -376,75 +376,84 @@ page { background: #f0f2f7; }
 
 /* ─── 抽奖转盘 ─── */
 .wheel-container {
-  position: relative; width: 520rpx; height: 520rpx;
-  margin: 0 auto 24rpx;
+  position: relative;
+  width: 420rpx;
+  height: 420rpx;
+  margin: 28rpx auto 24rpx;
 }
 
 .wheel-pointer {
-  position: absolute; top: -32rpx; left: 50%;
-  transform: translateX(-50%);
-  width: 0; height: 0;
-  border-left: 18rpx solid transparent;
-  border-right: 18rpx solid transparent;
-  border-top: 32rpx solid #e74c3c;
+  position: absolute;
   z-index: 10;
-  filter: drop-shadow(0 2rpx 4rpx rgba(0,0,0,0.2));
+  top: -18rpx;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 22rpx solid transparent;
+  border-right: 22rpx solid transparent;
+  border-top: 54rpx solid var(--theme-primary-deep, #2F8DB8);
 }
 
 .wheel {
-  position: relative;
-  width: 100%; height: 100%;
+  position: absolute;
+  inset: 0;
+  border: 14rpx solid rgba(255,255,255,.85);
   border-radius: 50%;
   overflow: hidden;
-  background: conic-gradient(
-    #FF6B6B 0deg 60deg,
-    #4ECDC4 60deg 120deg,
-    #FFE66D 120deg 180deg,
-    #A8E6CF 180deg 240deg,
-    #FF8B94 240deg 300deg,
-    #B8A9C9 300deg 360deg
-  );
-  box-shadow: 0 4rpx 24rpx rgba(0,0,0,0.12), inset 0 0 0 12rpx #fff;
-  transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+  box-shadow: 0 18rpx 42rpx rgba(55,78,110,.18);
+  transition: transform 5.6s cubic-bezier(.12,.67,.18,1);
 }
 
 .wheel-center {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 120rpx; height: 120rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--theme-action-start, #2F8DB8), var(--theme-action-end, #3F9486));
-  color: #fff;
-  font-size: 28rpx; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4rpx 16rpx rgba(74,144,217,0.4);
+  position: absolute;
   z-index: 5;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 112rpx;
+  height: 112rpx;
+  border: 10rpx solid rgba(255,255,255,.92);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  background: var(--theme-primary-deep, #2F8DB8);
+  font-size: 25rpx;
+  font-weight: 900;
 }
 .wheel-center.disabled {
-  background: #ccc;
-  box-shadow: none;
+  opacity: .75;
   pointer-events: none;
 }
 
-/* 转盘文字标签（在 wheel 内部，跟随旋转） */
-.wheel-labels {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none;
-}
 .wheel-label {
   position: absolute;
-  top: 50%; left: 50%;
-  transform-origin: 0 0;
-  font-size: 20rpx;
-  font-weight: 600;
-  color: #fff;
-  text-shadow: 0 1rpx 3rpx rgba(0,0,0,0.4);
-  white-space: nowrap;
-  writing-mode: vertical-lr;
-  text-orientation: upright;
-  letter-spacing: 2rpx;
+  z-index: 2;
+  width: 116rpx;
+  min-height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.wheel-label text {
+  display: -webkit-box;
+  width: 116rpx;
+  overflow: hidden;
+  color: #FFFFFF;
+  font-size: 18rpx;
+  font-weight: 900;
+  line-height: 1.18;
+  text-align: center;
+  text-shadow: 0 2rpx 5rpx rgba(0,0,0,.18);
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  transform-origin: center;
+  transition: transform 5.6s cubic-bezier(.12,.67,.18,1);
 }
 
 .lottery-result {
