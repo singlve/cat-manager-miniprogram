@@ -266,19 +266,30 @@
 }
 .admin-wheel-label {
   position: absolute;
-  inset: 22rpx;
+  z-index: 2;
+  width: 116rpx;
+  min-height: 48rpx;
   display: flex;
+  align-items: center;
   justify-content: center;
-  transform-origin: center;
+  transform: translate(-50%, -50%);
   pointer-events: none;
 }
 .admin-wheel-label text {
-  width: 112rpx;
+  display: -webkit-box;
+  width: 116rpx;
+  overflow: hidden;
   color: #FFFFFF;
-  font-size: 20rpx;
+  font-size: 18rpx;
   font-weight: 900;
+  line-height: 1.18;
   text-align: center;
   text-shadow: 0 2rpx 5rpx rgba(0,0,0,.18);
+  word-break: break-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  transform-origin: center;
+  transition: transform 2.5s cubic-bezier(.12,.67,.18,1);
 }
 .admin-wheel-center {
   position: absolute;

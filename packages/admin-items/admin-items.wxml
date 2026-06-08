@@ -387,10 +387,10 @@
             <view
               class="admin-wheel-label"
               wx:for="{{testWheelLabels}}"
-              wx:key="rotate"
-              style="transform:rotate({{item.rotate}}deg);"
+              wx:key="key"
+              style="left:{{item.x}}%;top:{{item.y}}%;"
             >
-              <text style="transform:rotate({{item.counterRotate}}deg);">{{item.name}}</text>
+              <text style="transform:rotate({{testWheelCounterAngle}}deg);">{{item.name}}</text>
             </view>
           </view>
           <view class="admin-wheel-center {{testSpinning ? 'disabled' : ''}}" bindtap="runLotteryTest">

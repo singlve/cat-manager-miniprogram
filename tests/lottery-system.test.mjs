@@ -69,6 +69,8 @@ describe('可配置抽奖系统', () => {
     expect(source).toContain('deleteLotteryPrize');
     expect(source).toContain('updateLotteryProbability');
     expect(source).toContain('runLotteryTest');
+    expect(source).toContain('Math.sin(radians)');
+    expect(template).toContain('left:{{item.x}}%;top:{{item.y}}%;');
   });
 
   it('首次使用时云函数会自动创建奖池集合并填充默认奖品', () => {

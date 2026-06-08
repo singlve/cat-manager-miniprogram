@@ -48,6 +48,7 @@ Page({
     testWheelLabels: [],
     testWheelBackground: '',
     testWheelAngle: 0,
+    testWheelCounterAngle: 0,
     testSpinning: false,
     testLotteryResult: '',
     testLotteryResultColor: '#5BA7D8',
@@ -478,7 +479,13 @@ Page({
     var gradients = [];
     prizes.forEach(function(item, index) {
       var rotate = index * segmentAngle + segmentAngle / 2;
-      labels.push({ name: item.name, rotate: rotate, counterRotate: -rotate });
+      var radians = rotate * Math.PI / 180;
+      labels.push({
+        key: item._id || String(index),
+        name: item.name,
+        x: (50 + Math.sin(radians) * 31).toFixed(2),
+        y: (50 - Math.cos(radians) * 31).toFixed(2)
+      });
       gradients.push(
         (item.color || '#5BA7D8') + ' ' + (index * segmentAngle) + 'deg '
         + ((index + 1) * segmentAngle) + 'deg'
@@ -490,6 +497,7 @@ Page({
       testWheelLabels: labels,
       testWheelBackground: 'conic-gradient(' + gradients.join(',') + ')',
       testWheelAngle: 0,
+      testWheelCounterAngle: 0,
       testSpinning: false,
       testLotteryResult: ''
     });
@@ -516,12 +524,17 @@ Page({
       }
     }
     var segmentAngle = 360 / prizes.length;
-    var targetAngle = 360 * 5 + 360 - (prizeIndex * segmentAngle + segmentAngle / 2);
+    var currentAngle = Number(this.data.testWheelAngle) || 0;
+    var currentNormalized = ((currentAngle % 360) + 360) % 360;
+    var desiredNormalized = (360 - (prizeIndex * segmentAngle + segmentAngle / 2)) % 360;
+    var alignDelta = (desiredNormalized - currentNormalized + 360) % 360;
+    var targetAngle = currentAngle + 360 * 5 + alignDelta;
     var prize = prizes[prizeIndex];
     this.setData({
       testSpinning: true,
       testLotteryResult: '',
-      testWheelAngle: targetAngle
+      testWheelAngle: targetAngle,
+      testWheelCounterAngle: -targetAngle
     });
     setTimeout(() => {
       this.setData({
