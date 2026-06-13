@@ -1,5 +1,6 @@
 const cloud = require('wx-server-sdk');
 const cloudbase = require('@cloudbase/node-sdk');
+const { normalizeClaimDocument, enrichClaims } = require('./claim-utils');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -94,10 +95,21 @@ function isDocumentMissing(error) {
   return /DATABASE_DOCUMENT_NOT_EXIST|DOCUMENT_NOT_EXIST|document not exists|document does not exist|doc not exist|not found/i.test(text);
 }
 
+async function repairNestedClaim(document) {
+  if (!document || !document._id || !document.data || typeof document.data !== 'object') return;
+  const normalized = normalizeClaimDocument(document);
+  const { _id, ...data } = normalized;
+  await cloudDb.collection(CLAIM_COL).doc(_id).set({ data });
+}
+
 async function getClaim(campaignId, userId) {
   try {
     const result = await cloudDb.collection(CLAIM_COL).doc(claimId(campaignId, userId)).get();
-    return result && result.data ? result.data : null;
+    const document = result && result.data;
+    if (!document) return null;
+    const claim = normalizeClaimDocument(document);
+    await repairNestedClaim(document);
+    return claim;
   } catch (error) {
     if (isDocumentMissing(error)) return null;
     throw error;
@@ -237,23 +249,41 @@ function normalizeCampaign(input) {
 }
 
 async function listForUser(user, knownClaim) {
-  const [campaignResult, claimResult] = await Promise.all([
+  const [campaignResult, claimResult, nestedClaimResult] = await Promise.all([
     cloudDb.collection(CAMPAIGN_COL).orderBy('sort', 'asc').limit(100).get(),
-    cloudDb.collection(CLAIM_COL).where({ userId: user._id }).limit(100).get()
+    cloudDb.collection(CLAIM_COL).where({ userId: user._id }).limit(100).get(),
+    cloudDb.collection(CLAIM_COL).where({ 'data.userId': user._id }).limit(100).get()
+      .catch(() => ({ data: [] }))
   ]);
-  const claims = (claimResult.data || []).sort((left, right) =>
+  const rawClaims = (claimResult.data || []).concat(nestedClaimResult.data || []);
+  const claimDocuments = [];
+  const seenClaimIds = {};
+  rawClaims.forEach(document => {
+    const id = document && document._id;
+    if (id && seenClaimIds[id]) return;
+    if (id) seenClaimIds[id] = true;
+    claimDocuments.push(document);
+  });
+  const claims = claimDocuments.map(normalizeClaimDocument).filter(Boolean).sort((left, right) =>
     String(right.claimedAt || '').localeCompare(String(left.claimedAt || ''))
   );
-  if (knownClaim && !claims.some(item => item.campaignId === knownClaim.campaignId)) {
-    claims.unshift(knownClaim);
+  const normalizedKnownClaim = normalizeClaimDocument(knownClaim);
+  if (normalizedKnownClaim &&
+      !claims.some(item => item.campaignId === normalizedKnownClaim.campaignId)) {
+    claims.unshift(normalizedKnownClaim);
   }
+  const campaignsRaw = campaignResult.data || [];
+  const campaignMap = {};
+  campaignsRaw.forEach(item => { campaignMap[item._id] = item; });
+  const enrichedClaims = enrichClaims(claims, campaignMap);
+  await Promise.all(claimDocuments.map(repairNestedClaim));
   const claimMap = {};
-  claims.forEach(item => { claimMap[item.campaignId] = item; });
-  const campaigns = (campaignResult.data || [])
+  enrichedClaims.forEach(item => { claimMap[item.campaignId] = item; });
+  const campaigns = campaignsRaw
     .map(item => publicCampaign(item, user, claimMap[item._id]))
     .filter(item => item.state !== 'disabled' && item.state !== 'ineligible');
   const themeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
-  const activeVoucherClaims = claims.filter(item => item.rewardType === 'theme_voucher' &&
+  const activeVoucherClaims = enrichedClaims.filter(item => item.rewardType === 'theme_voucher' &&
     (item.status === 'unused' || item.status === 'partially_used'));
   const trackedVoucherCount = activeVoucherClaims
     .reduce((total, item) => total + Math.max(
@@ -267,7 +297,7 @@ async function listForUser(user, knownClaim) {
   }
   return {
     campaigns,
-    claims,
+    claims: enrichedClaims,
     themeVouchers,
     voucherMaxPoints: themeVouchers > 0 ? voucherMaxPoints : 0,
     pendingClaims: campaigns.filter(item => item.canClaim).length,
@@ -367,8 +397,21 @@ exports.main = async event => {
         return { code: 0, data: result.data || [] };
       }
       if (action === 'adminClaims') {
-        const result = await cloudDb.collection(CLAIM_COL).orderBy('claimedAt', 'desc').limit(200).get();
-        return { code: 0, data: result.data || [] };
+        const [claimResult, campaignResult] = await Promise.all([
+          cloudDb.collection(CLAIM_COL).limit(200).get(),
+          cloudDb.collection(CAMPAIGN_COL).limit(100).get()
+        ]);
+        const documents = claimResult.data || [];
+        const campaignMap = {};
+        (campaignResult.data || []).forEach(item => { campaignMap[item._id] = item; });
+        const claims = enrichClaims(
+          documents.map(normalizeClaimDocument).filter(Boolean),
+          campaignMap
+        ).sort((left, right) =>
+          String(right.claimedAt || '').localeCompare(String(left.claimedAt || ''))
+        );
+        await Promise.all(documents.map(repairNestedClaim));
+        return { code: 0, data: claims };
       }
       if (action === 'adminSave') {
         const campaign = normalizeCampaign(event.campaign || {});
@@ -478,7 +521,7 @@ exports.main = async event => {
             usedAt: '',
             usedThemeKey: ''
           };
-          await claimRef.set({ data: claim });
+          await claimRef.set(claim);
           return { alreadyClaimed: false, claim, updates: granted.updates };
         }, 3);
       } catch (error) {

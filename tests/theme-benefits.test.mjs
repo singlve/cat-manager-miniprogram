@@ -1,9 +1,14 @@
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const root = resolve(import.meta.dirname, '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
+const require = createRequire(import.meta.url);
+const { normalizeClaimDocument, enrichClaims } = require(
+  resolve(root, 'cloudfunctions/benefitCenter/claim-utils.js')
+);
 
 describe('configurable benefit center', () => {
   it('seeds the launch benefit and claims every campaign once in a transaction', () => {
@@ -18,12 +23,49 @@ describe('configurable benefit center', () => {
     expect(source).toContain('const existingClaim = await getClaim(campaignId, currentUser._id)');
     expect(source).toContain('const recoveredClaim = await getClaim(campaignId, currentUser._id)');
     expect(source).toContain('if (!isDocumentMissing(error)) throw error');
+    expect(source).toContain('normalizeClaimDocument');
+    expect(source).toContain("where({ 'data.userId': user._id })");
+    expect(source).toContain('await repairNestedClaim(document)');
+    expect(source).toContain('await claimRef.set(claim)');
+    expect(source).not.toContain('await claimRef.set({ data: claim })');
     expect(source).toContain("const CAMPAIGN_COL = 'benefit_campaigns'");
     expect(source).toContain("const CLAIM_COL = 'benefit_claims'");
     expect(source).toContain('claimId(campaignId, currentUser._id)');
     expect(source).toContain('await ensureLegacyClaim(currentUser)');
     expect(source).toContain('themeVouchers');
     expect(source).toContain('maxThemePoints: 1000');
+  });
+
+  it('recovers nested legacy claims and fills their display fields', () => {
+    const nested = {
+      _id: 'benefit_new_user_u1',
+      data: {
+        campaignId: 'new_user',
+        userId: 'u1',
+        status: 'fulfilled',
+        claimedAt: '2026-06-13T10:00:00.000Z'
+      }
+    };
+    const normalized = normalizeClaimDocument(nested);
+    const [enriched] = enrichClaims([normalized], {
+      new_user: {
+        title: '新户礼',
+        rewardType: 'points',
+        rewardAmount: 100
+      }
+    });
+
+    expect(normalized).toMatchObject({
+      _id: 'benefit_new_user_u1',
+      campaignId: 'new_user',
+      userId: 'u1',
+      status: 'fulfilled'
+    });
+    expect(enriched).toMatchObject({
+      campaignTitle: '新户礼',
+      rewardType: 'points',
+      rewardAmount: 100
+    });
   });
 
   it('supports configurable rewards and protected admin operations', () => {
