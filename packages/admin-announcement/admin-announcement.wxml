@@ -1,5 +1,5 @@
 <view class="page {{themeClass}}">
-  <view wx:if="{{!isAdmin}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">无权访问</text></view>
+  <view wx:if="{{!isAdmin}}" class="empty-state"><image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" /><text class="empty-text">无权访问</text></view>
 
   <block wx:else>
     <view class="service-feature-hero-shell">
@@ -45,7 +45,7 @@
       <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
     </view>
     <view wx:else class="list">
-      <view wx:if="{{list.length === 0}}" class="empty-state"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text class="empty-text">暂无公告</text></view>
+      <view wx:if="{{list.length === 0}}" class="empty-state"><image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" /><text class="empty-text">暂无公告</text></view>
       <view class="card" wx:for="{{list}}" wx:key="_id">
         <view class="card-top">
           <view class="status-chip {{item.isActive ? 'active' : ''}}">

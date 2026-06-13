@@ -1,6 +1,17 @@
 const cloud = require('wx-server-sdk');
 const cloudbase = require('@cloudbase/node-sdk');
-const { normalizeClaimDocument, enrichClaims } = require('./claim-utils');
+const {
+  normalizeClaimDocument,
+  enrichClaims,
+  getOutstandingThemeVouchers
+} = require('./claim-utils');
+const {
+  parseTime,
+  campaignState,
+  campaignAdminState,
+  isAudienceEligible
+} = require('./eligibility-utils');
+const { isCollectionMissing, isDocumentMissing } = require('./error-utils');
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -24,6 +35,8 @@ const DEFAULT_CAMPAIGN = {
   rewardAmount: 1,
   maxThemePoints: 1000,
   audience: 'all',
+  totalQuota: 0,
+  claimedCount: 0,
   enabled: true,
   sort: 10,
   startAt: '',
@@ -75,26 +88,6 @@ function claimId(campaignId, userId) {
   return 'benefit_' + campaignId + '_' + userId;
 }
 
-function isCollectionMissing(error) {
-  const text = [
-    error && error.errCode,
-    error && error.code,
-    error && error.message,
-    error && error.errMsg
-  ].filter(Boolean).join(' ');
-  return /DATABASE_COLLECTION_NOT_EXIST|COLLECTION_NOT_EXIST|collection not exists|Db or Table not exist|ResourceNotFound/i.test(text);
-}
-
-function isDocumentMissing(error) {
-  const text = [
-    error && error.errCode,
-    error && error.code,
-    error && error.message,
-    error && error.errMsg
-  ].filter(Boolean).join(' ');
-  return /DATABASE_DOCUMENT_NOT_EXIST|DOCUMENT_NOT_EXIST|document not exists|document does not exist|doc not exist|not found/i.test(text);
-}
-
 async function repairNestedClaim(document) {
   if (!document || !document._id || !document.data || typeof document.data !== 'object') return;
   const normalized = normalizeClaimDocument(document);
@@ -144,6 +137,22 @@ async function ensureData() {
   await cloudDb.collection(CAMPAIGN_COL).doc(_id).set({ data });
 }
 
+async function queryAll(collectionName, query) {
+  const pageSize = 100;
+  const result = [];
+  let skip = 0;
+  while (true) {
+    let request = cloudDb.collection(collectionName);
+    if (query) request = request.where(query);
+    const page = await request.skip(skip).limit(pageSize).get();
+    const rows = page.data || [];
+    result.push(...rows);
+    if (rows.length < pageSize) break;
+    skip += rows.length;
+  }
+  return result;
+}
+
 async function isServerAdmin(openid) {
   if (!openid) return false;
   const configured = String(process.env.ADMIN_OPENIDS || '')
@@ -191,26 +200,6 @@ function normalizeThemes(value) {
   return Array.from(new Set(themes.filter(Boolean)));
 }
 
-function parseTime(value) {
-  if (!value) return 0;
-  const timestamp = new Date(value).getTime();
-  return Number.isNaN(timestamp) ? 0 : timestamp;
-}
-
-function campaignState(campaign, user, claim, now) {
-  const start = parseTime(campaign.startAt);
-  const end = parseTime(campaign.endAt);
-  const created = parseTime(user && (user.createdAt || user._createTime));
-  const newUserSince = parseTime(campaign.newUserSince);
-  let state = 'available';
-  if (campaign.enabled === false) state = 'disabled';
-  else if (start && now < start) state = 'upcoming';
-  else if (end && now > end) state = 'expired';
-  else if (campaign.audience === 'new' && newUserSince && (!created || created < newUserSince)) state = 'ineligible';
-  else if (claim) state = claim.status === 'used' ? 'used' : 'claimed';
-  return state;
-}
-
 function publicCampaign(campaign, user, claim) {
   const state = campaignState(campaign, user, claim, Date.now());
   return Object.assign({}, campaign, {
@@ -228,6 +217,8 @@ function normalizeCampaign(input) {
   const amountLimit = rewardType === 'points'
     ? 1000000
     : (rewardType === 'physical' ? 20 : 100);
+  const now = new Date().toISOString();
+  const audience = input.audience === 'new' ? 'new' : 'all';
   return {
     title: String(input.title || '').trim(),
     desc: String(input.desc || '').trim(),
@@ -238,14 +229,60 @@ function normalizeCampaign(input) {
       : 0,
     themeKey: rewardType === 'theme' ? String(input.themeKey || '') : '',
     linkedItemId: rewardType === 'physical' ? String(input.linkedItemId || '') : '',
-    audience: input.audience === 'new' ? 'new' : 'all',
-    newUserSince: input.audience === 'new' ? String(input.newUserSince || '') : '',
-    startAt: String(input.startAt || ''),
+    audience,
+    totalQuota: Math.max(0, parseInt(input.totalQuota, 10) || 0),
+    newUserSince: audience === 'new' ? String(input.newUserSince || now) : '',
+    startAt: String(input.startAt || now),
     endAt: String(input.endAt || ''),
     enabled: input.enabled !== false,
     sort: parseInt(input.sort, 10) || 0,
-    updatedAt: new Date().toISOString()
+    updatedAt: now
   };
+}
+
+function uniqueClaims(documents) {
+  const seen = {};
+  return (documents || []).map(normalizeClaimDocument).filter(item => {
+    if (!item) return false;
+    const key = item.campaignId && item.userId
+      ? item.campaignId + ':' + item.userId
+      : item._id;
+    if (!key) return false;
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
+async function getAdminOverview() {
+  const [campaignResult, users, claimDocuments] = await Promise.all([
+    cloudDb.collection(CAMPAIGN_COL).orderBy('sort', 'asc').limit(100).get(),
+    queryAll(USER_COL),
+    queryAll(CLAIM_COL)
+  ]);
+  const claims = uniqueClaims(claimDocuments);
+  const claimCounts = {};
+  claims.forEach(item => {
+    claimCounts[item.campaignId] = (claimCounts[item.campaignId] || 0) + 1;
+  });
+  const now = Date.now();
+  return (campaignResult.data || []).map(item => {
+    const claimedCount = claimCounts[item._id] || 0;
+    const totalQuota = Math.max(0, parseInt(item.totalQuota, 10) || 0);
+    const eligibleUsers = users.filter(user => isAudienceEligible(item, user)).length;
+    const state = campaignAdminState(Object.assign({}, item, { claimedCount }), now);
+    return Object.assign({}, item, {
+      claimedCount,
+      eligibleUsers,
+      state,
+      remainingQuota: totalQuota > 0 ? Math.max(0, totalQuota - claimedCount) : -1
+    });
+  });
+}
+
+async function previewAudience(campaign) {
+  const users = await queryAll(USER_COL);
+  return users.filter(user => isAudienceEligible(campaign, user)).length;
 }
 
 async function listForUser(user, knownClaim) {
@@ -282,14 +319,17 @@ async function listForUser(user, knownClaim) {
   const campaigns = campaignsRaw
     .map(item => publicCampaign(item, user, claimMap[item._id]))
     .filter(item => item.state !== 'disabled' && item.state !== 'ineligible');
-  const themeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
+  let themeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
   const activeVoucherClaims = enrichedClaims.filter(item => item.rewardType === 'theme_voucher' &&
     (item.status === 'unused' || item.status === 'partially_used'));
-  const trackedVoucherCount = activeVoucherClaims
-    .reduce((total, item) => total + Math.max(
-      0,
-      (parseInt(item.rewardAmount, 10) || 1) - (parseInt(item.usedAmount, 10) || 0)
-    ), 0);
+  const trackedVoucherCount = getOutstandingThemeVouchers(activeVoucherClaims);
+  if (themeVouchers < trackedVoucherCount) {
+    themeVouchers = trackedVoucherCount;
+    user.themeVouchers = themeVouchers;
+    await cloudDb.collection(USER_COL).doc(user._id).update({
+      data: { themeVouchers }
+    });
+  }
   let voucherMaxPoints = activeVoucherClaims
     .reduce((max, item) => Math.max(max, parseInt(item.maxThemePoints, 10) || 1000), 0);
   if (themeVouchers > trackedVoucherCount) {
@@ -298,7 +338,11 @@ async function listForUser(user, knownClaim) {
   return {
     campaigns,
     claims: enrichedClaims,
+    totalPoints: Math.max(0, parseInt(user.totalPoints, 10) || 0),
+    makeUpCards: Math.max(0, parseInt(user.makeUpCards, 10) || 0),
     themeVouchers,
+    bonusLotteryDraws: Math.max(0, parseInt(user.bonusLotteryDraws, 10) || 0),
+    ownedThemes: normalizeThemes(user.ownedThemes),
     voucherMaxPoints: themeVouchers > 0 ? voucherMaxPoints : 0,
     pendingClaims: campaigns.filter(item => item.canClaim).length,
     pendingUses: themeVouchers
@@ -339,43 +383,39 @@ async function grantReward(transaction, campaign, user, openid, now) {
       if (!inventoryId) inventoryId = currentInventoryId;
       inventoryIds.push(currentInventoryId);
       await transaction.collection(REDEEM_RECORD_COL).doc(recordId).set({
-        data: {
-          _openid: openid,
-          itemId: item._id,
-          itemName: item.name,
-          itemType: 'physical',
-          pointsSpent: 0,
-          userNickname: user.nickname || '',
-          openid,
-          redeemedAt: now,
-          status: 'in_backpack',
-          source: 'benefit',
-          benefitCampaignId: campaign._id,
-          inventoryId: currentInventoryId
-        }
+        _openid: openid,
+        itemId: item._id,
+        itemName: item.name,
+        itemType: 'physical',
+        pointsSpent: 0,
+        userNickname: user.nickname || '',
+        openid,
+        redeemedAt: now,
+        status: 'in_backpack',
+        source: 'benefit',
+        benefitCampaignId: campaign._id,
+        inventoryId: currentInventoryId
       });
       await transaction.collection(INVENTORY_COL).doc(currentInventoryId).set({
-        data: {
-          _openid: openid,
-          itemId: item._id,
-          itemName: item.name,
-          itemType: 'physical',
-          image: item.image || '',
-          pointsSpent: 0,
-          ownedAt: now,
-          status: 'in_backpack',
-          source: 'benefit',
-          benefitCampaignId: campaign._id,
-          redeemRecordId: recordId
-        }
+        _openid: openid,
+        itemId: item._id,
+        itemName: item.name,
+        itemType: 'physical',
+        image: item.image || '',
+        pointsSpent: 0,
+        ownedAt: now,
+        status: 'in_backpack',
+        source: 'benefit',
+        benefitCampaignId: campaign._id,
+        redeemRecordId: recordId
       });
     }
     await transaction.collection(ITEM_COL).doc(item._id).update({
-      data: { stock: stock - amount }
+      stock: stock - amount
     });
   }
 
-  if (Object.keys(updates).length) await userRef.update({ data: updates });
+  if (Object.keys(updates).length) await userRef.update(updates);
   return { updates, claimStatus, inventoryId, inventoryIds };
 }
 
@@ -387,25 +427,30 @@ exports.main = async event => {
   try {
     await ensureData();
 
-    const adminActions = ['adminList', 'adminSave', 'adminToggle', 'adminDelete', 'adminClaims'];
+    const adminActions = [
+      'adminList', 'adminPreview', 'adminSave', 'adminToggle', 'adminDelete', 'adminClaims'
+    ];
     if (adminActions.indexOf(action) !== -1) {
       if (!(await isServerAdmin(openid))) {
         return { code: 'FORBIDDEN', msg: '无管理员权限' };
       }
       if (action === 'adminList') {
-        const result = await cloudDb.collection(CAMPAIGN_COL).orderBy('sort', 'asc').limit(100).get();
-        return { code: 0, data: result.data || [] };
+        return { code: 0, data: await getAdminOverview() };
+      }
+      if (action === 'adminPreview') {
+        const campaign = normalizeCampaign(event.campaign || {});
+        return { code: 0, data: { eligibleUsers: await previewAudience(campaign) } };
       }
       if (action === 'adminClaims') {
-        const [claimResult, campaignResult] = await Promise.all([
-          cloudDb.collection(CLAIM_COL).limit(200).get(),
+        const [claimDocuments, campaignResult] = await Promise.all([
+          queryAll(CLAIM_COL),
           cloudDb.collection(CAMPAIGN_COL).limit(100).get()
         ]);
-        const documents = claimResult.data || [];
+        const documents = claimDocuments || [];
         const campaignMap = {};
         (campaignResult.data || []).forEach(item => { campaignMap[item._id] = item; });
         const claims = enrichClaims(
-          documents.map(normalizeClaimDocument).filter(Boolean),
+          uniqueClaims(documents),
           campaignMap
         ).sort((left, right) =>
           String(right.claimedAt || '').localeCompare(String(left.claimedAt || ''))
@@ -422,9 +467,27 @@ exports.main = async event => {
         if (campaign.rewardType === 'physical' && !campaign.linkedItemId) {
           return { code: 'INVALID_ITEM', msg: '请选择实物商品' };
         }
+        if (campaign.audience === 'new' && !parseTime(campaign.newUserSince)) {
+          return { code: 'INVALID_NEW_USER_TIME', msg: '请填写有效的新用户注册起算时间' };
+        }
+        if (!parseTime(campaign.startAt)) {
+          return { code: 'INVALID_START_TIME', msg: '请选择有效的活动开始时间' };
+        }
+        if (campaign.endAt && !parseTime(campaign.endAt)) {
+          return { code: 'INVALID_END_TIME', msg: '请选择有效的活动结束时间' };
+        }
         if (campaign.startAt && campaign.endAt &&
             parseTime(campaign.startAt) >= parseTime(campaign.endAt)) {
           return { code: 'INVALID_TIME', msg: '结束时间必须晚于开始时间' };
+        }
+        const existingClaims = event.id ? uniqueClaims(await queryAll(CLAIM_COL)) : [];
+        campaign.claimedCount = existingClaims
+          .filter(item => item.campaignId === event.id).length;
+        if (campaign.totalQuota > 0 && campaign.totalQuota < campaign.claimedCount) {
+          return {
+            code: 'INVALID_QUOTA',
+            msg: '总发放份数不能小于已领取人数 ' + campaign.claimedCount
+          };
         }
         if (event.id) {
           await cloudDb.collection(CAMPAIGN_COL).doc(event.id).update({ data: campaign });
@@ -495,7 +558,8 @@ exports.main = async event => {
               upcoming: '福利活动尚未开始',
               expired: '福利活动已结束',
               disabled: '福利活动暂未开放',
-              ineligible: '当前账号不符合领取条件'
+              ineligible: '当前账号不符合领取条件',
+              sold_out: '福利已经领完啦'
             };
             throw businessError('CAMPAIGN_' + state.toUpperCase(), messages[state] || '暂时无法领取');
           }
@@ -522,6 +586,10 @@ exports.main = async event => {
             usedThemeKey: ''
           };
           await claimRef.set(claim);
+          await campaignRef.update({
+            claimedCount: Math.max(0, parseInt(campaign.claimedCount, 10) || 0) + 1,
+            updatedAt: now
+          });
           return { alreadyClaimed: false, claim, updates: granted.updates };
         }, 3);
       } catch (error) {
@@ -535,7 +603,11 @@ exports.main = async event => {
     const result = transactionResult && transactionResult.result
       ? transactionResult.result
       : transactionResult;
-    const refreshedUser = await getCurrentUser(openid);
+    const refreshedUser = Object.assign(
+      {},
+      await getCurrentUser(openid),
+      result.updates || {}
+    );
     return {
       code: 0,
       data: Object.assign({}, await listForUser(refreshedUser, result.claim), {

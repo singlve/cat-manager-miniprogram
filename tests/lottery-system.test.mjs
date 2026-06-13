@@ -70,9 +70,9 @@ describe('可配置抽奖系统', () => {
 
     expect(inventorySource).toContain("title: '取消并兑换积分'");
     expect(inventorySource).toContain("secondTitle: '再次确认取消'");
-    expect(inventorySource).toContain('cancelLotteryPhysicalInventory');
+    expect(inventorySource).toContain('cancelInventoryAtomic');
     expect(inventorySource).toContain('也不会返还任何积分');
-    expect(cloudSource).toContain("action === 'cancelPhysical'");
+    expect(read('cloudfunctions/redeemItem/index.js')).toContain("action === 'cancelInventory'");
     expect(cloudSource).toContain('compensationPoints += points');
     expect(cloudSource).toContain('totalPoints: nextPoints');
   });

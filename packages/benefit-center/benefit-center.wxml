@@ -28,7 +28,16 @@
         <text class="voucher-balance-label">我的主题兑换券</text>
         <text class="voucher-balance-desc">{{pendingClaims > 0 ? '还有 ' + pendingClaims + ' 份福利待领取' : (pendingUses > 0 ? '可直接兑换符合条件的主题' : '新福利会在这里提醒你')}}</text>
       </view>
-      <view class="voucher-balance-count"><text>{{themeVouchers}}</text><text>张</text></view>
+      <view class="voucher-balance-side">
+        <view class="voucher-balance-count"><text>{{themeVouchers}}</text><text>张</text></view>
+      </view>
+    </view>
+    <view class="voucher-redeem-entry" bindtap="goThemeMall">
+      <view>
+        <text class="voucher-entry-title">{{themeVouchers > 0 ? '使用主题兑换券' : '查看可兑换主题'}}</text>
+        <text class="voucher-entry-desc">{{themeVouchers > 0 ? '前往积分小铺，兑换喜欢的主题' : '有兑换券后可在这里直接使用'}}</text>
+      </view>
+      <view class="voucher-entry-arrow"></view>
     </view>
 
     <view class="benefit-section-head">

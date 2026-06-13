@@ -1,0 +1,10 @@
+{
+  "name": "userAccount",
+  "version": "1.0.0",
+  "description": "用户资料与签到资产事务",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "~3.0.0"
+  }
+}

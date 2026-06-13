@@ -113,11 +113,11 @@ Page({
 
     // 并行加载所有数据源，一个失败不影响其他
     var [itemsResult, recordsResult, shipmentsResult, usersResult, lotteryResult] = await Promise.allSettled([
-      clouddb.getRedeemItems(),
+      clouddb.getRedeemItems({ admin: true }),
       clouddb.getRedeemRecordsAdmin(),
       clouddb.getShipmentsAdmin(),
       clouddb.isCloudReady()
-        ? wx.cloud.database().collection('users').limit(200).get()
+        ? wx.cloud.callFunction({ name: 'adminStore', data: { action: 'listUserPhones' } })
         : Promise.resolve({ data: [] }),
       clouddb.getLotteryPrizes({ admin: true })
     ]);
@@ -169,7 +169,9 @@ Page({
     shipments = shipmentsResult.status === 'fulfilled' ? (shipmentsResult.value || []) : [];
 
     if (usersResult.status === 'fulfilled') {
-      var users = usersResult.value.data || [];
+      var users = usersResult.value.result
+        ? (usersResult.value.result.data || [])
+        : (usersResult.value.data || []);
       users.forEach(function(u) {
         if (u._openid && u.phone) phoneMap[u._openid] = u.phone;
       });
@@ -758,34 +760,10 @@ Page({
 
     this.setData({ shipping: true });
     try {
-      // 更新发货单状态
       await clouddb.updateShipment(shipRecord._id, {
-        status: 'shipped',
         carrier: shipCarrier,
-        trackingNo: shipTrackingNo.trim(),
-        shippedAt: new Date().toISOString()
+        trackingNo: shipTrackingNo.trim()
       });
-
-      // 同步更新背包中对应的 inventoryItems 状态
-      var inventoryIds = shipRecord.inventoryIds || [];
-      for (var i = 0; i < inventoryIds.length; i++) {
-        await clouddb.updateInventoryItem(inventoryIds[i], {
-          status: 'shipped',
-          carrier: shipCarrier,
-          trackingNo: shipTrackingNo.trim()
-        }).catch(function(e) { console.error('[admin] updateInventoryItem fail:', e); });
-      }
-
-      // 同时更新对应的 redeemRecords 状态
-      var redeemRecordIds = shipRecord.redeemRecordIds || [];
-      for (var j = 0; j < redeemRecordIds.length; j++) {
-        await clouddb.updateRedeemRecord(redeemRecordIds[j], {
-          status: 'shipped',
-          carrier: shipCarrier,
-          trackingNo: shipTrackingNo.trim(),
-          shippedAt: new Date().toISOString()
-        }).catch(function(e) { console.error('[admin] updateRedeemRecord fail:', e); });
-      }
 
       wx.showToast({ title: '已发货', icon: 'success' });
       this.setData({ showShipEditor: false });
@@ -958,6 +936,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

@@ -17,7 +17,7 @@ const {
 } = require('../utils/themes.js');
 const {
   getExpenseCategories
-} = require('../utils/expense-categories.js');
+} = require('../packages/utils/expense-categories.js');
 
 const root = resolve(import.meta.dirname, '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
@@ -209,15 +209,26 @@ describe('主题功能页面接线', () => {
     expect(adminWxml).toContain('wx:if="{{!item._isSystemTheme}}"');
   });
 
+  it('普通用户通过云函数读取正式商品价格，管理员读取完整商品列表', () => {
+    const cloudDbJs = read('utils/clouddb.js');
+    const adminJs = read('packages/admin-items/admin-items.js');
+    const adminBenefitsJs = read('packages/admin-benefits/admin-benefits.js');
+
+    expect(cloudDbJs).toContain("options.admin ? 'adminStore' : 'redeemItem'");
+    expect(cloudDbJs).toContain("options.admin ? 'listItems' : 'list'");
+    expect(adminJs).toContain('getRedeemItems({ admin: true })');
+    expect(adminBenefitsJs).toContain('getRedeemItems({ admin: true })');
+  });
+
   it('核心业务页面都挂载主题上下文', () => {
     [
       'pages/cat-list/cat-list.wxml',
-      'pages/cat-detail/cat-detail.wxml',
-      'pages/health-records/health-records.wxml',
-      'pages/weight-records/weight-records.wxml',
-      'pages/reminder-add/reminder-add.wxml',
-      'pages/expense/expense.wxml',
-      'pages/expense-add/expense-add.wxml',
+      'pet-package/cat-detail/cat-detail.wxml',
+      'pet-package/health-records/health-records.wxml',
+      'pet-package/weight-records/weight-records.wxml',
+      'pet-package/reminder-add/reminder-add.wxml',
+      'packages/expense/expense.wxml',
+      'packages/expense-add/expense-add.wxml',
       'pages/services/services.wxml',
       'pages/mine/mine.wxml'
     ].forEach(path => {
@@ -241,8 +252,8 @@ describe('主题功能页面接线', () => {
     expect(homeJs).toContain('/assets/icons/ui/record.png');
     expect(homeJs).not.toContain("iconPath: '/assets/icons/ui/expense.png'");
     expect(read('pages/cat-list/cat-list.wxml')).toContain('theme-business-icon');
-    expect(read('pages/health-records/health-records.wxml')).toContain('theme-business-icon');
-    expect(read('pages/expense/expense.wxml')).toContain('theme-business-icon');
+    expect(read('pet-package/health-records/health-records.wxml')).toContain('theme-business-icon');
+    expect(read('packages/expense/expense.wxml')).toContain('theme-business-icon');
   });
 
   it('主题中心支持实时预览、取消和确认后再持久化', () => {
@@ -303,8 +314,8 @@ describe('主题功能页面接线', () => {
 
   it('空状态、Canvas 和主要 Tab 页都使用当前主题', () => {
     const appWxss = read('app.wxss');
-    const weightJs = read('pages/weight-records/weight-records.js');
-    const detailJs = read('pages/cat-detail/cat-detail.js');
+    const weightJs = read('pet-package/weight-records/weight-records.js');
+    const detailJs = read('pet-package/cat-detail/cat-detail.js');
 
     expect(appWxss).toContain('.empty-state .ui-empty-img');
     expect(weightJs).toContain('getThemeCanvasPalette');

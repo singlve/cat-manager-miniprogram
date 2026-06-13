@@ -1,0 +1,145 @@
+<!-- pet-package/reminder-add/reminder-add.wxml -->
+<view class="container {{themeClass}}">
+  <!-- 无可用宠物：全部已经离世 -->
+  <view wx:if="{{noCatsAvailable}}" class="empty-cats">
+    <image class="ui-empty-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFill" />
+    <text class="empty-cats-text">所有宠物都已经离世了</text>
+    <text class="empty-cats-desc">不再需要为它们添加健康提醒</text>
+  </view>
+
+  <block wx:else>
+  <view class="form-card">
+    <view class="ui-compact-hero">
+      <image class="ui-compact-hero-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFit" />
+      <view class="ui-compact-hero-body">
+        <text class="ui-compact-kicker">CARE REMINDER</text>
+        <text class="ui-compact-title">{{isEdit ? '调整提醒计划' : '创建照护提醒'}}</text>
+        <text class="ui-compact-desc">洗澡、驱虫、免疫和体检都可以提前安排好。</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">{{isEdit ? '所属宠物' : '选择宠物'}} <text class="required">*</text></text>
+      <view wx:if="{{isEdit}}" class="picker custom-picker cat-picker-readonly">
+        <view class="picker-value">{{lockedCatName || selectedCatName}}</view>
+        <view class="readonly-badge">不可修改</view>
+      </view>
+      <view wx:else class="picker custom-picker" bindtap="openCatPickerModal">
+        <view class="picker-value {{selectedCatId ? '' : 'placeholder'}}">
+          {{selectedCatName || '请选择宠物'}}
+        </view>
+        <view class="picker-arrow"><view class="picker-chevron"></view></view>
+      </view>
+      <text wx:if="{{isEdit}}" class="field-hint readonly-hint">提醒已归属于该宠物，编辑时不能更换。</text>
+    </view>
+
+    <view class="form-group">
+      <text class="label">提醒类型 <text class="required">*</text></text>
+      <view class="type-grid">
+        <view
+          wx:for="{{typeOptions}}"
+          wx:key="key"
+          class="type-btn {{type === item.key ? 'active' : ''}} type-{{item.key}}"
+          bindtap="typeChangeTap"
+          data-type="{{item.key}}"
+        >
+          <image class="type-icon ui-icon theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
+          <text class="type-label">{{item.label}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">上次执行时间 <text class="required">*</text></text>
+      <picker mode="date" value="{{lastDate}}" bindchange="lastDateChange" class="picker">
+        <view class="picker-value {{lastDate ? '' : 'placeholder'}}">
+          {{lastDate || '请选择上次执行时间'}}
+        </view>
+      </picker>
+      <text class="field-hint" wx:if="{{!isEdit && selectedCatId}}">
+        已自动从{{selectedCatName}}的健康记录中获取最近一次「{{typeLabel}}」的时间，可自行修改
+      </text>
+    </view>
+
+    <view class="form-group">
+      <text class="label">提醒间隔</text>
+      <view class="interval-section">
+        <text class="interval-text">每</text>
+        <input
+          class="interval-input"
+          type="number"
+          value="{{intervalDaysRaw}}"
+          bindinput="intervalInput"
+          placeholder="输入天数"
+        />
+        <text class="interval-text">天</text>
+      </view>
+      <view class="interval-presets">
+        <text
+          wx:for="{{presetIntervals}}"
+          wx:key="*this"
+          class="preset-btn {{intervalDays === item ? 'active' : ''}}"
+          bindtap="setInterval"
+          data-days="{{item}}"
+        >{{item}}天</text>
+      </view>
+    </view>
+
+    <view class="form-group">
+      <text class="label">备注</text>
+      <textarea
+        class="textarea"
+        placeholder="补充说明（如：使用XXX牌驱虫药）"
+        value="{{note}}"
+        bindinput="noteInput"
+        maxlength="100"
+        auto-height
+      />
+    </view>
+
+    <!-- 下次提醒预览 -->
+    <view class="next-preview" wx:if="{{lastDate && intervalDays}}">
+      <image class="preview-icon ui-icon-sm" src="/assets/icons/ui/calendar.png" mode="aspectFit" />
+      <text class="preview-text">下次提醒时间：{{nextPreviewDate}}</text>
+    </view>
+  </view>
+
+  <view class="btn-section">
+    <button
+      class="save-btn {{saving ? 'saving' : ''}}"
+      bindtap="save"
+      disabled="{{saving}}"
+      loading="{{saving}}"
+    >{{saving ? '保存中...' : (isEdit ? '保存修改' : '创建提醒')}}</button>
+  </view>
+
+  <view wx:if="{{showCatPickerModal && !isEdit}}" class="cat-picker-mask" catchtap="closeCatPickerModal">
+    <view class="cat-picker-panel" catchtap="">
+      <view class="cat-picker-head">
+        <text class="cat-picker-title">选择宠物</text>
+        <text class="cat-picker-subtitle">为哪位宝贝安排这次提醒</text>
+      </view>
+      <view class="cat-picker-list">
+        <view
+          wx:for="{{cats}}"
+          wx:key="_id"
+          class="cat-picker-item {{selectedCatId === item._id ? 'active' : ''}}"
+          bindtap="selectCatFromModal"
+          data-index="{{index}}"
+        >
+          <view class="cat-picker-avatar">
+            <image wx:if="{{item._displayAvatar || item.avatar}}" src="{{item._displayAvatar || item.avatar}}" mode="aspectFill" />
+            <image wx:else class="cat-picker-icon ui-icon-sm" src="/assets/icons/ui/cat.png" mode="aspectFit" />
+          </view>
+          <view class="cat-picker-info">
+            <text class="cat-picker-name">{{item.name}}</text>
+            <text class="cat-picker-meta">{{item.breed || '品种未知'}}</text>
+          </view>
+          <text wx:if="{{selectedCatId === item._id}}" class="cat-picker-check">✓</text>
+        </view>
+      </view>
+      <view class="cat-picker-cancel" bindtap="closeCatPickerModal">取消</view>
+    </view>
+  </view>
+  </block>
+</view>

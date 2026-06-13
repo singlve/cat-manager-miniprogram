@@ -7,9 +7,9 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 
 describe('expense add entry', () => {
   it('uses a large empty-state button and a draggable FAB when records exist', () => {
-    const template = read('pages/expense/expense.wxml');
-    const script = read('pages/expense/expense.js');
-    const styles = read('pages/expense/expense.wxss');
+    const template = read('packages/expense/expense.wxml');
+    const script = read('packages/expense/expense.js');
+    const styles = read('packages/expense/expense.wxss');
 
     expect(template).toContain('wx:if="{{!loading && !loadError && !hasVisibleExpenses}}" class="add-section"');
     expect(template).toContain('wx:if="{{!loading && !loadError && hasVisibleExpenses}}" class="add-fab-area"');

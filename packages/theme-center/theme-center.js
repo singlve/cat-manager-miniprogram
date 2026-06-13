@@ -272,7 +272,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      imageUrl: '/assets/logo.png',
+      imageUrl: '/assets/logo.jpg',
       title: '宠物小管家Plus - 主题装扮',
       path: '/pages/cat-list/cat-list'
     };

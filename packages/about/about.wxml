@@ -1,0 +1,107 @@
+<!-- packages/about/about.wxml -->
+<view class="page {{themeClass}}">
+  <view class="about-hero">
+    <image class="about-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
+    <view class="about-hero-copy">
+      <text class="about-kicker">PET CARE</text>
+      <text class="app-name">宠物小管家Plus</text>
+      <text class="version">版本 1.0.0</text>
+    </view>
+  </view>
+
+  <view class="intro-card">
+    <text class="desc-title">认真记录每一段陪伴</text>
+    <text class="desc-body">集中管理宠物档案、健康、体重、提醒和日常花销，让照护更清晰，也让珍贵的成长点滴随时可见。</text>
+  </view>
+
+  <view class="features">
+    <view class="feature-head">
+      <text class="feature-title">主要功能</text>
+      <text class="feature-subtitle">陪伴宠物日常照护的实用工具</text>
+    </view>
+
+    <view class="feature-grid">
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-blue">
+          <image class="feature-icon" src="/assets/icons/ui/pet.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">宠物档案</text>
+          <text class="feature-desc">记录多只宠物的基础资料与成长信息</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-green">
+          <image class="feature-icon" src="/assets/icons/ui/health.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">健康记录</text>
+          <text class="feature-desc">随手记录洗澡、驱虫、免疫和体检</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-orange">
+          <image class="feature-icon" src="/assets/icons/ui/weight.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">体重趋势</text>
+          <text class="feature-desc">持续追踪体重变化与成长走势</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-purple">
+          <image class="feature-icon" src="/assets/icons/ui/reminder.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">智能提醒</text>
+          <text class="feature-desc">安排护理计划并接收微信到期提醒</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-blue">
+          <image class="feature-icon" src="/assets/icons/ui/expense.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">宠物记账</text>
+          <text class="feature-desc">按月份、宠物和分类查看照护花销</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-orange">
+          <image class="feature-icon" src="/assets/icons/ui/backpack.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">积分与背包</text>
+          <text class="feature-desc">签到积累积分，兑换虚拟或实物商品</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-purple">
+          <image class="feature-icon" src="/assets/icons/ui/gift.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">主题与福利</text>
+          <text class="feature-desc">领取专属福利，装扮喜欢的页面主题</text>
+        </view>
+      </view>
+
+      <view class="feature-item">
+        <view class="feature-icon-wrap icon-green">
+          <image class="feature-icon" src="/assets/icons/ui/data.png" mode="aspectFit" />
+        </view>
+        <view class="feature-copy">
+          <text class="feature-name">分享与备份</text>
+          <text class="feature-desc">生成宠物分享海报，并备份重要数据</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <button class="back-btn" bindtap="goBack">返回</button>
+</view>

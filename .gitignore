@@ -11,3 +11,6 @@ project.private.config.json
 
 # macOS
 .DS_Store
+
+# 云开发本地调试状态
+.cloudbase/

@@ -39,26 +39,42 @@
         <view class="campaign-head">
           <view class="campaign-title-wrap">
             <text class="campaign-title">{{item.title}}</text>
-            <text class="campaign-status {{item.enabled ? 'enabled' : 'disabled'}}">{{item.enabled ? '发放中' : '已停用'}}</text>
+            <text class="campaign-status {{item._statusClass}}">{{item._statusText}}</text>
+            <text wx:if="{{item._endingText}}" class="ending-soon">{{item._endingText}}</text>
           </view>
           <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleCampaign" data-item="{{item}}" />
         </view>
         <text class="campaign-desc">{{item.desc || '暂无说明'}}</text>
         <view class="campaign-meta">
           <text>{{item._rewardText}}</text>
-          <text>{{item.audience === 'new' ? '新用户' : '全部用户'}}</text>
+          <text>{{item._audienceText}}</text>
           <text>{{item._timeText}}</text>
         </view>
+        <view class="campaign-stats">
+          <view><text>{{item.eligibleUsers}}</text><text>预计适用用户</text></view>
+          <view><text>{{item.claimedCount || 0}}</text><text>已领取</text></view>
+          <view><text>{{item.remainingQuota < 0 ? '不限' : item.remainingQuota}}</text><text>剩余份数</text></view>
+        </view>
+        <text class="campaign-quota">{{item._quotaText}}</text>
         <view class="campaign-actions">
           <text bindtap="openEdit" data-item="{{item}}">编辑</text>
+          <text bindtap="copyCampaign" data-item="{{item}}">复制</text>
           <text class="danger" bindtap="deleteCampaign" data-item="{{item}}">删除</text>
         </view>
       </view>
     </block>
 
     <block wx:else>
-      <view wx:if="{{claims.length === 0}}" class="empty-tip">暂无领取记录</view>
-      <view wx:for="{{claims}}" wx:key="_id" class="claim-card">
+      <scroll-view class="claim-filter-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="claim-filter-row">
+          <view wx:for="{{claimCampaignOptions}}" wx:key="value" class="claim-filter-chip {{claimCampaignFilter === item.value ? 'active' : ''}}" bindtap="selectClaimCampaign" data-value="{{item.value}}">{{item.label}}</view>
+        </view>
+      </scroll-view>
+      <view class="claim-status-filter">
+        <view wx:for="{{claimStatusFilters}}" wx:key="value" class="{{claimStatusFilter === item.value ? 'active' : ''}}" bindtap="selectClaimStatus" data-value="{{item.value}}">{{item.label}}</view>
+      </view>
+      <view wx:if="{{filteredClaims.length === 0}}" class="empty-tip">当前筛选下暂无领取记录</view>
+      <view wx:for="{{filteredClaims}}" wx:key="_id" class="claim-card">
         <view>
           <text class="claim-title">{{item.campaignTitle}}</text>
           <text class="claim-user">{{item.userNickname || '未命名用户'}}</text>
@@ -97,6 +113,10 @@
             <text wx:elif="{{form.rewardType === 'draw'}}" class="form-help">例如填 2，表示每位用户获得 2 次额外抽奖机会。</text>
             <text wx:else class="form-help">表示每位用户可领取的实物件数，通常填 1。</text>
 
+            <text class="form-label">总发放份数</text>
+            <input class="form-input" type="number" value="{{form.totalQuota}}" data-key="totalQuota" bindinput="onInput" />
+            <text class="form-help">默认 100 份；填 0 表示不限总份数。每位用户仍然只能领取一次。</text>
+
             <block wx:if="{{form.rewardType === 'theme_voucher'}}">
               <text class="form-label">可兑换主题积分上限</text>
               <input class="form-input" type="number" value="{{form.maxThemePoints}}" data-key="maxThemePoints" bindinput="onInput" />
@@ -124,14 +144,48 @@
               <view class="{{form.audience === 'new' ? 'active' : ''}}" bindtap="selectAudience" data-value="new">新用户</view>
             </view>
             <block wx:if="{{form.audience === 'new'}}">
-              <text class="form-label">新用户起算时间</text>
-              <input class="form-input" value="{{form.newUserSince}}" data-key="newUserSince" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" placeholder-class="form-placeholder" />
+              <text class="form-label">注册时间起算点</text>
+              <view class="time-control">
+                <picker class="time-picker" mode="date" value="{{form.newUserSinceDate}}" bindchange="onTimePartChange" data-key="newUserSince" data-part="date">
+                  <view class="time-picker-value">{{form.newUserSinceDate || '选择日期'}}<view class="time-picker-arrow"></view></view>
+                </picker>
+                <picker class="time-picker" mode="time" value="{{form.newUserSinceTime}}" bindchange="onTimePartChange" data-key="newUserSince" data-part="time">
+                  <view class="time-picker-value">{{form.newUserSinceTime || '选择时间'}}<view class="time-picker-arrow"></view></view>
+                </picker>
+              </view>
+              <text class="form-help">仅注册时间不早于该时间的用户可领取；老账号或缺少注册时间的账号不可领取。</text>
             </block>
+            <view class="audience-preview">
+              <view>
+                <text class="audience-preview-label">预计适用人数</text>
+                <text class="audience-preview-value">{{audiencePreview === null ? '尚未计算' : audiencePreview + ' 人'}}</text>
+              </view>
+              <view class="audience-preview-btn" bindtap="previewAudience">{{previewingAudience ? '计算中' : '重新计算'}}</view>
+            </view>
 
-            <text class="form-label">开始时间（留空立即开始）</text>
-            <input class="form-input" value="{{form.startAt}}" data-key="startAt" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" placeholder-class="form-placeholder" />
-            <text class="form-label">结束时间（留空长期有效）</text>
-            <input class="form-input" value="{{form.endAt}}" data-key="endAt" bindinput="onInput" placeholder="2026-12-31T23:59:59+08:00" placeholder-class="form-placeholder" />
+            <text class="form-label">活动开始时间</text>
+            <view class="time-control">
+              <picker class="time-picker" mode="date" value="{{form.startAtDate}}" bindchange="onTimePartChange" data-key="startAt" data-part="date">
+                <view class="time-picker-value">{{form.startAtDate}}<view class="time-picker-arrow"></view></view>
+              </picker>
+              <picker class="time-picker" mode="time" value="{{form.startAtTime}}" bindchange="onTimePartChange" data-key="startAt" data-part="time">
+                <view class="time-picker-value">{{form.startAtTime}}<view class="time-picker-arrow"></view></view>
+              </picker>
+            </view>
+            <text class="form-help">新建活动默认使用当前系统时间，保存后立即开始。</text>
+            <view class="form-label-row">
+              <text class="form-label">活动结束时间</text>
+              <text wx:if="{{form.endAt}}" class="time-clear" bindtap="clearEndTime">设为长期有效</text>
+            </view>
+            <view class="time-control">
+              <picker class="time-picker" mode="date" value="{{form.endAtDate || form.startAtDate}}" bindchange="onTimePartChange" data-key="endAt" data-part="date">
+                <view class="time-picker-value {{!form.endAtDate ? 'placeholder' : ''}}">{{form.endAtDate || '选择日期'}}<view class="time-picker-arrow"></view></view>
+              </picker>
+              <picker class="time-picker" mode="time" value="{{form.endAtTime || form.startAtTime}}" bindchange="onTimePartChange" data-key="endAt" data-part="time">
+                <view class="time-picker-value {{!form.endAtTime ? 'placeholder' : ''}}">{{form.endAtTime || '选择时间'}}<view class="time-picker-arrow"></view></view>
+              </picker>
+            </view>
+            <text class="form-help">结束时间不选择时，活动长期有效。</text>
             <text class="form-label">展示顺序</text>
             <input class="form-input" type="number" value="{{form.sort}}" data-key="sort" bindinput="onInput" />
             <text class="form-help">数字越小越靠前，活动不多时按 1、2、3 依次填写即可。</text>

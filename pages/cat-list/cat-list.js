@@ -244,7 +244,14 @@ Page({
 
   addCat() {
     // 不拦截：允许体验添加流程，保存时才检查登录
-    wx.navigateTo({ url: '/pages/cat-add/cat-add' });
+    wx.navigateTo({ url: '/pet-package/cat-add/cat-add' });
+  },
+
+  addFilteredPet(e) {
+    const species = e.currentTarget.dataset.species === 'dog' ? 'dog' : 'cat';
+    wx.navigateTo({
+      url: `/pet-package/cat-add/cat-add?species=${species}&lockSpecies=1`
+    });
   },
 
   _initAddFabPosition() {
@@ -279,7 +286,7 @@ Page({
 
   goCatDetail(e) {
     // 不拦截：demo 猫可点击查看详情
-    wx.navigateTo({ url: `/pages/cat-detail/cat-detail?id=${e.currentTarget.dataset.id}` });
+    wx.navigateTo({ url: `/pet-package/cat-detail/cat-detail?id=${e.currentTarget.dataset.id}` });
   },
 
   goRecentActivity(e) {
@@ -289,7 +296,7 @@ Page({
       wx.switchTab({ url: '/pages/reminders/reminders' });
       return;
     }
-    if (catId) wx.navigateTo({ url: `/pages/cat-detail/cat-detail?id=${catId}` });
+    if (catId) wx.navigateTo({ url: `/pet-package/cat-detail/cat-detail?id=${catId}` });
   },
 
   toggleRecentActivities() {
@@ -504,6 +511,6 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

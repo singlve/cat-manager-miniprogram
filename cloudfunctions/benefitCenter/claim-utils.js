@@ -22,7 +22,18 @@ function enrichClaims(claims, campaignMap) {
   });
 }
 
+function getOutstandingThemeVouchers(claims) {
+  return (claims || []).reduce((total, item) => {
+    if (!item || item.rewardType !== 'theme_voucher') return total;
+    if (item.status !== 'unused' && item.status !== 'partially_used') return total;
+    const rewardAmount = Math.max(1, parseInt(item.rewardAmount, 10) || 1);
+    const usedAmount = Math.max(0, parseInt(item.usedAmount, 10) || 0);
+    return total + Math.max(0, rewardAmount - usedAmount);
+  }, 0);
+}
+
 module.exports = {
   normalizeClaimDocument,
-  enrichClaims
+  enrichClaims,
+  getOutstandingThemeVouchers
 };

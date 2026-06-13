@@ -5,7 +5,7 @@
   <!-- 未登录状态 -->
   <view wx:if="{{!isLoggedIn}}" class="not-logged-in">
     <view class="ui-hero-card mine-hero">
-      <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest-transparent.png" mode="aspectFit" />
+      <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest.webp" mode="aspectFit" />
       <text class="ui-hero-title">欢迎回到宠物小窝</text>
       <text class="ui-hero-subtitle">登录后同步宠物档案、签到积分和提醒事项。</text>
     </view>
@@ -45,7 +45,7 @@
   <!-- 已登录状态 -->
   <view wx:else>
   <view class="ui-hero-card mine-hero">
-    <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest-transparent.png" mode="aspectFit" />
+    <image class="ui-hero-img" src="/assets/illustrations/mine-hero-nest.webp" mode="aspectFit" />
     <text class="ui-hero-title">你的照护中心</text>
     <text class="ui-hero-subtitle">签到、积分和账号资料都在这里。</text>
   </view>

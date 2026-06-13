@@ -186,7 +186,7 @@ describe('_openid 过滤', () => {
 
 describe('体重记录筛选回归', () => {
   it('applyFilter 将局部 filtered 写入 filteredRecords', () => {
-    const source = readFileSync(resolve(import.meta.dirname, '../pages/weight-records/weight-records.js'), 'utf8');
+    const source = readFileSync(resolve(import.meta.dirname, '../pet-package/weight-records/weight-records.js'), 'utf8');
     expect(source).toContain('filteredRecords: filtered');
     expect(source).not.toMatch(/\n\s+filteredRecords,\n\s+summaryLatest/);
   });

@@ -410,7 +410,7 @@ Page({
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 积分商城', path: '/packages/points-mall/points-mall' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 积分商城', path: '/packages/points-mall/points-mall' };
   },
 });
 

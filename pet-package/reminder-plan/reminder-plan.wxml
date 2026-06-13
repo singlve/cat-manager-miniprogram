@@ -1,0 +1,172 @@
+<view class="page {{themeClass}}">
+  <view class="ui-compact-hero plan-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">SMART PLAN</text>
+      <text class="ui-compact-title">智能提醒计划</text>
+      <text class="ui-compact-desc">选择宠物和照护模板，一次生成常用提醒。</text>
+    </view>
+  </view>
+
+  <view wx:if="{{noCatsAvailable}}" class="empty-card">
+    <image class="empty-img" src="/pet-package/assets/illustrations/empty-pet.webp" mode="aspectFit" />
+    <text class="empty-title">暂无可用宠物</text>
+    <text class="empty-desc">已离世宠物不会生成新的照护提醒。</text>
+    <button class="primary-btn" bindtap="goAddPet">添加宠物</button>
+  </view>
+
+  <block wx:else>
+    <view class="form-section plan-settings">
+      <text class="section-label">计划设置</text>
+      <view class="setting-row" bindtap="openCatPicker">
+        <view class="setting-copy">
+          <text class="setting-label">宠物</text>
+          <text class="setting-value">{{selectedCatName || '请选择宠物'}}</text>
+          <text class="setting-hint">将为这位宝贝生成提醒</text>
+        </view>
+        <text class="selector-arrow">›</text>
+      </view>
+      <picker mode="date" value="{{planStartDate}}" bindchange="onPlanStartDateChange">
+        <view class="setting-row">
+          <view class="setting-copy">
+            <text class="setting-label">开始日期</text>
+            <text class="setting-value">{{planStartDate}}</text>
+            <text class="setting-hint">没有历史记录的项目会从这一天开始计算</text>
+          </view>
+          <text class="selector-arrow">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="form-section">
+      <text class="section-label">选择计划</text>
+      <text class="section-helper">已根据宠物类型和年龄阶段优先推荐</text>
+      <view class="plan-grid">
+        <view
+          wx:for="{{plans}}"
+          wx:key="id"
+          class="plan-card {{selectedPlanId === item.id ? 'active' : ''}} {{item.isRecommended ? 'recommended' : ''}}"
+          bindtap="selectPlan"
+          data-id="{{item.id}}"
+        >
+          <view class="plan-card-head">
+            <text class="plan-name">{{item.name}}</text>
+            <view class="plan-tags">
+              <text wx:if="{{item.isRecommended}}" class="plan-tag recommend">推荐</text>
+              <text class="plan-tag">{{item.targetText}}</text>
+            </view>
+          </view>
+          <text class="plan-desc">{{item.desc}}</text>
+          <text class="plan-item-summary">{{item.itemSummary}}</text>
+          <text class="plan-count">包含 {{item.itemCount}} 项提醒</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="preview-section">
+      <view class="preview-head">
+        <view>
+          <text class="section-label">生成预览</text>
+          <text class="preview-sub">已选 {{createCount}} 条，跳过 {{skipCount}} 条。点选卡片可取消生成。</text>
+        </view>
+        <view wx:if="{{!loading && previewItems.length > 0}}" class="preview-tools">
+          <text class="preview-tool" bindtap="selectAllPreviewItems">全选</text>
+          <text class="preview-tool" bindtap="clearPreviewItems">清空</text>
+          <text class="preview-tool primary" bindtap="buildPreview">刷新</text>
+        </view>
+      </view>
+
+      <view wx:if="{{loading}}" class="loading-box">正在生成预览...</view>
+      <view wx:else class="preview-list">
+        <view
+          wx:for="{{previewItems}}"
+          wx:key="type"
+          class="preview-item {{item.status}} {{item.checked ? 'checked' : 'unchecked'}}"
+          bindtap="togglePreviewItem"
+          data-type="{{item.type}}"
+        >
+          <image class="preview-icon ui-icon theme-business-icon" src="{{item.iconPath}}" mode="aspectFit" />
+          <view class="preview-info">
+            <view class="preview-title-row">
+              <text class="preview-title">{{item.typeLabel}}</text>
+              <view class="preview-title-actions">
+                <text class="preview-status {{item.status}}">{{item.statusText}}</text>
+                <text
+                  wx:if="{{item.status === 'create'}}"
+                  class="preview-edit-btn"
+                  catchtap="openPreviewEditor"
+                  data-type="{{item.type}}"
+                >调整</text>
+              </view>
+            </view>
+            <text class="preview-meta">{{item.metaText}}</text>
+            <text class="preview-next">{{item.nextText}}</text>
+          </view>
+          <view wx:if="{{item.status === 'create'}}" class="preview-check {{item.checked ? 'on' : ''}}">
+            <text wx:if="{{item.checked}}">✓</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{showPreviewEditor}}" class="edit-mask" catchtap="closePreviewEditor">
+      <view class="edit-panel" catchtap="">
+        <text class="edit-kicker">REMINDER ITEM</text>
+        <text class="edit-title">调整{{editingTypeLabel}}</text>
+        <view class="edit-field">
+          <text class="edit-label">上次执行时间</text>
+          <picker mode="date" value="{{editLastDate}}" bindchange="onEditLastDateChange">
+            <view class="edit-picker">
+              <text>{{editLastDate}}</text>
+              <text class="edit-arrow">›</text>
+            </view>
+          </picker>
+        </view>
+        <view class="edit-field">
+          <text class="edit-label">提醒周期</text>
+          <view class="edit-input-wrap">
+            <input class="edit-input" type="number" value="{{editIntervalDaysRaw}}" bindinput="onEditIntervalInput" placeholder="请输入天数" />
+            <text class="edit-unit">天</text>
+          </view>
+        </view>
+        <view class="edit-field">
+          <text class="edit-label">备注</text>
+          <textarea class="edit-textarea" value="{{editNote}}" bindinput="onEditNoteInput" placeholder="可填写提醒备注" maxlength="40" />
+        </view>
+        <view class="edit-actions">
+          <button class="edit-btn ghost" bindtap="closePreviewEditor">取消</button>
+          <button class="edit-btn primary" bindtap="savePreviewEdit">保存调整</button>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-actions">
+      <button class="generate-btn" loading="{{saving}}" disabled="{{saving || createCount === 0}}" bindtap="generatePlan">
+        <text class="generate-btn-text">{{generateButtonText}}</text>
+      </button>
+    </view>
+
+    <view wx:if="{{showCatPicker}}" class="picker-mask" catchtap="closeCatPicker">
+      <view class="picker-panel" catchtap="">
+        <text class="picker-title">选择宠物</text>
+        <view class="picker-list">
+          <view
+            wx:for="{{cats}}"
+            wx:key="_id"
+            class="picker-item {{selectedCatId === item._id ? 'active' : ''}}"
+            bindtap="selectCat"
+            data-index="{{index}}"
+          >
+            <image class="picker-avatar" src="{{item.species === 'dog' ? '/assets/icons/ui/dog.png' : '/assets/icons/ui/cat.png'}}" mode="aspectFit" />
+            <view class="picker-info">
+              <text class="picker-name">{{item.name}}</text>
+              <text class="picker-meta">{{item.breed || '品种未知'}}</text>
+            </view>
+            <text wx:if="{{selectedCatId === item._id}}" class="picker-check">✓</text>
+          </view>
+        </view>
+        <view class="picker-cancel" bindtap="closeCatPicker">取消</view>
+      </view>
+    </view>
+  </block>
+</view>

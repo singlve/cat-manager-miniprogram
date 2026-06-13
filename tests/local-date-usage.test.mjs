@@ -7,12 +7,12 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 
 describe('local calendar dates', () => {
   it.each([
-    'pages/cat-add/cat-add.js',
-    'pages/cat-edit/cat-edit.js',
-    'pages/cat-detail/cat-detail.js',
+    'pet-package/cat-add/cat-add.js',
+    'pet-package/cat-edit/cat-edit.js',
+    'pet-package/cat-detail/cat-detail.js',
     'pages/cat-list/cat-list.js',
-    'pages/weight-records/weight-records.js',
-    'utils/cat-form-behavior.js'
+    'pet-package/weight-records/weight-records.js',
+    'pet-package/utils/cat-form-behavior.js'
   ])('%s avoids UTC date truncation', path => {
     expect(read(path)).not.toContain("toISOString().split('T')[0]");
     expect(read(path)).not.toContain('toISOString().split("T")[0]');

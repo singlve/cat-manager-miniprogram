@@ -8,7 +8,7 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 describe('small-screen layout safeguards', () => {
   it.each([
     'pages/reminders/reminders.wxss',
-    'pages/health-records/health-records.wxss',
+    'pet-package/health-records/health-records.wxss',
     'pages/services/services.wxss',
     'packages/points-mall/points-mall.wxss',
     'packages/inventory/inventory.wxss'

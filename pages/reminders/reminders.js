@@ -531,7 +531,7 @@ Page({
     const app = getApp();
     if (!app.isLoggedIn()) { this.goLogin(); return; }
     const catId = this.data.catFilter && this.data.catFilter !== 'all' ? this.data.catFilter : '';
-    wx.navigateTo({ url: catId ? `/pages/reminder-plan/reminder-plan?catId=${catId}` : '/pages/reminder-plan/reminder-plan' });
+    wx.navigateTo({ url: catId ? `/pet-package/reminder-plan/reminder-plan?catId=${catId}` : '/pet-package/reminder-plan/reminder-plan' });
   },
 
   async addReminder() {
@@ -543,13 +543,13 @@ Page({
       wx.showToast({ title: '所有宠物都已经离世了', icon: 'none' });
       return;
     }
-    wx.navigateTo({ url: '/pages/reminder-add/reminder-add' });
+    wx.navigateTo({ url: '/pet-package/reminder-add/reminder-add' });
   },
 
   editReminder(e) {
     const app = getApp();
     if (!app.isLoggedIn()) { this.goLogin(); return; }
-    wx.navigateTo({ url: `/pages/reminder-add/reminder-add?id=${e.currentTarget.dataset.id}` });
+    wx.navigateTo({ url: `/pet-package/reminder-add/reminder-add?id=${e.currentTarget.dataset.id}` });
   },
 
   async deleteReminder(e) {
@@ -583,6 +583,6 @@ Page({
   onShareAppMessage() {
     const current = this.data.catTabs.find(cat => cat._id === this.data.catFilter);
     const title = current ? `一起管理${current.name}的照护提醒` : '把宠物的重要照护安排得更清楚';
-    return { imageUrl: '/assets/logo.png', title, path: '/pages/reminders/reminders' };
+    return { imageUrl: '/assets/logo.jpg', title, path: '/pages/reminders/reminders' };
   },
 });

@@ -215,64 +215,13 @@ Page({
       // 拿前 confirmQty 件 in_backpack 的原始条目
       var available = confirmTarget.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
       var toConfirm = available.slice(0, confirmQty);
-      var unreservedLotteryIds = toConfirm.filter(function(item) {
-        return item.source === 'lottery' && item.stockReserved !== true;
-      }).map(function(item) { return item._id; });
-
-      if (unreservedLotteryIds.length) {
-        await clouddb.reserveLotteryPhysicalInventory(unreservedLotteryIds);
-      }
-
-      var shippingAddr = addr ? {
-        name: addr.name, phone: addr.phone,
-        province: addr.province, city: addr.city,
-        district: addr.district, detail: addr.detail
-      } : null;
-
       var currentUser = null;
       try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-
-      // 收集 inventoryIds 和 redeemRecordIds
-      var inventoryIds = [];
-      var redeemRecordIds = [];
-
-      // 逐件更新状态
-      for (var idx = 0; idx < toConfirm.length; idx++) {
-        var item = toConfirm[idx];
-        inventoryIds.push(item._id);
-        if (item.redeemRecordId) redeemRecordIds.push(item.redeemRecordId);
-
-        // 更新兑换记录状态
-        if (confirmTarget.itemType === 'physical' && item.redeemRecordId) {
-          await clouddb.updateRedeemRecord(item.redeemRecordId, {
-            status: 'pending',
-            shippingAddress: shippingAddr,
-            shippingAddressId: selectedAddressId || ''
-          });
-        }
-        // 更新背包 item 状态
-        await clouddb.updateInventoryItem(item._id, {
-          status: 'pending',
-          shippingAddress: shippingAddr,
-          shippingAddressId: selectedAddressId || ''
-        });
-      }
-
-      // 生成发货单（合并 N 件为一条）
-      if (confirmTarget.itemType === 'physical' && toConfirm.length > 0) {
-        await clouddb.addShipment({
-          itemId: confirmTarget.itemId,
-          itemName: confirmTarget.name,
-          qty: toConfirm.length,
-          userNickname: (currentUser && currentUser.nickname) || '',
-          openid: (currentUser && currentUser._openid) || '',
-          shippingAddress: shippingAddr,
-          shippingAddressId: selectedAddressId || '',
-          status: 'pending',
-          inventoryIds: inventoryIds,
-          redeemRecordIds: redeemRecordIds
-        });
-      }
+      await clouddb.confirmInventoryAtomic({
+        userId: currentUser && currentUser._id,
+        inventoryIds: toConfirm.map(function(item) { return item._id; }),
+        addressId: selectedAddressId
+      });
 
       wx.showToast({ title: '已确认 ' + confirmQty + ' 件，等待管理员发货', icon: 'success' });
       this.setData({ showConfirm: false, confirmTarget: null });
@@ -291,26 +240,23 @@ Page({
     if (!item || item.inBackpackQty < 1) return;
 
     var toCancel = item.rawItems.filter(function(i) { return i.status === 'in_backpack'; });
-    var lotteryItems = toCancel.filter(function(i) { return i.source === 'lottery'; });
-    var normalItems = toCancel.filter(function(i) { return i.source !== 'lottery'; });
     var redeemItems = await clouddb.getRedeemItems();
     var targetItem = (redeemItems || []).find(function(product) { return product._id === item.itemId; });
-    var lotteryCompensation = lotteryItems.reduce(function(sum, raw) {
-      var points = Math.max(0, parseInt(raw.compensationPoints, 10) || 0);
-      if (!points) points = Math.max(0, parseInt(targetItem && targetItem.points, 10) || 0);
+    var estimatedPoints = toCancel.reduce(function(sum, raw) {
+      var points = Math.max(0, parseInt(raw.pointsSpent, 10) || 0);
+      if (raw.source === 'lottery') {
+        points = Math.max(0, parseInt(raw.compensationPoints, 10) || 0);
+        if (!points) points = Math.max(0, parseInt(targetItem && targetItem.points, 10) || 0);
+      }
       return sum + points;
     }, 0);
-    var normalRefund = normalItems.reduce(function(sum, raw) {
-      return sum + Math.max(0, parseInt(raw.pointsSpent, 10) || item.points || 0);
-    }, 0);
-    var totalPoints = lotteryCompensation + normalRefund;
 
     var confirmed = await this._confirmDeleteTwice({
       title: '取消并兑换积分',
-      content: '将取消「' + item.name + '」共 ' + toCancel.length + ' 件，预计获得 ' + totalPoints + ' 积分。',
+      content: '将取消「' + item.name + '」共 ' + toCancel.length + ' 件，预计获得 ' + estimatedPoints + ' 积分。',
       confirmText: '继续',
       secondTitle: '再次确认取消',
-      secondContent: '确认后商品会从背包移除，已预留库存将释放，并获得 ' + totalPoints + ' 积分。此操作不可恢复。',
+      secondContent: '确认后商品会从背包移除，已预留库存将释放，并获得 ' + estimatedPoints + ' 积分。此操作不可恢复。',
       secondConfirmText: '确认取消'
     });
     if (!confirmed) return;
@@ -319,48 +265,16 @@ Page({
     try {
       var currentUser = null;
       try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (err) {}
-
-      if (lotteryItems.length) {
-        var lotteryResult = await clouddb.cancelLotteryPhysicalInventory(
-          currentUser && currentUser._id,
-          lotteryItems.map(function(raw) { return raw._id; })
-        );
-        lotteryCompensation = lotteryResult.compensationPoints || 0;
-        if (currentUser) {
-          currentUser.totalPoints = lotteryResult.points;
-          try { wx.setStorageSync('currentUser', currentUser); } catch (err) {}
-        }
+      var result = await clouddb.cancelInventoryAtomic({
+        userId: currentUser && currentUser._id,
+        inventoryIds: toCancel.map(function(raw) { return raw._id; })
+      });
+      if (currentUser) {
+        currentUser.totalPoints = result.points;
+        try { wx.setStorageSync('currentUser', currentUser); } catch (err) {}
       }
 
-      // 普通商城商品沿用原兑换积分返还逻辑。
-      if (normalRefund > 0) {
-        if (currentUser && currentUser._id) {
-          await clouddb.updateUser(currentUser._id, {
-            totalPoints: (currentUser.totalPoints || 0) + normalRefund
-          });
-          currentUser.totalPoints = (currentUser.totalPoints || 0) + normalRefund;
-          try { wx.setStorageSync('currentUser', currentUser); } catch (err) {}
-        }
-      }
-
-      if (item.itemId && normalItems.length > 0) {
-        if (targetItem) {
-          await clouddb.updateRedeemItem(item.itemId, {
-            stock: (targetItem.stock || 0) + normalItems.length
-          });
-        }
-      }
-
-      for (var j = 0; j < normalItems.length; j++) {
-        if (normalItems[j].redeemRecordId) {
-          await clouddb.deleteRedeemRecord(normalItems[j].redeemRecordId).catch(function(error) {
-            console.error('[inventory] deleteRedeemRecord fail:', error);
-          });
-        }
-        await clouddb.deleteInventoryItem(normalItems[j]._id);
-      }
-
-      wx.showToast({ title: '已取消，获得 ' + (lotteryCompensation + normalRefund) + ' 积分', icon: 'success' });
+      wx.showToast({ title: '已取消，获得 ' + result.compensationPoints + ' 积分', icon: 'success' });
       await this.loadAll();
     } catch (e) {
       console.error('[inventory] cancel fail:', e);
@@ -389,15 +303,12 @@ Page({
 
     this.setData({ loading: true });
     try {
-      var reservedLotteryIds = item.rawItems.filter(function(raw) {
-        return raw.source === 'lottery' && raw.stockReserved === true && raw.status === 'in_backpack';
-      }).map(function(raw) { return raw._id; });
-      if (reservedLotteryIds.length) {
-        await clouddb.releaseLotteryPhysicalInventory(reservedLotteryIds);
-      }
-      for (var i = 0; i < item.rawItems.length; i++) {
-        await clouddb.deleteInventoryItem(item.rawItems[i]._id);
-      }
+      var currentUser = null;
+      try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (err) {}
+      await clouddb.deleteInventoryAtomic({
+        userId: currentUser && currentUser._id,
+        inventoryIds: item.rawItems.map(function(raw) { return raw._id; })
+      });
       wx.showToast({ title: '已删除', icon: 'success' });
       await this.loadAll();
     } catch (err) {
@@ -450,7 +361,7 @@ Page({
     var no = e.currentTarget.dataset.tracking || '';
     if (!no) return;
     // 跳转到快递100查询
-    wx.navigateTo({ url: '/pages/webview/webview?url=' + encodeURIComponent('https://m.kuaidi100.com/query?nu=' + encodeURIComponent(no)) });
+    wx.navigateTo({ url: '/packages/webview/webview?url=' + encodeURIComponent('https://m.kuaidi100.com/query?nu=' + encodeURIComponent(no)) });
   },
 
   async queryTracking(e) {
@@ -487,13 +398,13 @@ Page({
   goMall() { wx.navigateTo({ url: '/packages/points-mall/points-mall' }); },
 
   stopBubble() {},
-  goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
+  goShippingAddress() { wx.navigateTo({ url: '/packages/shipping-address/shipping-address' }); },
 
   async onPullDownRefresh() {
     try { await this.loadAll(); } finally { wx.stopPullDownRefresh(); }
   },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 我的背包', path: '/packages/inventory/inventory' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 我的背包', path: '/packages/inventory/inventory' };
   },
 });

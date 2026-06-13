@@ -1,7 +1,7 @@
 <!-- pages/admin-data/admin-data.wxml -->
 <view class="page {{themeClass}}">
 <view wx:if="{{!isAdmin}}" class="empty-state">
-  <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
+  <image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" />
   <text class="empty-text">无权访问此页面</text>
 </view>
 
@@ -42,7 +42,7 @@
   <!-- 结果列表 -->
   <view class="user-list" wx:if="{{searched}}">
     <view wx:if="{{errorMsg}}" class="empty-state">
-      <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
+      <image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" />
       <text class="empty-text">{{errorMsg}}</text>
     </view>
 
@@ -81,7 +81,7 @@
   </view>
 
   <view wx:if="{{!searched && !loading}}" class="empty-state">
-    <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
+    <image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" />
     <text class="empty-text">输入昵称或手机号搜索用户</text>
   </view>
 

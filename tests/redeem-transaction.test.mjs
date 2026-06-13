@@ -15,6 +15,12 @@ describe('atomic points redemption', () => {
     expect(source).toContain("transaction.collection(INVENTORY_COL)");
     expect(source).toContain('user._openid !== openid');
     expect(source).toContain('item.enabled === false');
+    expect(source).toContain('.doc(recordDocId).set(recordData)');
+    expect(source).toContain('.doc(inventoryDocId).set(inventoryData)');
+    expect(source).not.toContain('.doc(recordDocId).set({ data: recordData })');
+    expect(source).not.toContain('.doc(inventoryDocId).set({ data: inventoryData })');
+    expect(source).toMatch(/await userRef\.update\(\{\s*totalPoints:/);
+    expect(source).toMatch(/await requestRef\.set\(\{\s*_openid:/);
   });
 
   it('uses an idempotent request id from the mall page', () => {
@@ -27,9 +33,14 @@ describe('atomic points redemption', () => {
 
   it('exposes cloud and local redemption through the data layer', () => {
     const source = read('utils/clouddb.js');
+    const cloudSource = read('cloudfunctions/redeemItem/index.js');
 
     expect(source).toContain('async function redeemItemAtomic(params)');
     expect(source).toContain("name: 'redeemItem'");
     expect(source).toContain('redeemItemAtomic,');
+    expect(source).toContain("options.admin ? 'adminStore' : 'redeemItem'");
+    expect(source).toContain("options.admin ? 'listItems' : 'list'");
+    expect(cloudSource).toContain("if (action === 'list')");
+    expect(cloudSource).toContain('item.enabled !== false');
   });
 });

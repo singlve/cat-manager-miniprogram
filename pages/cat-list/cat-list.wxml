@@ -4,7 +4,7 @@
 
   <view class="home-hero">
     <view class="home-hero-art">
-      <image class="home-hero-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
+      <image class="home-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
       <view class="home-hero-fade fade-top"></view>
       <view class="home-hero-fade fade-bottom"></view>
     </view>
@@ -67,7 +67,7 @@
 
   <!-- 空状态（已登录、加载完成、且无猫） -->
   <view wx:elif="{{isLoggedIn && !loading && !loadError && cats.length === 0}}" class="empty">
-    <image class="empty-all-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
+    <image class="empty-all-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
     <text class="empty-text">还没有添加宠物</text>
     <text class="empty-hint">添加你的第一只宠物，开始记录它的健康成长</text>
     <button class="empty-cta" bindtap="addCat">+ 添加宠物</button>
@@ -134,9 +134,9 @@
 
   <!-- 筛选后空状态 -->
   <view wx:if="{{cats.length > 0 && displayCats.length === 0 && !loading}}" class="empty-filter">
-    <image class="empty-filter-img" src="{{filterSpecies === 'dog' ? '/assets/illustrations/empty-dog-transparent.png' : '/assets/illustrations/empty-cat-transparent.png'}}" mode="aspectFit" />
+    <image class="empty-filter-img" src="{{filterSpecies === 'dog' ? '/assets/illustrations/empty-dog.webp' : '/assets/illustrations/empty-cat.webp'}}" mode="aspectFit" />
     <text class="empty-filter-text">还没有添加{{filterSpecies === 'dog' ? '狗狗' : '猫咪'}}</text>
-    <button class="empty-filter-btn" bindtap="addCat">+ 添加{{filterSpecies === 'dog' ? '狗狗' : '猫咪'}}</button>
+    <button class="empty-filter-btn" bindtap="addFilteredPet" data-species="{{filterSpecies}}">+ 添加{{filterSpecies === 'dog' ? '狗狗' : '猫咪'}}</button>
   </view>
 
   <!-- 宠物列表 -->

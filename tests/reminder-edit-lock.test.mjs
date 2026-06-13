@@ -7,8 +7,8 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 
 describe('编辑提醒时锁定所属宠物', () => {
   it('编辑界面显示只读宠物归属且不打开选择弹层', () => {
-    const template = read('pages/reminder-add/reminder-add.wxml');
-    const source = read('pages/reminder-add/reminder-add.js');
+    const template = read('pet-package/reminder-add/reminder-add.wxml');
+    const source = read('pet-package/reminder-add/reminder-add.js');
 
     expect(template).toContain('cat-picker-readonly');
     expect(template).toContain('不可修改');
@@ -18,7 +18,7 @@ describe('编辑提醒时锁定所属宠物', () => {
   });
 
   it('编辑保存只更新提醒内容，不提交宠物字段', () => {
-    const source = read('pages/reminder-add/reminder-add.js');
+    const source = read('pet-package/reminder-add/reminder-add.js');
 
     expect(source).toContain(
       "await clouddb.updateReminder(reminderId, { type, lastDate, intervalDays, note });"

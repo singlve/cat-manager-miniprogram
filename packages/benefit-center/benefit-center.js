@@ -19,7 +19,8 @@ function stateMeta(item) {
     claimed: { text: item.rewardType === 'theme_voucher' ? '待使用' : '已到账', className: 'claimed' },
     used: { text: '已使用', className: 'used' },
     upcoming: { text: '未开始', className: 'upcoming' },
-    expired: { text: '已过期', className: 'expired' }
+    expired: { text: '已过期', className: 'expired' },
+    sold_out: { text: '已领完', className: 'expired' }
   };
   return map[item.state] || { text: '暂不可领', className: 'expired' };
 }
@@ -70,7 +71,17 @@ Page({
     const claims = status.claims || [];
     const claimMap = {};
     claims.forEach(item => { claimMap[item.campaignId] = item; });
+    if (status.totalPoints !== undefined) {
+      currentUser.totalPoints = Math.max(0, parseInt(status.totalPoints, 10) || 0);
+    }
+    if (status.makeUpCards !== undefined) {
+      currentUser.makeUpCards = Math.max(0, parseInt(status.makeUpCards, 10) || 0);
+    }
     currentUser.themeVouchers = Math.max(0, parseInt(status.themeVouchers, 10) || 0);
+    if (status.bonusLotteryDraws !== undefined) {
+      currentUser.bonusLotteryDraws = Math.max(0, parseInt(status.bonusLotteryDraws, 10) || 0);
+    }
+    if (Array.isArray(status.ownedThemes)) currentUser.ownedThemes = status.ownedThemes;
     wx.setStorageSync('currentUser', currentUser);
     const campaigns = (status.campaigns || []).map(item => {
       const claim = claimMap[item._id] || item.claim || null;

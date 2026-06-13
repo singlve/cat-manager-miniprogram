@@ -1,4 +1,4 @@
-<!-- 离线提示条 - 通过 <include src="../../templates/offline-tip.wxml" /> 引入 -->
+<!-- 离线提示条：由页面按自身目录层级引入 -->
 <!-- 需要在页面 data 中有 isOnline 字段 -->
 <view class="offline-tip" wx:if="{{!isOnline}}">
   <image class="offline-tip__icon ui-icon-sm" src="/assets/icons/ui/warning.png" mode="aspectFit" />

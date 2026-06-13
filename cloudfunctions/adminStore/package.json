@@ -1,0 +1,10 @@
+{
+  "name": "adminStore",
+  "version": "1.0.0",
+  "description": "积分商城与发货管理后台",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "~3.0.0"
+  }
+}

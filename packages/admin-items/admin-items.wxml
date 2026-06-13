@@ -3,7 +3,7 @@
 
   <!-- 非管理员提示 -->
   <view wx:if="{{!isAdmin}}" class="empty-tip">
-    <image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" />
+    <image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" />
     <text>无权访问此页面</text>
   </view>
 
@@ -49,7 +49,7 @@
     <!-- ═══ 商品管理 Tab ═══ -->
     <block wx:elif="{{!loadError && activeTab === 'items'}}">
       <view class="add-btn" bindtap="openAddItem">+ 添加商品</view>
-      <view wx:if="{{items.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text>暂无商品</text></view>
+      <view wx:if="{{items.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" /><text>暂无商品</text></view>
       <view class="item-row" wx:for="{{items}}" wx:key="_id">
         <image wx:if="{{item.image}}" class="item-thumb" src="{{item.image}}" mode="aspectFill" lazy-load/>
         <view wx:else class="item-thumb item-thumb-placeholder"><image class="ui-icon-lg" src="/assets/icons/ui/gift.png" mode="aspectFit" /></view>
@@ -107,7 +107,7 @@
 
     <!-- ═══ 发货管理 Tab ═══ -->
     <block wx:elif="{{!loadError && activeTab==='shipments'}}">
-      <view wx:if="{{shipments.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/assets/illustrations/admin-dashboard-transparent.png" mode="aspectFill" /><text>暂无待处理发货单</text></view>
+      <view wx:if="{{shipments.length === 0}}" class="empty-tip"><image class="ui-empty-img" src="/packages/assets/illustrations/admin-dashboard.webp" mode="aspectFill" /><text>暂无待处理发货单</text></view>
       <view wx:else>
         <!-- 待发货 -->
         <block wx:if="{{shipments.length > 0}}">

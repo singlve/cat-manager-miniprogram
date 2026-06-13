@@ -1,9 +1,9 @@
 <!--pages/points-mall/points-mall.wxml-->
 <view class="page {{themeClass}}">
-  <include src="../../../templates/offline-tip.wxml" />
+  <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-hero-card">
-    <image class="ui-hero-img" src="/assets/illustrations/rewards-hero-pets-transparent.png" mode="aspectFit" />
+    <image class="ui-hero-img" src="/packages/assets/illustrations/rewards-hero-pets.webp" mode="aspectFit" />
     <text class="ui-hero-title">积分小铺</text>
     <text class="ui-hero-subtitle">把日常照护攒成积分，换一点给宝贝的小惊喜。</text>
   </view>
@@ -68,7 +68,7 @@
   <!-- 商品列表 -->
   <block wx:else>
     <view wx:if="{{filteredItems.length === 0}}" class="empty-tip">
-      <image class="ui-empty-img" src="/assets/illustrations/pet-profile-clean.png" mode="aspectFill" />
+      <image class="ui-empty-img" src="/packages/assets/illustrations/pet-profile.webp" mode="aspectFill" />
       <text style="color:#999;margin-top:16rpx;">暂无商品</text>
     </view>
     <view wx:else class="item-list">

@@ -6,8 +6,8 @@ const root = resolve(import.meta.dirname, '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
 
 const retryPages = [
-  'pages/shipping-address/shipping-address',
-  'pages/feedback/feedback',
+  'packages/shipping-address/shipping-address',
+  'packages/feedback/feedback',
   'packages/admin-announcement/admin-announcement',
   'packages/admin-items/admin-items',
   'packages/points-mall/points-mall',

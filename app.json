@@ -2,32 +2,44 @@
   "pages": [
     "pages/cat-list/cat-list",
     "pages/login/login",
-    "pages/register/register",
-    "pages/cat-add/cat-add",
-    "pages/cat-detail/cat-detail",
-    "pages/cat-edit/cat-edit",
-    "pages/health-records/health-records",
-    "pages/weight-records/weight-records",
     "pages/reminders/reminders",
-    "pages/reminder-add/reminder-add",
-    "pages/reminder-plan/reminder-plan",
     "pages/services/services",
-    "pages/mine/mine",
-    "pages/about/about",
-    "pages/expense/expense",
-    "pages/expense-add/expense-add",
-    "pages/feedback/feedback",
-    "pages/feedback-post/feedback-post",
-    "pages/webview/webview",
-    "pages/shipping-address/shipping-address",
-    "pages/bind-phone/bind-phone",
-    "pages/data-backup/data-backup"
+    "pages/mine/mine"
   ],
   "subPackages": [
+    {
+      "root": "pet-package",
+      "name": "petCare",
+      "pages": [
+        "cat-add/cat-add",
+        "cat-detail/cat-detail",
+        "cat-edit/cat-edit",
+        "health-records/health-records",
+        "weight-records/weight-records",
+        "reminder-add/reminder-add",
+        "reminder-plan/reminder-plan"
+      ]
+    },
+    {
+      "root": "account-package",
+      "name": "account",
+      "pages": [
+        "register/register",
+        "bind-phone/bind-phone"
+      ]
+    },
     {
       "root": "packages",
       "name": "serviceTools",
       "pages": [
+        "about/about",
+        "expense/expense",
+        "expense-add/expense-add",
+        "feedback/feedback",
+        "feedback-post/feedback-post",
+        "webview/webview",
+        "shipping-address/shipping-address",
+        "data-backup/data-backup",
         "points-mall/points-mall",
         "inventory/inventory",
         "theme-center/theme-center",

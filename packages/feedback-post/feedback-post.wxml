@@ -1,0 +1,87 @@
+<!-- packages/feedback-post/feedback-post.wxml -->
+<view class="page {{themeClass}}">
+  <view class="ui-compact-hero">
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat.webp" mode="aspectFit" />
+    <view class="ui-compact-hero-body">
+      <text class="ui-compact-kicker">FEEDBACK</text>
+      <text class="ui-compact-title">发布留言</text>
+      <text class="ui-compact-desc">写下建议、问题或体验反馈，图片会帮助管理员更快定位。</text>
+    </view>
+  </view>
+
+  <!-- 分类 -->
+  <view class="section">
+    <text class="section-label">分类</text>
+    <view class="picker-val" bindtap="openCategoryPicker">
+      <text>{{categories[categoryIdx].label}}</text>
+      <view class="picker-chevron"></view>
+    </view>
+  </view>
+
+  <!-- 内容 -->
+  <view class="section">
+    <text class="section-label">内容</text>
+    <textarea class="content-input"
+      placeholder="畅所欲言，分享使用体验、反馈Bug或提建议..."
+      value="{{content}}"
+      bindinput="onContentInput"
+      maxlength="1000"
+      auto-height
+      focus="{{true}}"/>
+    <text class="char-count">{{content.length || 0}}/1000</text>
+  </view>
+
+  <!-- 图片 -->
+  <view class="section">
+    <text class="section-label">图片（选填，最多{{maxImages}}张）</text>
+    <view class="image-grid">
+      <view class="img-item" wx:for="{{images}}" wx:key="path">
+        <image src="{{item.path}}" mode="aspectFill" class="img-preview"/>
+        <view wx:if="{{item.uploading}}" class="img-mask">
+          <text>上传中...</text>
+        </view>
+        <view wx:if="{{item.error}}" class="img-mask img-error">
+          <text>上传失败</text>
+        </view>
+        <view class="img-del" catchtap="removeImage" data-idx="{{index}}">✕</view>
+      </view>
+      <view class="img-add" wx:if="{{images.length < maxImages}}" bindtap="chooseImage">
+        <text class="img-add-icon">+</text>
+        <text class="img-add-text">添加图片</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 提交 -->
+  <view class="btn-area">
+    <button
+      class="submit-btn {{submitting ? 'disabled' : ''}}"
+      bindtap="submit"
+      disabled="{{submitting}}"
+      loading="{{submitting}}"
+    >
+      {{submitting ? '发布中...' : '发布留言'}}
+    </button>
+  </view>
+
+  <view wx:if="{{showCategoryPicker}}" class="category-mask" catchtap="closeCategoryPicker">
+    <view class="category-panel" catchtap="stopBubble">
+      <view class="category-accent"></view>
+      <text class="category-title">选择留言分类</text>
+      <text class="category-desc">选择最符合内容的类型</text>
+      <view class="category-options">
+        <view
+          wx:for="{{categories}}"
+          wx:key="key"
+          class="category-option {{categoryIdx === index ? 'active' : ''}}"
+          data-idx="{{index}}"
+          bindtap="selectCategory"
+        >
+          <text>{{item.label}}</text>
+          <view wx:if="{{categoryIdx === index}}" class="category-check"></view>
+        </view>
+      </view>
+      <view class="category-cancel" bindtap="closeCategoryPicker">取消</view>
+    </view>
+  </view>
+</view>

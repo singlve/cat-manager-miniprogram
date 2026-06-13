@@ -9,12 +9,13 @@ describe('智能提醒计划页面回归', () => {
   it('页面路由和提醒页入口保持注册', () => {
     const app = JSON.parse(read('app.json'));
     const remindersWxml = read('pages/reminders/reminders.wxml');
-    expect(app.pages).toContain('pages/reminder-plan/reminder-plan');
+    const petPackage = app.subPackages.find(item => item.root === 'pet-package');
+    expect(petPackage.pages).toContain('reminder-plan/reminder-plan');
     expect(remindersWxml).toContain('bindtap="goReminderPlan"');
   });
 
   it('预览保留批量选择和单项调整入口', () => {
-    const wxml = read('pages/reminder-plan/reminder-plan.wxml');
+    const wxml = read('pet-package/reminder-plan/reminder-plan.wxml');
     expect(wxml).toContain('bindtap="selectAllPreviewItems"');
     expect(wxml).toContain('bindtap="clearPreviewItems"');
     expect(wxml).toContain('catchtap="openPreviewEditor"');
@@ -22,13 +23,13 @@ describe('智能提醒计划页面回归', () => {
   });
 
   it('已有进行中提醒会被标记为跳过', () => {
-    const js = read('pages/reminder-plan/reminder-plan.js');
+    const js = read('pet-package/reminder-plan/reminder-plan.js');
     expect(js).toContain("reminders.find(reminder => reminder.type === item.type && !reminder.completedAt)");
     expect(js).toContain("status: existing ? 'skip' : 'create'");
   });
 
   it('生成完成后通知提醒页刷新并回到列表', () => {
-    const planJs = read('pages/reminder-plan/reminder-plan.js');
+    const planJs = read('pet-package/reminder-plan/reminder-plan.js');
     const remindersJs = read('pages/reminders/reminders.js');
     expect(planJs).toContain("wx.setStorageSync('reminderPlanGenerated'");
     expect(planJs).toContain('wx.navigateBack()');

@@ -3,7 +3,7 @@
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero ui-tab-hero reminder-hero">
-    <image class="ui-compact-hero-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFit" />
+    <image class="ui-compact-hero-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">REMINDER</text>
       <text class="ui-compact-title">提醒列表</text>
@@ -13,7 +13,7 @@
 
   <!-- 未登录提示 -->
   <view wx:if="{{!isLoggedIn}}" class="guest-banner">
-    <image class="reminder-empty-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFit" />
+    <image class="reminder-empty-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFit" />
     <text class="guest-title">登录后管理提醒</text>
     <text class="guest-desc">登录后可以为宠物设置定期提醒，不错过每一次护理</text>
     <button class="guest-login-btn" bindtap="goLogin">登录 / 注册</button>
@@ -87,7 +87,7 @@
 
     <!-- 空状态 -->
     <view wx:if="{{!hasData}}" class="empty-state">
-      <image class="reminder-empty-img" src="/assets/illustrations/empty-reminder-transparent.png" mode="aspectFit" />
+      <image class="reminder-empty-img" src="/assets/illustrations/empty-reminder.webp" mode="aspectFit" />
       <text class="empty-title">暂无提醒</text>
       <text class="empty-desc">{{statusFilter === 'active' ? '所有提醒都在进行中，干得漂亮！' : '还没有完成任何提醒'}}</text>
     </view>

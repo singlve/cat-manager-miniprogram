@@ -73,7 +73,7 @@ Page({
             } else if (user) {
               try { wx.setStorageSync('currentUser', user); } catch (err) {}
               const needPwd = user.password ? 0 : 1;
-              wx.navigateTo({ url: `/pages/bind-phone/bind-phone?mode=login&needPassword=${needPwd}&isNewUser=0` });
+              wx.navigateTo({ url: `/account-package/bind-phone/bind-phone?mode=login&needPassword=${needPwd}&isNewUser=0` });
             } else {
               wx.showLoading({ title: '创建账号中...' });
               const newUser = {
@@ -99,7 +99,7 @@ Page({
               newUser._id = id;
               try { wx.setStorageSync('currentUser', newUser); } catch (err) {}
               wx.hideLoading();
-              wx.navigateTo({ url: '/pages/bind-phone/bind-phone?mode=login&needPassword=1&isNewUser=1' });
+              wx.navigateTo({ url: '/account-package/bind-phone/bind-phone?mode=login&needPassword=1&isNewUser=1' });
             }
           },
           fail: err => {
@@ -317,9 +317,9 @@ Page({
   },
 
   toggleOtherLogin() { this.setData({ showOtherLogin: !this.data.showOtherLogin }); },
-  goRegister() { wx.navigateTo({ url: '/pages/register/register' }); },
+  goRegister() { wx.navigateTo({ url: '/account-package/register/register' }); },
 
   onShareAppMessage() {
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 记录宝贝的健康日常', path: '/pages/cat-list/cat-list' };
   },
 });

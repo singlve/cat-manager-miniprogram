@@ -45,9 +45,29 @@ page { background: var(--theme-bg, #F7F9FB); }
 }
 .voucher-balance-label { display: block; color: #FFFFFF; font-size: 28rpx; font-weight: 900; }
 .voucher-balance-desc { display: block; margin-top: 5rpx; color: rgba(255,255,255,.72); font-size: 21rpx; }
+.voucher-balance > view:first-child { flex: 1; min-width: 0; padding-right: 18rpx; }
+.voucher-balance-side { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 8rpx; }
 .voucher-balance-count { display: flex; align-items: baseline; gap: 5rpx; color: #FFFFFF; }
 .voucher-balance-count text:first-child { font-size: 48rpx; font-weight: 900; }
 .voucher-balance-count text:last-child { font-size: 22rpx; font-weight: 700; }
+.voucher-redeem-entry {
+  min-height: 88rpx;
+  margin-top: 12rpx;
+  padding: 16rpx 22rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rpx;
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .2);
+  border-radius: 20rpx;
+  background: var(--theme-card, #FFFFFF);
+  box-shadow: 0 8rpx 22rpx rgba(68,92,120,.06);
+  box-sizing: border-box;
+}
+.voucher-redeem-entry > view:first-child { flex: 1; min-width: 0; }
+.voucher-entry-title { display: block; color: var(--theme-text, #243044); font-size: 24rpx; line-height: 1.25; font-weight: 900; }
+.voucher-entry-desc { display: block; margin-top: 5rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 19rpx; line-height: 1.35; }
+.voucher-entry-arrow { width: 14rpx; height: 14rpx; flex-shrink: 0; margin-right: 5rpx; border-top: 3rpx solid var(--theme-primary, #5BA7D8); border-right: 3rpx solid var(--theme-primary, #5BA7D8); transform: rotate(45deg); box-sizing: border-box; }
 
 .benefit-card {
   margin-top: 20rpx;
@@ -155,4 +175,6 @@ page { background: var(--theme-bg, #F7F9FB); }
   .benefit-hero-art { width: 146rpx; transform: scale(.86); transform-origin: left center; margin-right: -18rpx; }
   .benefit-title { font-size: 32rpx; }
   .benefit-desc { font-size: 21rpx; }
+  .voucher-balance { padding-left: 22rpx; padding-right: 22rpx; }
+  .voucher-redeem-entry { padding-left: 18rpx; padding-right: 18rpx; }
 }

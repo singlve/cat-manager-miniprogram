@@ -534,5 +534,5 @@ module.exports = {
   getWeekKey,
   isAdmin,
   confirmDangerousAction,
-  SHARE_IMAGE: '/assets/logo.png'
+  SHARE_IMAGE: '/assets/logo.jpg'
 };

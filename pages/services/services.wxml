@@ -3,7 +3,7 @@
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero ui-tab-hero services-hero">
-    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat-transparent.png" mode="aspectFit" />
+    <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">SERVICE</text>
       <text class="ui-compact-title">服务中心</text>
@@ -12,7 +12,7 @@
   </view>
 
   <view wx:if="{{!isLoggedIn}}" class="service-login-card">
-    <image class="service-login-img" src="/assets/illustrations/profile-mascot-transparent.png" mode="aspectFit" />
+    <image class="service-login-img" src="/assets/illustrations/profile-mascot.webp" mode="aspectFit" />
     <text class="service-login-title">登录后使用服务中心</text>
     <text class="service-login-desc">记账、收货地址、留言互动和管理工具都会在这里展示。</text>
     <button class="service-login-btn" bindtap="goLogin">登录 / 注册</button>
@@ -26,6 +26,20 @@
           <view wx:if="{{benefitAvailable}}" class="benefit-dot">{{benefitHint}}</view>
         </view>
         <text class="desktop-title">福利中心</text>
+      </view>
+
+      <view class="desktop-app" bindtap="goPointsMall">
+        <view class="desktop-icon icon-shop">
+          <image class="desktop-icon-img" src="/assets/icons/ui/shop.png" mode="aspectFit" />
+        </view>
+        <text class="desktop-title">积分小铺</text>
+      </view>
+
+      <view class="desktop-app" bindtap="goInventory">
+        <view class="desktop-icon icon-backpack">
+          <image class="desktop-icon-img" src="/assets/icons/ui/backpack.png" mode="aspectFit" />
+        </view>
+        <text class="desktop-title">我的背包</text>
       </view>
 
       <view class="desktop-app" bindtap="goExpense">

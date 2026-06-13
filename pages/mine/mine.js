@@ -85,7 +85,7 @@ Page({
     wheelBackground: '',
     wheelLabels: [],
     lotteryPrizes: [],
-    // 绑定手机（已改为独立页面 pages/bind-phone）
+    // 绑定手机使用独立账号分包页面
   },
 
   onLoad() {
@@ -252,16 +252,16 @@ Page({
 
   goCats()      { wx.switchTab({ url: '/pages/cat-list/cat-list' }); },
   goReminders() { wx.switchTab({ url: '/pages/reminders/reminders' }); },
-  goRecords()   { wx.navigateTo({ url: '/pages/health-records/health-records' }); },
-  goExpense()   { wx.navigateTo({ url: '/pages/expense/expense' }); },
-  goShippingAddress() { wx.navigateTo({ url: '/pages/shipping-address/shipping-address' }); },
+  goRecords()   { wx.navigateTo({ url: '/pet-package/health-records/health-records' }); },
+  goExpense()   { wx.navigateTo({ url: '/packages/expense/expense' }); },
+  goShippingAddress() { wx.navigateTo({ url: '/packages/shipping-address/shipping-address' }); },
   goPointsMall()    { wx.navigateTo({ url: '/packages/points-mall/points-mall' }); },
   goInventory()    { wx.navigateTo({ url: '/packages/inventory/inventory' }); },
   goAdmin()         { wx.navigateTo({ url: '/packages/admin-items/admin-items' }); },
   goAdminAnnounce() { wx.navigateTo({ url: '/packages/admin-announcement/admin-announcement' }); },
   goAdminData()    { wx.navigateTo({ url: '/packages/admin-data/admin-data' }); },
-  goFeedback()    { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
-  goAbout()        { wx.navigateTo({ url: '/pages/about/about' }); },
+  goFeedback()    { wx.navigateTo({ url: '/packages/feedback/feedback' }); },
+  goAbout()        { wx.navigateTo({ url: '/packages/about/about' }); },
 
   async _loadNotifyCount() {
     try {
@@ -380,7 +380,7 @@ Page({
       const user = wx.getStorageSync('currentUser') || {};
       if (user && user.password) needPassword = 0;
     } catch (e) {}
-    wx.navigateTo({ url: `/pages/bind-phone/bind-phone?mode=mine&needPassword=${needPassword}` });
+    wx.navigateTo({ url: `/account-package/bind-phone/bind-phone?mode=mine&needPassword=${needPassword}` });
   },
 
   // ─── 签到积分 ───
@@ -389,65 +389,38 @@ Page({
       wx.showToast({ title: '今日已签到', icon: 'none' });
       return;
     }
+    if (this._checkingIn) return;
 
     let currentUser = {};
     try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-
-    const today = todayStr();
-    const lastDate = currentUser.lastCheckInDate || '';
-
-    // 计算连续签到天数
-    let streak = 1;
-    if (lastDate) {
-      const last = new Date(lastDate.replace(/-/g, '/'));
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      if (last.toDateString() === yesterday.toDateString()) {
-        streak = (currentUser.checkInStreak || 0) + 1;
-      } else if (last.toDateString() === new Date().toDateString()) {
-        return;
-      }
+    if (!currentUser._id) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
     }
 
-    // 累积签到 +1
-    var totalCheckIns = (currentUser.totalCheckIns || 0) + 1;
-    currentUser.totalCheckIns = totalCheckIns;
-
-    const pointsEarned = calcCheckInPoints(streak);
-    currentUser.totalPoints = (currentUser.totalPoints || 0) + pointsEarned;
-    currentUser.lastCheckInDate = today;
-    currentUser.checkInStreak = streak;
-
-    // 累积签到奖励检查
-    var claimedCumulative = currentUser.claimedCumulativeMilestones || [];
-    var cumulReward = calcCumulativeRewards(totalCheckIns, claimedCumulative);
-    if (cumulReward.earned) {
-      currentUser.totalPoints += cumulReward.points;
-      claimedCumulative.push(cumulReward.milestone);
-      currentUser.claimedCumulativeMilestones = claimedCumulative;
+    const requestId = this._checkInRequestId ||
+      ('checkin_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    this._checkInRequestId = requestId;
+    this._checkingIn = true;
+    let result;
+    try {
+      result = await clouddb.checkInAtomic(currentUser._id, requestId);
+      this._checkInRequestId = '';
+    } catch (e) {
+      console.error('[mine] checkIn failed:', e);
+      wx.showToast({ title: e.message || '签到失败，请重试', icon: 'none' });
+      return;
+    } finally {
+      this._checkingIn = false;
     }
 
-    if (currentUser._id) {
-      try {
-        await clouddb.updateUser(currentUser._id, {
-          totalPoints: currentUser.totalPoints,
-          totalCheckIns: totalCheckIns,
-          lastCheckInDate: today,
-          checkInStreak: streak,
-          claimedCumulativeMilestones: claimedCumulative
-        });
-        // 云端成功 → 更新本地
-        try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-      } catch (e) {
-        console.error('[mine] checkIn cloud update failed:', e);
-        wx.showToast({ title: '签到失败，请重试', icon: 'none' });
-        return;
-      }
-    } else {
-      // 未登录用户仅本地存储
-      try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
-    }
-
+    Object.assign(currentUser, result);
+    try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
+    const today = result.lastCheckInDate || todayStr();
+    const streak = result.checkInStreak || 0;
+    const totalCheckIns = result.totalCheckIns || 0;
+    const claimedCumulative = result.claimedCumulativeMilestones || [];
+    const cumulReward = result.cumulativeReward || {};
     // 抽奖：每连签7天里程碑给1次，已抽的不计
     var drawnMilestones = currentUser.drawnMilestones || [];
     var lotteryEarned = getLotteryDrawsForStreak(streak);
@@ -460,7 +433,7 @@ Page({
     var calendarMonth2 = buildCheckInMonth(today, streak, this.data.makeUpDates, drawnMilestones);
 
     this.setData({
-      points: currentUser.totalPoints,
+      points: result.totalPoints,
       checkedInToday: true,
       totalCheckIns: totalCheckIns,
       checkInStreak: streak,
@@ -476,10 +449,12 @@ Page({
       claimedCumulativeMilestones: claimedCumulative
     });
 
-    if (cumulReward.earned) {
+    if (result.alreadyChecked) {
+      wx.showToast({ title: '今日已签到', icon: 'none' });
+    } else if (cumulReward.earned) {
       wx.showToast({ title: '签到成功！累积' + cumulReward.label + '奖励+' + cumulReward.points + '分', icon: 'success' });
     } else {
-      wx.showToast({ title: '签到成功 +' + pointsEarned + '分', icon: 'success' });
+      wx.showToast({ title: '签到成功 +' + result.pointsEarned + '分', icon: 'success' });
     }
 
     if (canLottery2 && streak % 7 === 0) {
@@ -557,71 +532,41 @@ Page({
   async confirmMakeUp() {
     var self = this;
     var date = this.data.makeUpTargetDate;
-    var cards = this.data.makeUpCards;
-    var cost = this.data.nextMakeUpCost || 1;
-    if (cards < cost) { wx.showToast({ title: '补签卡不足', icon: 'none' }); return; }
-    if (this.data.monthlyMakeUpCount >= 4) {
-      wx.showToast({ title: '本月补签次数已达上限（4次）', icon: 'none' });
-      this.setData({ showMakeUpModal: false });
-      return;
-    }
+    if (this._makingUp) return;
 
     var currentUser = {};
     try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-
-    var today = todayStr();
-    var actualCost = (self.data.monthlyMakeUpCount || 0) + 1;
-    if (actualCost > cost) cost = actualCost;
-
-    // 补签：只增加累积签到，不改变连续签到
-    var newDates = (self.data.makeUpDates || []).concat([date]);
-    var newCards = cards - cost;
-    var newTotalCheckIns = (currentUser.totalCheckIns || 0) + 1;
-    var streakUnchanged = currentUser.checkInStreak || 0;
-
-    var currentMonth = today.slice(0, 7);
-    var monthlyMakeUpCount = currentUser.monthlyMakeUpCount || 0;
-    var monthlyMakeUpMonth = currentUser.monthlyMakeUpMonth || '';
-    if (monthlyMakeUpMonth !== currentMonth) { monthlyMakeUpCount = 0; }
-    monthlyMakeUpCount += 1;
-
-    currentUser.totalCheckIns = newTotalCheckIns;
-    currentUser.makeUpCards = newCards;
-    currentUser.makeUpDates = newDates;
-    currentUser.monthlyMakeUpCount = monthlyMakeUpCount;
-    currentUser.monthlyMakeUpMonth = currentMonth;
-    // checkInStreak 不变！
-
-    // 累积奖励检查（在云端更新之前合并）
-    var claimedCumulative = currentUser.claimedCumulativeMilestones || [];
-    var cumulReward = calcCumulativeRewards(newTotalCheckIns, claimedCumulative);
-    var cloudUpdates = {
-      totalCheckIns: newTotalCheckIns,
-      makeUpCards: newCards,
-      makeUpDates: newDates,
-      monthlyMakeUpCount: monthlyMakeUpCount,
-      monthlyMakeUpMonth: currentMonth
-    };
-    if (cumulReward.earned) {
-      claimedCumulative.push(cumulReward.milestone);
-      currentUser.claimedCumulativeMilestones = claimedCumulative;
-      currentUser.totalPoints = (currentUser.totalPoints || 0) + cumulReward.points;
-      cloudUpdates.totalPoints = currentUser.totalPoints;
-      cloudUpdates.claimedCumulativeMilestones = claimedCumulative;
+    if (!currentUser._id) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
     }
 
-    // 先写云端，成功后再写本地
-    if (currentUser._id) {
-      try {
-        await clouddb.updateUser(currentUser._id, cloudUpdates);
-      } catch (e) {
-        console.error('[mine] confirmMakeUp cloud update failed:', e);
-        wx.showToast({ title: '补签失败，请重试', icon: 'none' });
-        return;
-      }
+    const requestId = this._makeUpRequestId ||
+      ('makeup_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    this._makeUpRequestId = requestId;
+    this._makingUp = true;
+    var result;
+    try {
+      result = await clouddb.makeUpAtomic(currentUser._id, date, requestId);
+      this._makeUpRequestId = '';
+    } catch (e) {
+      console.error('[mine] confirmMakeUp failed:', e);
+      wx.showToast({ title: e.message || '补签失败，请重试', icon: 'none' });
+      return;
+    } finally {
+      this._makingUp = false;
     }
+
+    Object.assign(currentUser, result);
     try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
 
+    var newDates = result.makeUpDates || [];
+    var newCards = result.makeUpCards || 0;
+    var newTotalCheckIns = result.totalCheckIns || 0;
+    var monthlyMakeUpCount = result.monthlyMakeUpCount || 0;
+    var streakUnchanged = result.checkInStreak || currentUser.checkInStreak || 0;
+    var claimedCumulative = result.claimedCumulativeMilestones || [];
+    var cumulReward = result.cumulativeReward || {};
     var drawnMilestones = currentUser.drawnMilestones || [];
     var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streakUnchanged, newDates, drawnMilestones);
     var lotteryEarned = getLotteryDrawsForStreak(streakUnchanged);
@@ -646,10 +591,15 @@ Page({
       drawnToday: self.data.drawnToday,
       hasDrawnBefore: drawnMilestones.length > 0,
       claimedCumulativeMilestones: claimedCumulative,
-      points: cumulReward.earned ? currentUser.totalPoints : self.data.points
+      points: result.totalPoints
     });
 
-    wx.showToast({ title: '补签成功！累积+1天', icon: 'success' });
+    wx.showToast({
+      title: cumulReward.earned
+        ? '补签成功，奖励+' + cumulReward.points + '分'
+        : '补签成功！累积+1天',
+      icon: 'success'
+    });
   },
 
   async onPullDownRefresh() {
@@ -658,40 +608,35 @@ Page({
 
   onShareAppMessage: function() {
     this._awardShareCard('group');
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 记录宠物的每一个瞬间', path: '/pages/cat-list/cat-list' };
   },
 
   onShareTimeline: function() {
     this._awardShareCard('timeline');
-    return { imageUrl: '/assets/logo.png', title: '宠物小管家Plus - 记录宠物的每一个瞬间' };
+    return { imageUrl: '/assets/logo.jpg', title: '宠物小管家Plus - 记录宠物的每一个瞬间' };
   },
 
   async _awardShareCard(type) {
     var self = this;
-    var today = todayStr();
     var currentUser = {};
     try { currentUser = wx.getStorageSync('currentUser') || {}; } catch (e) {}
-
-    var dateField = type === 'group' ? 'lastGroupShareDate' : 'lastTimelineShareDate';
-    if ((currentUser[dateField] || '') === today) {
-      wx.showToast({ title: '今日已领取分享奖励', icon: 'none' });
+    if (!currentUser._id) return;
+    const requestKey = type === 'timeline' ? '_timelineRewardRequestId' : '_groupRewardRequestId';
+    const requestId = this[requestKey] ||
+      ('share_' + type + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8));
+    this[requestKey] = requestId;
+    var result;
+    try {
+      result = await clouddb.claimShareRewardAtomic(currentUser._id, type, requestId);
+      this[requestKey] = '';
+    } catch (e) {
+      console.error('[mine] awardShareCard failed:', e);
       return;
     }
-
-    var newCards = (currentUser.makeUpCards || 0) + 1;
-    currentUser.makeUpCards = newCards;
-    currentUser[dateField] = today;
-
-    if (currentUser._id) {
-      try {
-        await clouddb.updateUser(currentUser._id, { makeUpCards: newCards, [dateField]: today });
-      } catch (e) {
-        console.error('[mine] awardShareCard cloud update failed:', e);
-        return;
-      }
-    }
+    Object.assign(currentUser, result);
     try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
 
+    var newCards = result.makeUpCards || 0;
     var drawnMilestones = currentUser.drawnMilestones || [];
     var streak = currentUser.checkInStreak || 0;
     var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streak, currentUser.makeUpDates || [], drawnMilestones);
@@ -712,11 +657,14 @@ Page({
       drawnToday: self.data.drawnToday,
       hasDrawnBefore: drawnMilestones.length > 0,
       showShareTask: false,
-      lastGroupShareDate: type === 'group' ? today : self.data.lastGroupShareDate,
-      lastTimelineShareDate: type === 'timeline' ? today : self.data.lastTimelineShareDate
+      lastGroupShareDate: result.lastGroupShareDate || '',
+      lastTimelineShareDate: result.lastTimelineShareDate || ''
     });
 
-    wx.showToast({ title: '+1补签卡', icon: 'success' });
+    wx.showToast({
+      title: result.alreadyRewarded ? '今日已领取分享奖励' : '+1补签卡',
+      icon: result.alreadyRewarded ? 'none' : 'success'
+    });
   },
 
   async openLottery() {

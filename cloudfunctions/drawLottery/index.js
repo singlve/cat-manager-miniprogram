@@ -258,7 +258,12 @@ exports.main = async event => {
       let oldRequest = null;
       try { oldRequest = await requestRef.get(); } catch (error) { oldRequest = null; }
       if (oldRequest && oldRequest.data) {
-        if (oldRequest.data._openid !== openid) throw businessError('INVALID_REQUEST', '请求不属于当前用户');
+        if (oldRequest.data._openid !== openid ||
+            oldRequest.data.userId !== userId ||
+            Math.max(0, parseInt(oldRequest.data.requestedMilestone, 10) || 0) !==
+              Math.max(0, requestedMilestone)) {
+          throw businessError('INVALID_REQUEST', '请求标识与当前抽奖不匹配');
+        }
         return oldRequest.data.result;
       }
 
@@ -411,7 +416,13 @@ exports.main = async event => {
       }, snapshot);
 
       await requestRef.set({
-        data: { _openid: openid, userId, createdAt: now, result: response }
+        data: {
+          _openid: openid,
+          userId,
+          requestedMilestone,
+          createdAt: now,
+          result: response
+        }
       });
       return response;
     });

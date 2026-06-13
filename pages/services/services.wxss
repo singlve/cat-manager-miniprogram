@@ -145,6 +145,16 @@ page { background: var(--theme-bg, #F7F9FB); }
   border: 1rpx solid rgba(255,184,107,.24);
 }
 
+.icon-shop {
+  background: linear-gradient(135deg, var(--theme-primary-soft, #EAF4FB), #FFF1DF);
+  border: 1rpx solid rgba(var(--theme-primary-rgb, 91, 167, 216), .16);
+}
+
+.icon-backpack {
+  background: linear-gradient(135deg, var(--theme-secondary-soft, #EAF7F5), #FFF4E6);
+  border: 1rpx solid rgba(var(--theme-secondary-rgb, 107, 198, 179), .16);
+}
+
 .benefit-dot {
   position: absolute;
   top: -5rpx;

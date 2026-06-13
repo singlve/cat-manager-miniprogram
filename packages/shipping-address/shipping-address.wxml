@@ -1,0 +1,97 @@
+<!--packages/shipping-address/shipping-address.wxml-->
+<view class="page {{themeClass}}">
+  <view class="service-feature-hero-shell">
+    <view class="service-feature-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/address.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">DELIVERY</text>
+        <text class="service-feature-title">收货地址</text>
+        <text class="service-feature-desc">管理积分商城实物商品的收件信息与默认地址。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="ui-loading-state">
+    <view class="ui-loading-mark"></view>
+    <text class="ui-loading-text">正在加载收货地址</text>
+  </view>
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">地址加载失败</text>
+    <text class="load-error-desc">请检查网络后重新加载，已有地址不会丢失</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <!-- 地址列表 -->
+  <block wx:elif="{{addresses.length > 0}}">
+    <view class="addr-card" wx:for="{{addresses}}" wx:key="_id">
+      <!-- 默认标签 -->
+      <view wx:if="{{item.isDefault}}" class="default-tag">默认</view>
+
+      <view class="addr-header">
+        <text class="addr-name">{{item.name}}</text>
+        <text class="addr-phone">{{item.phone}}</text>
+      </view>
+      <view class="addr-body">{{item.province}} {{item.city}} {{item.district}} {{item.detail}}</view>
+
+      <view class="addr-actions">
+        <view wx:if="{{!item.isDefault}}" class="addr-act-btn" bindtap="setDefault" data-id="{{item._id}}">设为默认</view>
+        <view class="addr-act-btn" bindtap="editAddress" data-address="{{item}}">编辑</view>
+        <view class="addr-act-btn danger" bindtap="deleteAddress" data-id="{{item._id}}">删除</view>
+      </view>
+    </view>
+  </block>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{!loadError}}" class="empty-tip">
+    <image class="ui-empty-img" src="/assets/illustrations/profile-mascot.webp" mode="aspectFill" />
+    <text style="color:#999;margin-top:16rpx;">还没有收货地址</text>
+    <text style="color:#bbb;font-size:22rpx;margin-top:8rpx;">点击下方按钮添加</text>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view wx:if="{{!loading && !loadError}}" class="add-btn" bindtap="addAddress">+ 添加收货地址</view>
+
+  <!-- ── 编辑弹窗 ── -->
+  <view wx:if="{{showEditor}}" class="mask" catchtap="closeEditor">
+    <view class="editor-sheet" catchtap="stopBubble">
+      <view class="editor-bar"></view>
+      <text class="editor-title">{{editingId ? '编辑地址' : '新增地址'}}</text>
+
+      <view class="form-group">
+        <text class="form-label">收货人</text>
+        <input class="form-input" placeholder="请输入姓名" value="{{formName}}" bindinput="onNameInput" maxlength="20"/>
+      </view>
+      <view class="form-group">
+        <text class="form-label">手机号</text>
+        <input class="form-input" type="number" placeholder="请输入手机号" value="{{formPhone}}" bindinput="onPhoneInput" maxlength="11"/>
+      </view>
+      <view class="form-group">
+        <text class="form-label">省市区</text>
+        <picker mode="region" value="{{formRegion}}" bindchange="onRegionChange">
+          <view class="form-input region-picker {{formProvince ? '' : 'placeholder'}}">
+            {{formProvince ? formProvince + ' ' + formCity + ' ' + formDistrict : '请选择省市区'}}
+          </view>
+        </picker>
+      </view>
+      <view class="form-group">
+        <text class="form-label">详细地址</text>
+        <input class="form-input" placeholder="街道/门牌号等" value="{{formDetail}}" bindinput="onDetailInput" maxlength="100"/>
+      </view>
+
+      <view class="editor-btns">
+        <view class="e-btn cancel" bindtap="closeEditor">取消</view>
+        <view class="e-btn confirm {{saving ? 'disabled' : ''}}" bindtap="saveAddress">{{saving ? '保存中...' : '保存'}}</view>
+      </view>
+    </view>
+  </view>
+
+</view>

@@ -4,7 +4,7 @@
 
     <!-- Logo -->
     <view class="login-brand">
-      <image class="login-hero-img" src="/assets/illustrations/home-hero-transparent.png" mode="aspectFit" />
+      <image class="login-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
       <text class="brand-kicker">PET CARE</text>
       <text class="brand-title">宠物小管家Plus</text>
       <text class="brand-subtitle">记录宠物成长，守护每一刻</text>
@@ -62,7 +62,7 @@
       <view class="profile-avatar-wrap">
         <view class="avatar-ring"></view>
         <button class="avatar-choose-btn" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
-          <image src="{{profileAvatar || '/images/default-avatar.svg'}}" mode="aspectFill" class="avatar-preview" />
+          <image src="{{profileAvatar || '/assets/illustrations/profile-mascot.webp'}}" mode="aspectFill" class="avatar-preview" />
         </button>
       </view>
       <text class="profile-avatar-hint">点击选择头像</text>

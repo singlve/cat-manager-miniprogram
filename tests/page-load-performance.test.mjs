@@ -7,8 +7,8 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 
 describe('页面加载性能保护', () => {
   it.each([
-    'pages/health-records/health-records.js',
-    'pages/weight-records/weight-records.js'
+    'pet-package/health-records/health-records.js',
+    'pet-package/weight-records/weight-records.js'
   ])('%s 跳过首次 onShow 的重复请求', path => {
     const source = read(path);
 
@@ -18,7 +18,7 @@ describe('页面加载性能保护', () => {
   });
 
   it('记账本月度按月加载，年度才读取全年', () => {
-    const source = read('pages/expense/expense.js');
+    const source = read('packages/expense/expense.js');
 
     expect(source).toContain("if (this.data.viewMode === 'year')");
     expect(source).toContain("start = y + '-01-01'");
@@ -27,8 +27,8 @@ describe('页面加载性能保护', () => {
   });
 
   it.each([
-    'pages/health-records/health-records.js',
-    'pages/weight-records/weight-records.js'
+    'pet-package/health-records/health-records.js',
+    'pet-package/weight-records/weight-records.js'
   ])('%s 原始记录保留在逻辑层，避免重复 setData', path => {
     const source = read(path);
     expect(source).toContain('this._records');

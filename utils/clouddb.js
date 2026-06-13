@@ -405,7 +405,52 @@ async function addUser(user) {
 
 async function updateUser(id, updates) {
   if (!isCloudReady()) return;
-  await _cloudUpdate(USER_COL, id, updates);
+  const res = await wx.cloud.callFunction({
+    name: 'userAccount',
+    data: { action: 'updateFields', userId: id, updates: updates || {} }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) {
+    const error = new Error(result.msg || '用户资料更新失败');
+    error.code = result.code;
+    throw error;
+  }
+  return result.data;
+}
+
+function _assetRequestId(action) {
+  return action + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+}
+
+async function callUserAssetAction(action, params) {
+  params = params || {};
+  if (!isCloudReady()) throw new Error('云开发不可用，无法修改账户资产');
+  const res = await wx.cloud.callFunction({
+    name: 'userAccount',
+    data: Object.assign({}, params, {
+      action: action,
+      requestId: params.requestId || _assetRequestId(action)
+    })
+  });
+  const result = res.result || {};
+  if (result.code !== 0) {
+    const error = new Error(result.msg || '操作失败，请重试');
+    error.code = result.code;
+    throw error;
+  }
+  return result.data;
+}
+
+async function checkInAtomic(userId, requestId) {
+  return callUserAssetAction('checkIn', { userId, requestId });
+}
+
+async function makeUpAtomic(userId, date, requestId) {
+  return callUserAssetAction('makeUp', { userId, date, requestId });
+}
+
+async function claimShareRewardAtomic(userId, shareType, requestId) {
+  return callUserAssetAction('shareReward', { userId, shareType, requestId });
 }
 
 async function searchUsers(type, keyword) {
@@ -503,6 +548,17 @@ async function getBenefitCampaignsAdmin() {
   const result = res.result || {};
   if (result.code !== 0) throw new Error(result.msg || '福利配置加载失败');
   return result.data || [];
+}
+
+async function previewBenefitAudience(campaign) {
+  if (!isCloudReady()) return { eligibleUsers: 0 };
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminPreview', campaign: campaign }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '适用人数预估失败');
+  return result.data || { eligibleUsers: 0 };
 }
 
 async function getBenefitClaimsAdmin() {
@@ -725,18 +781,16 @@ async function setDefaultAddress(id) {
 // ════════════════════════════════════════════════════
 // 积分商城 - 商品
 // ════════════════════════════════════════════════════
-async function getRedeemItems() {
+async function getRedeemItems(options) {
+  options = options || {};
   if (isCloudReady()) {
-    try {
-      const db = wx.cloud.database();
-      const { data } = await db.collection(REDEEM_ITEM_COL).get();
-      if (!data || data.length === 0) {
-        await _seedRedeemItems(db);
-        const { data: seeded } = await db.collection(REDEEM_ITEM_COL).get();
-        return seeded;
-      }
-      return data;
-    } catch (e) { console.error('[clouddb] getRedeemItems fail', e); }
+    const response = await wx.cloud.callFunction({
+      name: options.admin ? 'adminStore' : 'redeemItem',
+      data: { action: options.admin ? 'listItems' : 'list' }
+    });
+    const result = response.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '商品列表加载失败');
+    return result.data || [];
   }
   return _storage().getRedeemItems();
 }
@@ -751,7 +805,7 @@ async function _seedRedeemItems(db) {
 // 将内置主题迁移为可由管理员维护的正式商城商品。
 // 只补缺失项，不覆盖管理员已经修改过的积分、名称或上下架状态。
 async function ensureThemeRedeemItems() {
-  const items = await getRedeemItems();
+  const items = await getRedeemItems({ admin: true });
   const created = [];
   const themeProducts = getThemeProducts();
 
@@ -780,34 +834,41 @@ async function ensureThemeRedeemItems() {
 
 async function addRedeemItem(item) {
   if (isCloudReady()) {
-    try {
-      const db = wx.cloud.database();
-      const res = await db.collection(REDEEM_ITEM_COL).add({ data: item });
-      item._id = res._id;
-      return item;
-    } catch (e) { console.error('[clouddb] addRedeemItem fail', e); }
+    const res = await wx.cloud.callFunction({
+      name: 'adminStore',
+      data: { action: 'saveItem', item }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '商品添加失败');
+    return result.data;
   }
   return _storage().addRedeemItem(item);
 }
 
 async function updateRedeemItem(id, updates) {
   if (isCloudReady()) {
-    try {
-      const db = wx.cloud.database();
-      await db.collection(REDEEM_ITEM_COL).doc(id).update({ data: updates });
-      return { _id: id, ...updates };
-    } catch (e) { console.error('[clouddb] updateRedeemItem fail', e); }
+    const current = (await getRedeemItems({ admin: true })).find(item => item._id === id);
+    if (!current) throw new Error('商品不存在');
+    const res = await wx.cloud.callFunction({
+      name: 'adminStore',
+      data: { action: 'saveItem', id, item: Object.assign({}, current, updates) }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '商品更新失败');
+    return result.data;
   }
   return _storage().updateRedeemItem(id, updates);
 }
 
 async function deleteRedeemItem(id) {
   if (isCloudReady()) {
-    try {
-      const db = wx.cloud.database();
-      await db.collection(REDEEM_ITEM_COL).doc(id).remove();
-      return true;
-    } catch (e) { console.error('[clouddb] deleteRedeemItem fail', e); }
+    const res = await wx.cloud.callFunction({
+      name: 'adminStore',
+      data: { action: 'deleteItem', id }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '商品删除失败');
+    return true;
   }
   return _storage().deleteRedeemItem(id);
 }
@@ -916,6 +977,40 @@ async function redeemItemAtomic(params) {
     themeKey: item.virtualType === 'theme' ? item.virtualValue : '',
     quantity
   };
+}
+
+async function inventoryActionAtomic(action, params) {
+  params = params || {};
+  if (!isCloudReady()) throw new Error('云开发不可用，无法执行背包操作');
+  const res = await wx.cloud.callFunction({
+    name: 'redeemItem',
+    data: {
+      action,
+      userId: params.userId,
+      inventoryIds: params.inventoryIds || [],
+      addressId: params.addressId || '',
+      requestId: params.requestId || _assetRequestId(action)
+    }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) {
+    const error = new Error(result.msg || '背包操作失败，请重试');
+    error.code = result.code;
+    throw error;
+  }
+  return result.data;
+}
+
+async function confirmInventoryAtomic(params) {
+  return inventoryActionAtomic('confirmInventory', params);
+}
+
+async function cancelInventoryAtomic(params) {
+  return inventoryActionAtomic('cancelInventory', params);
+}
+
+async function deleteInventoryAtomic(params) {
+  return inventoryActionAtomic('deleteInventory', params);
 }
 
 async function getLotteryPrizes(options) {
@@ -1369,11 +1464,13 @@ async function getShipments(query) {
 
 async function getShipmentsAdmin() {
   if (isCloudReady()) {
-    try {
-      var db2 = wx.cloud.database();
-      var res = await db2.collection(SHIPMENT_COL).orderBy('createdAt', 'desc').limit(100).get();
-      return res.data;
-    } catch (e) { console.error('[clouddb] getShipmentsAdmin fail', e); }
+    const res = await wx.cloud.callFunction({
+      name: 'adminStore',
+      data: { action: 'listShipments' }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '发货单加载失败');
+    return result.data || [];
   }
   return _storage().getShipments ? _storage().getShipments() : [];
 }
@@ -1391,11 +1488,18 @@ async function addShipment(shipment) {
 
 async function updateShipment(id, updates) {
   if (isCloudReady()) {
-    try {
-      var db2 = wx.cloud.database();
-      await db2.collection(SHIPMENT_COL).doc(id).update({ data: updates });
-      return { _id: id, ...updates };
-    } catch (e) { console.error('[clouddb] updateShipment fail', e); }
+    const res = await wx.cloud.callFunction({
+      name: 'adminStore',
+      data: {
+        action: 'shipOrder',
+        shipmentId: id,
+        carrier: updates && updates.carrier,
+        trackingNo: updates && updates.trackingNo
+      }
+    });
+    const result = res.result || {};
+    if (result.code !== 0) throw new Error(result.msg || '发货失败');
+    return result.data;
   }
   return _storage().updateShipment ? _storage().updateShipment(id, updates) : null;
 }
@@ -1874,8 +1978,9 @@ module.exports = {
   getReminders, addReminder, updateReminder, deleteReminder,
   // users
   getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
+  checkInAtomic, makeUpAtomic, claimShareRewardAtomic,
   getBenefitStatus, claimBenefit,
-  getBenefitCampaignsAdmin, getBenefitClaimsAdmin, saveBenefitCampaign,
+  getBenefitCampaignsAdmin, previewBenefitAudience, getBenefitClaimsAdmin, saveBenefitCampaign,
   toggleBenefitCampaign, deleteBenefitCampaign,
   searchUsers, adminUpdateUser,
   // feedback
@@ -1894,6 +1999,7 @@ module.exports = {
   getShippingAddresses, addShippingAddress, updateShippingAddress, deleteShippingAddress, setDefaultAddress,
   // redeem items
   getRedeemItems, ensureThemeRedeemItems, addRedeemItem, updateRedeemItem, deleteRedeemItem, redeemItemAtomic,
+  confirmInventoryAtomic, cancelInventoryAtomic, deleteInventoryAtomic,
   // lottery
   getLotteryPrizes, saveLotteryPrize, toggleLotteryPrize, deleteLotteryPrize, drawLotteryAtomic,
   reserveLotteryPhysicalInventory, releaseLotteryPhysicalInventory, cancelLotteryPhysicalInventory,

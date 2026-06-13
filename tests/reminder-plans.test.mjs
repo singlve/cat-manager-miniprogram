@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createRequire } from 'module';
 
 const require = createRequire(import.meta.url);
-const { REMINDER_PLANS, getPlanById, getTypeMeta } = require('../utils/reminder-plans.js');
+const { REMINDER_PLANS, getPlanById, getTypeMeta } = require('../pet-package/utils/reminder-plans.js');
 
 describe('智能提醒计划模板', () => {
   it('每个计划都有可生成的提醒项', () => {

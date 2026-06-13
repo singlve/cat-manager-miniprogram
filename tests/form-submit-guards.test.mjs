@@ -7,8 +7,8 @@ const read = path => readFileSync(resolve(root, path), 'utf8');
 
 describe('primary form submit guards', () => {
   it('keeps reminder creation visibly locked while saving', () => {
-    const source = read('pages/reminder-add/reminder-add.js');
-    const template = read('pages/reminder-add/reminder-add.wxml');
+    const source = read('pet-package/reminder-add/reminder-add.js');
+    const template = read('pet-package/reminder-add/reminder-add.wxml');
 
     expect(source).toContain('if (this.data.saving) return');
     expect(source).toContain('this.setData({ saving: true })');
@@ -17,8 +17,8 @@ describe('primary form submit guards', () => {
   });
 
   it('prevents duplicate feedback submissions', () => {
-    const source = read('pages/feedback-post/feedback-post.js');
-    const template = read('pages/feedback-post/feedback-post.wxml');
+    const source = read('packages/feedback-post/feedback-post.js');
+    const template = read('packages/feedback-post/feedback-post.wxml');
 
     expect(source).toContain('if (this.data.submitting) return');
     expect(source).toContain('this.setData({ submitting: true })');
@@ -27,11 +27,11 @@ describe('primary form submit guards', () => {
   });
 
   it.each([
-    ['pages/weight-records/weight-records.js', 'savingRecord'],
-    ['pages/cat-detail/cat-detail.js', 'weightSaving'],
+    ['pet-package/weight-records/weight-records.js', 'savingRecord'],
+    ['pet-package/cat-detail/cat-detail.js', 'weightSaving'],
     ['pages/cat-list/cat-list.js', 'quickSaving'],
-    ['pages/bind-phone/bind-phone.js', 'submitting'],
-    ['pages/health-records/health-records.js', 'editSaving']
+    ['account-package/bind-phone/bind-phone.js', 'submitting'],
+    ['pet-package/health-records/health-records.js', 'editSaving']
   ])('%s exposes a visible submit guard', (path, state) => {
     const source = read(path);
 

@@ -1,0 +1,179 @@
+<!-- packages/feedback/feedback.wxml -->
+<view class="page {{themeClass}}">
+  <view class="service-feature-hero-shell">
+    <view class="service-feature-hero">
+      <view class="service-feature-art">
+        <view class="service-feature-art-back"></view>
+        <view class="service-feature-art-mid"></view>
+        <view class="service-feature-art-front">
+          <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/feedback.png" mode="aspectFit" />
+        </view>
+        <view class="service-feature-art-dot"></view>
+      </view>
+      <view class="service-feature-copy">
+        <text class="service-feature-kicker">COMMUNITY</text>
+        <text class="service-feature-title">互动服务</text>
+        <text class="service-feature-desc">集中查看建议、问题反馈和互动消息。</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 分类筛选 -->
+  <scroll-view scroll-x class="filter-bar">
+    <view class="filter-item {{filter === item.key ? 'active' : ''}}"
+      wx:for="{{categories}}" wx:key="key"
+      bindtap="setFilter" data-filter="{{item.key}}">
+      <image class="ui-icon-sm" src="{{item.iconPath}}" mode="aspectFit" />
+      <text>{{item.label}}</text>
+    </view>
+  </scroll-view>
+
+  <!-- 通知胶囊 -->
+  <view wx:if="{{unreadNotifyCount > 0}}" class="notify-capsule" bindtap="openNotifyPanel">
+    <text class="capsule-text">{{unreadNotifyCount}} 条新消息</text>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="ui-loading-state">
+    <view class="ui-loading-mark"></view>
+    <text class="ui-loading-text">正在加载互动内容</text>
+  </view>
+  <view wx:elif="{{loadError}}" class="load-error-state">
+    <image class="load-error-icon ui-icon-lg" src="/assets/icons/ui/cloud.png" mode="aspectFit" />
+    <text class="load-error-title">互动内容加载失败</text>
+    <text class="load-error-desc">请检查网络后重新加载</text>
+    <button class="load-retry-btn" bindtap="retryLoad">重新加载</button>
+  </view>
+
+  <!-- 留言列表 -->
+  <view wx:elif="{{!loadError}}" class="feedback-list">
+    <view wx:if="{{filteredFeedbacks.length === 0}}" class="empty-state">
+      <image class="ui-empty-img" src="/assets/illustrations/feedback-chat.webp" mode="aspectFill" />
+      <text class="empty-text">还没有留言，来抢沙发吧</text>
+    </view>
+
+    <view class="fb-card {{item.adopted ? 'adopted' : ''}} {{item._highlight ? 'highlight' : ''}}"
+      wx:for="{{filteredFeedbacks}}" wx:key="_id" wx:for-index="idx" id="fb-{{idx}}">
+
+      <!-- 头部：用户 + 分类 + 时间 -->
+      <view class="fb-header">
+        <view class="fb-user">
+          <image wx:if="{{item._avatarUrl}}" class="fb-avatar-img" src="{{item._avatarUrl}}" mode="aspectFill"/>
+          <text wx:else class="fb-avatar">{{item.userNickname ? item.userNickname.slice(0,1) : '?'}}</text>
+          <view class="fb-user-info">
+            <text class="fb-nickname">{{item.userNickname || '匿名用户'}}</text>
+            <text class="fb-time">{{item._time}}</text>
+          </view>
+        </view>
+        <view class="fb-cat cat-{{item.category}}">
+          <text>{{categories[1].icon}} {{item.category === 'suggestion' ? '建议' : item.category === 'bug' ? 'Bug' : item.category === 'experience' ? '体验' : '其他'}}</text>
+        </view>
+      </view>
+
+      <!-- 采纳标记 -->
+      <view wx:if="{{item.adopted}}" class="adopted-badge">
+        <image class="ui-icon-sm" src="/assets/icons/ui/done.png" mode="aspectFit" />
+        <text>管理员已采纳</text>
+      </view>
+
+      <!-- 内容 -->
+      <view class="fb-content">
+        <text>{{item.content}}</text>
+      </view>
+
+      <!-- 图片 -->
+      <view wx:if="{{item._imageUrls && item._imageUrls.length > 0}}" class="fb-images">
+        <image wx:for="{{item._imageUrls}}" wx:for-item="img" wx:key="*this"
+          src="{{img}}" mode="aspectFill" class="fb-img"
+          bindtap="previewImage" data-url="{{img}}" data-idx="{{idx}}"/>
+      </view>
+
+      <!-- 底部操作栏 -->
+      <view class="fb-actions">
+        <view class="fb-act {{item._liked ? 'liked' : ''}}" catchtap="toggleLike" data-id="{{item._id}}" data-idx="{{idx}}">
+          <image class="ui-icon-sm" src="{{item._liked ? '/assets/icons/ui/heart.png' : '/assets/icons/ui/done.png'}}" mode="aspectFit" />
+          <text>{{item.likeCount || 0}}</text>
+        </view>
+        <view class="fb-act" catchtap="openComment" data-idx="{{idx}}" hover-class="fb-act-hover">
+          <image class="ui-icon-sm" src="/assets/icons/ui/comment.png" mode="aspectFit" />
+          <text>评论{{item._commentCount > 0 ? ' ' + item._commentCount : ''}}</text>
+        </view>
+        <view wx:if="{{isAdmin && (item.category === 'bug' || item.category === 'suggestion')}}"
+          class="fb-act admin-act" catchtap="toggleAdopted" data-id="{{item._id}}" data-idx="{{idx}}">
+          <text>{{item.adopted ? '取消采纳' : '采纳'}}</text>
+        </view>
+        <view wx:if="{{item._openid === currentOpenid || isAdmin}}"
+          class="fb-act delete-act" catchtap="deleteFeedback" data-id="{{item._id}}" data-idx="{{idx}}">
+          <image class="ui-icon-sm" src="/assets/icons/ui/delete.png" mode="aspectFit" />
+          <text>删除</text>
+        </view>
+      </view>
+
+      <!-- 评论区 -->
+      <view wx:if="{{item.comments && item.comments.length > 0}}" class="fb-comments">
+        <view class="cmt-item" wx:for="{{item.comments}}" wx:for-item="c" wx:for-index="cmtIdx" wx:key="_id"
+          catchtap="replyComment" data-idx="{{idx}}" data-cmt-idx="{{cmtIdx}}" hover-class="cmt-hover">
+          <view class="cmt-main">
+            <text class="cmt-user">{{c.userNickname || '匿名'}}：</text>
+            <text class="cmt-text">{{c.content}}</text>
+          </view>
+          <!-- 子回复 -->
+          <view wx:if="{{c.replies && c.replies.length > 0}}" class="cmt-replies">
+            <view class="cmt-item cmt-sub" wx:for="{{c.replies}}" wx:for-item="r" wx:key="_id">
+              <text class="cmt-user">{{r.userNickname || '匿名'}}：</text>
+              <text class="cmt-text">{{r.content}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view wx:if="{{!loading && !loadError}}" class="add-section">
+    <button class="add-btn" bindtap="openPost">写留言</button>
+  </view>
+
+  <!-- 评论弹窗 -->
+  <view wx:if="{{showCommentModal}}" class="mask" catchtap="closeComment">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">写评论</text>
+      <text class="sheet-sub" wx:if="{{commentTarget !== null}}">回复：{{filteredFeedbacks[commentTarget].content.slice(0, 50)}}...</text>
+
+      <view class="field-group">
+        <textarea class="field-textarea" placeholder="写点想法..."
+          value="{{commentContent}}" bindinput="onCommentInput"
+          maxlength="200" auto-height/>
+      </view>
+
+      <view class="sheet-btns">
+        <button class="cancel" bindtap="closeComment">取消</button>
+        <button class="confirm {{commenting ? 'disabled' : ''}}" bindtap="doComment">{{commenting ? '发送中...' : '发送'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 通知面板 -->
+  <view wx:if="{{showNotifyPanel}}" class="mask" catchtap="closeNotifyPanel">
+    <view class="sheet" catchtap="stopBubble">
+      <view class="sheet-bar"></view>
+      <text class="sheet-title">消息通知</text>
+
+      <view wx:if="{{unreadNotifications.length === 0}}" class="notify-empty">
+        <text>暂无新消息</text>
+      </view>
+
+      <view class="notify-list">
+        <view class="notify-item" wx:for="{{unreadNotifications}}" wx:key="_id"
+          bindtap="goToFeedback" data-fid="{{item.feedbackId}}">
+          <image class="notify-icon ui-icon-sm" src="{{item._iconPath}}" mode="aspectFit" />
+          <view class="notify-body">
+            <text class="notify-snippet">{{item.snippet}}</text>
+            <text class="notify-time">{{item._time}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

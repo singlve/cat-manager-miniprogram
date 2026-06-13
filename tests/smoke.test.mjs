@@ -64,10 +64,37 @@ describe('页面可达性', () => {
 
   it('cat-add 页面可打开', async () => {
     if (!devtoolsReady) return;
-    page = await miniProgram.navigateTo('/pages/cat-add/cat-add');
+    page = await miniProgram.navigateTo('/pet-package/cat-add/cat-add');
     await page.waitFor(500);
     const form = await page.$('.form-group');
     expect(form).toBeTruthy();
+  });
+
+  it('账号分包注册页可打开', async () => {
+    if (!devtoolsReady) return;
+    page = await miniProgram.reLaunch('/pages/login/login');
+    await page.waitFor(500);
+    page = await miniProgram.navigateTo('/account-package/register/register');
+    await page.waitFor(500);
+    expect(await page.$('.register-page')).toBeTruthy();
+  });
+
+  it('服务分包关于页可打开', async () => {
+    if (!devtoolsReady) return;
+    page = await miniProgram.reLaunch('/pages/services/services');
+    await page.waitFor(500);
+    page = await miniProgram.navigateTo('/packages/about/about');
+    await page.waitFor(500);
+    expect(await page.$('.about-hero')).toBeTruthy();
+  });
+
+  it('服务分包记账页可打开', async () => {
+    if (!devtoolsReady) return;
+    page = await miniProgram.reLaunch('/pages/services/services');
+    await page.waitFor(500);
+    page = await miniProgram.navigateTo('/packages/expense/expense');
+    await page.waitFor(700);
+    expect(await page.$('.service-feature-hero')).toBeTruthy();
   });
 
   it('mine 页面可切换到', async () => {
@@ -104,7 +131,7 @@ describe('未登录态', () => {
 describe('弹窗行为', () => {
   it('体重录入弹窗可打开和关闭', async () => {
     if (!devtoolsReady) return;
-    page = await miniProgram.navigateTo('/pages/cat-detail/cat-detail?id=demo_1');
+    page = await miniProgram.navigateTo('/pet-package/cat-detail/cat-detail?id=demo_1');
     await page.waitFor(1000);
 
     const addBtn = await page.$('.weight-add-btn');
