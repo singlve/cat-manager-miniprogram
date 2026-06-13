@@ -31,6 +31,8 @@ describe('configurable benefit center', () => {
     expect(source).toContain("source: 'benefit'");
     expect(adminTemplate).toContain('新建福利活动');
     expect(adminTemplate).toContain('领取记录');
+    expect(adminTemplate).toContain('展示顺序');
+    expect(adminTemplate).toContain('按 1、2、3 依次填写即可');
     expect(appConfig).toContain('admin-benefits/admin-benefits');
   });
 

@@ -33,6 +33,7 @@ page { background: var(--theme-bg, #F7F9FB); }
 .form-input { width: 100%; height: 78rpx; padding: 0 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; line-height: normal; box-sizing: border-box; }
 .form-textarea { width: 100%; height: 150rpx; padding: 18rpx 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; line-height: 1.5; box-sizing: border-box; }
 .form-placeholder { color: var(--theme-text-muted, #A5AFBC); }
+.form-help { display: block; margin-top: 8rpx; color: var(--theme-text-muted, #A5AFBC); font-size: 20rpx; line-height: 1.45; }
 .choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12rpx; }
 .choice-item { padding: 16rpx 8rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text-secondary, #6E7A8A); font-size: 21rpx; font-weight: 800; text-align: center; }
 .choice-item.active,.choice-row.active { color: var(--theme-primary-deep, #2F8DB8); border-color: var(--theme-primary, #5BA7D8); background: var(--theme-primary-soft, #EAF4FB); }

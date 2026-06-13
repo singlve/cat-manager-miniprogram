@@ -25,7 +25,7 @@ function emptyForm() {
     startAt: '',
     endAt: '',
     enabled: true,
-    sort: 10
+    sort: 1
   };
 }
 

@@ -126,8 +126,9 @@
             <input class="form-input" value="{{form.startAt}}" data-key="startAt" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" placeholder-class="form-placeholder" />
             <text class="form-label">结束时间（留空长期有效）</text>
             <input class="form-input" value="{{form.endAt}}" data-key="endAt" bindinput="onInput" placeholder="2026-12-31T23:59:59+08:00" placeholder-class="form-placeholder" />
-            <text class="form-label">排序</text>
+            <text class="form-label">展示顺序</text>
             <input class="form-input" type="number" value="{{form.sort}}" data-key="sort" bindinput="onInput" />
+            <text class="form-help">数字越小越靠前，活动不多时按 1、2、3 依次填写即可。</text>
 
             <view class="form-switch-row">
               <text>立即启用</text>
