@@ -70,10 +70,10 @@
         loading="{{claiming}}"
         disabled="{{claiming}}"
         bindtap="claimBenefit"
-      >{{claiming ? '领取中' : '立即领取'}}</button>
-      <button wx:else class="benefit-secondary-btn" bindtap="goThemeMall">
-        {{themeVouchers > 0 ? '去选择主题' : '查看主题'}}
-      </button>
+      ><text>{{claiming ? '领取中' : '立即领取'}}</text></button>
+      <view wx:else class="benefit-secondary-btn" bindtap="goThemeMall">
+        <text>{{themeVouchers > 0 ? '使用主题兑换券' : '兑换券已使用 · 查看主题'}}</text>
+      </view>
     </view>
 
     <view class="benefit-notes">

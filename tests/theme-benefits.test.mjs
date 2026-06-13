@@ -38,4 +38,15 @@ describe('theme launch benefit', () => {
     expect(mall).toContain('使用主题兑换券');
     expect(mall).toContain('使用积分兑换');
   });
+
+  it('keeps benefit actions centered and labels voucher states clearly', () => {
+    const template = read('packages/benefit-center/benefit-center.wxml');
+    const styles = read('packages/benefit-center/benefit-center.wxss');
+
+    expect(template).toContain('使用主题兑换券');
+    expect(template).toContain('兑换券已使用 · 查看主题');
+    expect(styles).toMatch(/\.benefit-primary-btn,\s*\n\.benefit-secondary-btn\s*\{[\s\S]*?display:\s*flex/);
+    expect(styles).toMatch(/align-items:\s*center/);
+    expect(styles).toMatch(/justify-content:\s*center/);
+  });
 });
