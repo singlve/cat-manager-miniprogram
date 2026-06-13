@@ -24,12 +24,15 @@ page { background: var(--theme-bg, #F7F9FB); }
 .claim-status { margin-top: 7rpx; color: var(--theme-text-muted, #A5AFBC); font-size: 20rpx; }
 .empty-tip { padding: 100rpx 24rpx; color: var(--theme-text-secondary, #6E7A8A); text-align: center; }
 .editor-mask { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; background: rgba(36,48,68,.46); }
-.editor-sheet { width: 100%; max-height: 88vh; padding: 22rpx 28rpx calc(34rpx + env(safe-area-inset-bottom)); border-radius: 32rpx 32rpx 0 0; background: var(--theme-bg, #F7F9FB); box-sizing: border-box; }
+.editor-sheet { width: 100%; height: 88vh; max-height: 1280rpx; display: flex; flex-direction: column; overflow: hidden; border-radius: 32rpx 32rpx 0 0; background: var(--theme-bg, #F7F9FB); box-sizing: border-box; }
+.editor-scroll { flex: 1; height: 0; min-height: 0; }
+.editor-content { padding: 22rpx 28rpx 26rpx; box-sizing: border-box; }
 .sheet-bar { width: 70rpx; height: 7rpx; margin: 0 auto 20rpx; border-radius: 999rpx; background: var(--theme-divider, #E8EEF4); }
 .editor-title { display: block; margin-bottom: 24rpx; color: var(--theme-text, #243044); font-size: 32rpx; font-weight: 900; text-align: center; }
 .form-label { display: block; margin: 20rpx 0 9rpx; color: var(--theme-text, #243044); font-size: 23rpx; font-weight: 800; }
-.form-input,.form-textarea { width: 100%; padding: 20rpx 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; box-sizing: border-box; }
-.form-textarea { height: 130rpx; }
+.form-input { width: 100%; height: 78rpx; padding: 0 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; line-height: normal; box-sizing: border-box; }
+.form-textarea { width: 100%; height: 150rpx; padding: 18rpx 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; line-height: 1.5; box-sizing: border-box; }
+.form-placeholder { color: var(--theme-text-muted, #A5AFBC); }
 .choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12rpx; }
 .choice-item { padding: 16rpx 8rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text-secondary, #6E7A8A); font-size: 21rpx; font-weight: 800; text-align: center; }
 .choice-item.active,.choice-row.active { color: var(--theme-primary-deep, #2F8DB8); border-color: var(--theme-primary, #5BA7D8); background: var(--theme-primary-soft, #EAF4FB); }
@@ -39,8 +42,8 @@ page { background: var(--theme-bg, #F7F9FB); }
 .segment-choice view { flex: 1; padding: 15rpx; border-radius: 16rpx; color: var(--theme-text-secondary, #6E7A8A); text-align: center; }
 .segment-choice .active { color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-card, #FFFFFF); font-weight: 900; }
 .form-switch-row { display: flex; align-items: center; justify-content: space-between; margin-top: 24rpx; padding: 18rpx 4rpx; color: var(--theme-text, #243044); font-size: 24rpx; font-weight: 800; }
-.editor-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
-.editor-cancel,.editor-confirm { flex: 1; padding: 23rpx 0; border-radius: 999rpx; font-size: 27rpx; font-weight: 900; text-align: center; }
+.editor-actions { flex-shrink: 0; display: flex; gap: 16rpx; padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom)); background: var(--theme-card, #FFFFFF); border-top: 1rpx solid var(--theme-divider, #E8EEF4); box-shadow: 0 -10rpx 26rpx rgba(36,48,68,.06); box-sizing: border-box; }
+.editor-cancel,.editor-confirm { flex: 1; min-width: 0; height: 84rpx; display: flex; align-items: center; justify-content: center; border-radius: 999rpx; font-size: 27rpx; line-height: 1.2; font-weight: 900; text-align: center; box-sizing: border-box; }
 .editor-cancel { color: var(--theme-text-secondary, #6E7A8A); background: var(--theme-surface-muted, #F5F9FC); }
 .editor-confirm { color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70)); }
 @media (max-width: 340px) {

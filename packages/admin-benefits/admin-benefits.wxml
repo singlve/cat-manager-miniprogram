@@ -72,71 +72,75 @@
     </block>
 
     <view wx:if="{{showEditor}}" class="editor-mask" catchtap="closeEditor">
-      <scroll-view class="editor-sheet" scroll-y catchtap="stopBubble">
-        <view class="sheet-bar"></view>
-        <text class="editor-title">{{editingId ? '编辑福利活动' : '新建福利活动'}}</text>
+      <view class="editor-sheet" catchtap="stopBubble">
+        <scroll-view class="editor-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+          <view class="editor-content">
+            <view class="sheet-bar"></view>
+            <text class="editor-title">{{editingId ? '编辑福利活动' : '新建福利活动'}}</text>
 
-        <text class="form-label">福利名称</text>
-        <input class="form-input" value="{{form.title}}" data-key="title" bindinput="onInput" placeholder="例如：周年庆登录礼" />
-        <text class="form-label">福利说明</text>
-        <textarea class="form-textarea" value="{{form.desc}}" data-key="desc" bindinput="onInput" placeholder="说明领取内容和使用方式" />
+            <text class="form-label">福利名称</text>
+            <input class="form-input" value="{{form.title}}" data-key="title" bindinput="onInput" placeholder="例如：周年庆登录礼" placeholder-class="form-placeholder" />
+            <text class="form-label">福利说明</text>
+            <textarea class="form-textarea" value="{{form.desc}}" data-key="desc" bindinput="onInput" placeholder="说明领取内容和使用方式" placeholder-class="form-placeholder" />
 
-        <text class="form-label">奖励类型</text>
-        <view class="choice-grid">
-          <view wx:for="{{rewardTypes}}" wx:key="value" class="choice-item {{form.rewardType === item.value ? 'active' : ''}}" bindtap="selectRewardType" data-value="{{item.value}}">{{item.label}}</view>
-        </view>
+            <text class="form-label">奖励类型</text>
+            <view class="choice-grid">
+              <view wx:for="{{rewardTypes}}" wx:key="value" class="choice-item {{form.rewardType === item.value ? 'active' : ''}}" bindtap="selectRewardType" data-value="{{item.value}}">{{item.label}}</view>
+            </view>
 
-        <text class="form-label">奖励数量</text>
-        <input class="form-input" type="number" value="{{form.rewardAmount}}" data-key="rewardAmount" bindinput="onInput" />
+            <text class="form-label">奖励数量</text>
+            <input class="form-input" type="number" value="{{form.rewardAmount}}" data-key="rewardAmount" bindinput="onInput" />
 
-        <block wx:if="{{form.rewardType === 'theme_voucher'}}">
-          <text class="form-label">可兑换主题积分上限</text>
-          <input class="form-input" type="number" value="{{form.maxThemePoints}}" data-key="maxThemePoints" bindinput="onInput" />
-        </block>
+            <block wx:if="{{form.rewardType === 'theme_voucher'}}">
+              <text class="form-label">可兑换主题积分上限</text>
+              <input class="form-input" type="number" value="{{form.maxThemePoints}}" data-key="maxThemePoints" bindinput="onInput" />
+            </block>
 
-        <block wx:if="{{form.rewardType === 'theme'}}">
-          <text class="form-label">指定主题</text>
-          <view class="choice-grid">
-            <view wx:for="{{themes}}" wx:key="key" class="choice-item {{form.themeKey === item.key ? 'active' : ''}}" bindtap="selectTheme" data-key="{{item.key}}">{{item.name}}</view>
-          </view>
-        </block>
+            <block wx:if="{{form.rewardType === 'theme'}}">
+              <text class="form-label">指定主题</text>
+              <view class="choice-grid">
+                <view wx:for="{{themes}}" wx:key="key" class="choice-item {{form.themeKey === item.key ? 'active' : ''}}" bindtap="selectTheme" data-key="{{item.key}}">{{item.name}}</view>
+              </view>
+            </block>
 
-        <block wx:if="{{form.rewardType === 'physical'}}">
-          <text class="form-label">关联实物商品</text>
-          <view class="choice-list">
-            <view wx:for="{{physicalItems}}" wx:key="_id" class="choice-row {{form.linkedItemId === item._id ? 'active' : ''}}" bindtap="selectPhysical" data-id="{{item._id}}">
-              <text>{{item.name}}</text><text>库存 {{item.stock || 0}}</text>
+            <block wx:if="{{form.rewardType === 'physical'}}">
+              <text class="form-label">关联实物商品</text>
+              <view class="choice-list">
+                <view wx:for="{{physicalItems}}" wx:key="_id" class="choice-row {{form.linkedItemId === item._id ? 'active' : ''}}" bindtap="selectPhysical" data-id="{{item._id}}">
+                  <text>{{item.name}}</text><text>库存 {{item.stock || 0}}</text>
+                </view>
+              </view>
+            </block>
+
+            <text class="form-label">适用用户</text>
+            <view class="segment-choice">
+              <view class="{{form.audience === 'all' ? 'active' : ''}}" bindtap="selectAudience" data-value="all">全部用户</view>
+              <view class="{{form.audience === 'new' ? 'active' : ''}}" bindtap="selectAudience" data-value="new">新用户</view>
+            </view>
+            <block wx:if="{{form.audience === 'new'}}">
+              <text class="form-label">新用户起算时间</text>
+              <input class="form-input" value="{{form.newUserSince}}" data-key="newUserSince" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" placeholder-class="form-placeholder" />
+            </block>
+
+            <text class="form-label">开始时间（留空立即开始）</text>
+            <input class="form-input" value="{{form.startAt}}" data-key="startAt" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" placeholder-class="form-placeholder" />
+            <text class="form-label">结束时间（留空长期有效）</text>
+            <input class="form-input" value="{{form.endAt}}" data-key="endAt" bindinput="onInput" placeholder="2026-12-31T23:59:59+08:00" placeholder-class="form-placeholder" />
+            <text class="form-label">排序</text>
+            <input class="form-input" type="number" value="{{form.sort}}" data-key="sort" bindinput="onInput" />
+
+            <view class="form-switch-row">
+              <text>立即启用</text>
+              <switch checked="{{form.enabled}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleFormEnabled" />
             </view>
           </view>
-        </block>
-
-        <text class="form-label">适用用户</text>
-        <view class="segment-choice">
-          <view class="{{form.audience === 'all' ? 'active' : ''}}" bindtap="selectAudience" data-value="all">全部用户</view>
-          <view class="{{form.audience === 'new' ? 'active' : ''}}" bindtap="selectAudience" data-value="new">新用户</view>
-        </view>
-        <block wx:if="{{form.audience === 'new'}}">
-          <text class="form-label">新用户起算时间</text>
-          <input class="form-input" value="{{form.newUserSince}}" data-key="newUserSince" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" />
-        </block>
-
-        <text class="form-label">开始时间（留空立即开始）</text>
-        <input class="form-input" value="{{form.startAt}}" data-key="startAt" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" />
-        <text class="form-label">结束时间（留空长期有效）</text>
-        <input class="form-input" value="{{form.endAt}}" data-key="endAt" bindinput="onInput" placeholder="2026-12-31T23:59:59+08:00" />
-        <text class="form-label">排序</text>
-        <input class="form-input" type="number" value="{{form.sort}}" data-key="sort" bindinput="onInput" />
-
-        <view class="form-switch-row">
-          <text>立即启用</text>
-          <switch checked="{{form.enabled}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleFormEnabled" />
-        </view>
+        </scroll-view>
 
         <view class="editor-actions">
           <view class="editor-cancel" bindtap="closeEditor">取消</view>
           <view class="editor-confirm" bindtap="saveCampaign">{{saving ? '保存中' : '保存活动'}}</view>
         </view>
-      </scroll-view>
+      </view>
     </view>
   </block>
 </view>
