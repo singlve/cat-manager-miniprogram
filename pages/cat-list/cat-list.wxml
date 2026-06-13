@@ -3,6 +3,7 @@
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="home-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <view class="home-hero-art">
       <image class="home-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
       <view class="home-hero-fade fade-top"></view>

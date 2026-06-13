@@ -1,0 +1,12 @@
+<image
+  wx:if="{{themeClass === 'theme-lunar'}}"
+  class="festival-hero-decor"
+  src="/assets/decorations/lunar-hero.png"
+  mode="scaleToFill"
+/>
+<image
+  wx:elif="{{themeClass === 'theme-christmas'}}"
+  class="festival-hero-decor"
+  src="/assets/decorations/christmas-hero.png"
+  mode="scaleToFill"
+/>

@@ -87,7 +87,9 @@ const THEMES = [
     tabBackground: '#FFFCF8',
     navText: '#ffffff',
     limited: true,
-    badge: '新岁限定'
+    badge: '新岁限定',
+    heroDecor: '/assets/decorations/lunar-hero.png',
+    tabEffect: 'firecracker'
   },
   {
     key: 'birthday',
@@ -125,7 +127,9 @@ const THEMES = [
     tabBackground: '#FBFDFC',
     navText: '#ffffff',
     limited: true,
-    badge: '冬日限定'
+    badge: '冬日限定',
+    heroDecor: '/assets/decorations/christmas-hero.png',
+    tabEffect: 'christmas-tree'
   }
 ];
 

@@ -4,6 +4,7 @@
 
     <!-- Logo -->
     <view class="login-brand">
+      <include src="../../templates/festival-hero-decor.wxml" />
       <image class="login-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
       <text class="brand-kicker">PET CARE</text>
       <text class="brand-title">宠物小管家Plus</text>

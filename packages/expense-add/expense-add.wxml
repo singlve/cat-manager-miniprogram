@@ -1,6 +1,7 @@
 <!--packages/expense-add/expense-add.wxml-->
 <view class="page {{themeClass}}">
   <view class="ui-compact-hero expense-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <image class="ui-compact-hero-img" src="/packages/assets/illustrations/rewards-hero-pets.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">DAILY EXPENSE</text>

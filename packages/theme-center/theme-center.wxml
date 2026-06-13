@@ -1,5 +1,6 @@
 <view class="page theme-center-page {{themeClass}}">
   <view class="theme-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <view class="theme-hero-art">
       <view class="hero-swatch swatch-one"></view>
       <view class="hero-swatch swatch-two"></view>
@@ -31,6 +32,12 @@
       >{{item.label}}</view>
     </view>
     <view class="live-preview-screen">
+      <image
+        wx:if="{{selectedTheme.heroDecor}}"
+        class="festival-preview-decor"
+        src="{{selectedTheme.heroDecor}}"
+        mode="scaleToFill"
+      />
       <view class="live-preview-nav">
         <view class="live-preview-nav-dot"></view>
         <text class="live-preview-nav-title">宠物小管家Plus</text>

@@ -2,6 +2,7 @@
 <view class="container {{themeClass}}">
 
   <view class="ui-compact-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <image class="ui-compact-hero-img" src="/assets/illustrations/home-hero.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">PET HOME</text>

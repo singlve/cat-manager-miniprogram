@@ -630,6 +630,7 @@ textarea {
 }
 
 .ui-hero-card {
+  position: relative;
   margin: 0 -8rpx 28rpx;
   padding: 0 8rpx 4rpx;
   border-radius: 0;
@@ -674,6 +675,7 @@ textarea {
 }
 
 .ui-compact-hero {
+  position: relative;
   margin: 0 -8rpx 26rpx;
   padding: 0 8rpx 4rpx;
   border-radius: 0;
@@ -765,6 +767,7 @@ textarea {
 }
 
 .service-feature-hero {
+  position: relative;
   min-height: 210rpx;
   margin: 0 0 24rpx;
   padding: 28rpx 30rpx;
@@ -776,6 +779,36 @@ textarea {
   border-radius: 28rpx;
   background: linear-gradient(145deg, rgba(255,255,255,.94), var(--theme-primary-soft, #EAF4FB));
   box-shadow: 0 14rpx 34rpx rgba(68, 92, 120, .08);
+}
+
+/* 节日限定装饰：透明图片只占 Hero 边缘，不阻挡文字和点击。 */
+.festival-hero-decor {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.home-hero,
+.about-hero,
+.login-brand,
+.theme-hero {
+  position: relative;
+}
+
+.theme-lunar .festival-hero-decor {
+  opacity: .94;
+}
+
+.theme-christmas .festival-hero-decor {
+  opacity: .9;
+}
+
+.ui-compact-hero > .festival-hero-decor,
+.ui-hero-card > .festival-hero-decor {
+  min-height: 100%;
 }
 
 .service-feature-art {

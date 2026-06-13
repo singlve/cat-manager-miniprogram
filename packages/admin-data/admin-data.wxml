@@ -8,6 +8,7 @@
 <block wx:else>
   <view class="service-feature-hero-shell">
     <view class="service-feature-hero admin">
+      <include src="../../templates/festival-hero-decor.wxml" />
       <view class="service-feature-art">
         <view class="service-feature-art-back"></view>
         <view class="service-feature-art-mid"></view>

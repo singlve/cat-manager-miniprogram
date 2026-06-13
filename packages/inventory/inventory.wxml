@@ -4,6 +4,7 @@
 
   <!-- 顶部说明 -->
   <view class="ui-hero-card inventory-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <image class="ui-hero-img" src="/packages/assets/illustrations/rewards-hero-pets.webp" mode="aspectFit" />
     <text class="ui-hero-title">我的背包</text>
     <text class="ui-hero-subtitle">查看已兑换的商品、确认发货和追踪物流。</text>

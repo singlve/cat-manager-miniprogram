@@ -3,6 +3,7 @@
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero weight-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <image class="ui-compact-hero-img" src="/assets/illustrations/profile-mascot.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">WEIGHT TRACKER</text>

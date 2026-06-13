@@ -4,6 +4,7 @@
   <view class="form-card">
 
     <view class="ui-compact-hero">
+      <include src="../../templates/festival-hero-decor.wxml" />
       <image class="ui-compact-hero-img" src="/pet-package/assets/illustrations/pet-profile.webp" mode="aspectFit" />
       <view class="ui-compact-hero-body">
         <text class="ui-compact-kicker">PET PROFILE</text>

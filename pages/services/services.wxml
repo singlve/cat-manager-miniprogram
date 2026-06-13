@@ -3,6 +3,7 @@
   <include src="../../templates/offline-tip.wxml" />
 
   <view class="ui-compact-hero ui-tab-hero services-hero">
+    <include src="../../templates/festival-hero-decor.wxml" />
     <image class="ui-compact-hero-img" src="/assets/illustrations/feedback-chat.webp" mode="aspectFit" />
     <view class="ui-compact-hero-body">
       <text class="ui-compact-kicker">SERVICE</text>
