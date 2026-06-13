@@ -37,6 +37,35 @@ function businessError(code, message) {
   return error;
 }
 
+function isTransactionBusy(error) {
+  const text = [
+    error && error.errCode,
+    error && error.code,
+    error && error.message,
+    error && error.errMsg
+  ].filter(Boolean).join(' ');
+  return /TransactionBusy|ResourceUnavailable|DATABASE_TRANSACTION_FAIL|Transaction is busy/i.test(text);
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function runTransactionWithRetry(handler, maxAttempts) {
+  const attempts = Math.max(1, maxAttempts || 3);
+  let lastError = null;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await db.runTransaction(handler);
+    } catch (error) {
+      lastError = error;
+      if (!isTransactionBusy(error) || attempt === attempts) throw error;
+      await wait(100 * attempt + Math.floor(Math.random() * 80));
+    }
+  }
+  throw lastError;
+}
+
 function buildId(prefix) {
   return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 9);
 }
@@ -368,11 +397,12 @@ exports.main = async event => {
     const campaignId = String(event.campaignId || '');
     if (!campaignId) return { code: 'INVALID_CAMPAIGN', msg: '缺少福利活动' };
 
-    const transactionResult = await db.runTransaction(async transaction => {
+    const transactionResult = await runTransactionWithRetry(async transaction => {
       const userRef = transaction.collection(USER_COL).doc(currentUser._id);
       const campaignRef = transaction.collection(CAMPAIGN_COL).doc(campaignId);
       const claimRef = transaction.collection(CLAIM_COL).doc(claimId(campaignId, currentUser._id));
-      const [userResult, campaignResult] = await Promise.all([userRef.get(), campaignRef.get()]);
+      const userResult = await userRef.get();
+      const campaignResult = await campaignRef.get();
       const user = userResult && userResult.data;
       const campaign = campaignResult && campaignResult.data;
       if (!user || user._openid !== openid) throw businessError('USER_NOT_FOUND', '用户信息不存在');
@@ -418,7 +448,7 @@ exports.main = async event => {
       };
       await claimRef.set({ data: claim });
       return { alreadyClaimed: false, claim, updates: granted.updates };
-    });
+    }, 3);
 
     const result = transactionResult && transactionResult.result
       ? transactionResult.result
@@ -432,9 +462,10 @@ exports.main = async event => {
     };
   } catch (error) {
     console.error('[benefitCenter] failed:', error);
+    const transactionBusy = isTransactionBusy(error);
     return {
-      code: error.businessCode || 'BENEFIT_FAILED',
-      msg: error.message || '福利操作失败，请重试'
+      code: error.businessCode || (transactionBusy ? 'TRANSACTION_BUSY' : 'BENEFIT_FAILED'),
+      msg: transactionBusy ? '领取人数较多，请稍后再试' : (error.message || '福利操作失败，请重试')
     };
   }
 };

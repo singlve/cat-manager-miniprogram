@@ -10,7 +10,11 @@ describe('configurable benefit center', () => {
     const source = read('cloudfunctions/benefitCenter/index.js');
 
     expect(source).toContain("_id: 'theme_launch_2026'");
-    expect(source).toContain('db.runTransaction');
+    expect(source).toContain('runTransactionWithRetry');
+    expect(source).toContain('isTransactionBusy');
+    expect(source).toContain('const userResult = await userRef.get()');
+    expect(source).toContain('const campaignResult = await campaignRef.get()');
+    expect(source).not.toContain('Promise.all([userRef.get(), campaignRef.get()])');
     expect(source).toContain("const CAMPAIGN_COL = 'benefit_campaigns'");
     expect(source).toContain("const CLAIM_COL = 'benefit_claims'");
     expect(source).toContain('claimId(campaignId, currentUser._id)');
