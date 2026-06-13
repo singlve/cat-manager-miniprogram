@@ -16,7 +16,7 @@ function emptyForm() {
     title: '',
     desc: '',
     rewardType: 'points',
-    rewardAmount: 100,
+    rewardAmount: 1,
     maxThemePoints: 1000,
     themeKey: '',
     linkedItemId: '',
@@ -141,7 +141,14 @@ Page({
   },
 
   selectRewardType(e) {
-    this.setData({ 'form.rewardType': e.currentTarget.dataset.value });
+    const rewardType = e.currentTarget.dataset.value;
+    if (rewardType === this.data.form.rewardType) return;
+    this.setData({
+      'form.rewardType': rewardType,
+      'form.rewardAmount': 1,
+      'form.themeKey': '',
+      'form.linkedItemId': ''
+    });
   },
 
   selectAudience(e) {

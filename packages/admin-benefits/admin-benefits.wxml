@@ -88,8 +88,14 @@
               <view wx:for="{{rewardTypes}}" wx:key="value" class="choice-item {{form.rewardType === item.value ? 'active' : ''}}" bindtap="selectRewardType" data-value="{{item.value}}">{{item.label}}</view>
             </view>
 
-            <text class="form-label">奖励数量</text>
+            <text class="form-label">每位用户获得数量</text>
             <input class="form-input" type="number" value="{{form.rewardAmount}}" data-key="rewardAmount" bindinput="onInput" />
+            <text wx:if="{{form.rewardType === 'points'}}" class="form-help">例如填 100，表示每位用户领取后获得 100 积分。</text>
+            <text wx:elif="{{form.rewardType === 'card'}}" class="form-help">例如填 2，表示每位用户领取后获得 2 张补签卡。</text>
+            <text wx:elif="{{form.rewardType === 'theme_voucher'}}" class="form-help">通常填 1，表示每位用户获得 1 张主题兑换券。</text>
+            <text wx:elif="{{form.rewardType === 'theme'}}" class="form-help">指定主题每位用户只需获得 1 套，数量请保持为 1。</text>
+            <text wx:elif="{{form.rewardType === 'draw'}}" class="form-help">例如填 2，表示每位用户获得 2 次额外抽奖机会。</text>
+            <text wx:else class="form-help">表示每位用户可领取的实物件数，通常填 1。</text>
 
             <block wx:if="{{form.rewardType === 'theme_voucher'}}">
               <text class="form-label">可兑换主题积分上限</text>
