@@ -84,6 +84,26 @@ function isCollectionMissing(error) {
   return /DATABASE_COLLECTION_NOT_EXIST|COLLECTION_NOT_EXIST|collection not exists|Db or Table not exist|ResourceNotFound/i.test(text);
 }
 
+function isDocumentMissing(error) {
+  const text = [
+    error && error.errCode,
+    error && error.code,
+    error && error.message,
+    error && error.errMsg
+  ].filter(Boolean).join(' ');
+  return /DATABASE_DOCUMENT_NOT_EXIST|DOCUMENT_NOT_EXIST|document not exists|document does not exist|doc not exist|not found/i.test(text);
+}
+
+async function getClaim(campaignId, userId) {
+  try {
+    const result = await cloudDb.collection(CLAIM_COL).doc(claimId(campaignId, userId)).get();
+    return result && result.data ? result.data : null;
+  } catch (error) {
+    if (isDocumentMissing(error)) return null;
+    throw error;
+  }
+}
+
 async function ensureCollection(name) {
   try {
     await cloudDb.collection(name).limit(1).get();
@@ -105,7 +125,9 @@ async function ensureData() {
   try {
     const result = await cloudDb.collection(CAMPAIGN_COL).doc(DEFAULT_CAMPAIGN._id).get();
     if (result && result.data) return;
-  } catch (error) {}
+  } catch (error) {
+    if (!isDocumentMissing(error)) throw error;
+  }
   const { _id, ...data } = DEFAULT_CAMPAIGN;
   await cloudDb.collection(CAMPAIGN_COL).doc(_id).set({ data });
 }
@@ -129,10 +151,8 @@ async function ensureLegacyClaim(user) {
   if (!user || !Array.isArray(user.claimedBenefits) ||
       user.claimedBenefits.indexOf(DEFAULT_CAMPAIGN._id) === -1) return;
   const id = claimId(DEFAULT_CAMPAIGN._id, user._id);
-  try {
-    const old = await cloudDb.collection(CLAIM_COL).doc(id).get();
-    if (old && old.data) return;
-  } catch (error) {}
+  const old = await getClaim(DEFAULT_CAMPAIGN._id, user._id);
+  if (old) return;
   const voucherCount = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
   await cloudDb.collection(CLAIM_COL).doc(id).set({
     data: {
@@ -216,7 +236,7 @@ function normalizeCampaign(input) {
   };
 }
 
-async function listForUser(user) {
+async function listForUser(user, knownClaim) {
   const [campaignResult, claimResult] = await Promise.all([
     cloudDb.collection(CAMPAIGN_COL).orderBy('sort', 'asc').limit(100).get(),
     cloudDb.collection(CLAIM_COL).where({ userId: user._id }).limit(100).get()
@@ -224,6 +244,9 @@ async function listForUser(user) {
   const claims = (claimResult.data || []).sort((left, right) =>
     String(right.claimedAt || '').localeCompare(String(left.claimedAt || ''))
   );
+  if (knownClaim && !claims.some(item => item.campaignId === knownClaim.campaignId)) {
+    claims.unshift(knownClaim);
+  }
   const claimMap = {};
   claims.forEach(item => { claimMap[item.campaignId] = item; });
   const campaigns = (campaignResult.data || [])
@@ -397,65 +420,82 @@ exports.main = async event => {
     const campaignId = String(event.campaignId || '');
     if (!campaignId) return { code: 'INVALID_CAMPAIGN', msg: '缺少福利活动' };
 
-    const transactionResult = await runTransactionWithRetry(async transaction => {
-      const userRef = transaction.collection(USER_COL).doc(currentUser._id);
-      const campaignRef = transaction.collection(CAMPAIGN_COL).doc(campaignId);
-      const claimRef = transaction.collection(CLAIM_COL).doc(claimId(campaignId, currentUser._id));
-      const userResult = await userRef.get();
-      const campaignResult = await campaignRef.get();
-      const user = userResult && userResult.data;
-      const campaign = campaignResult && campaignResult.data;
-      if (!user || user._openid !== openid) throw businessError('USER_NOT_FOUND', '用户信息不存在');
-      if (!campaign) throw businessError('CAMPAIGN_NOT_FOUND', '福利活动不存在');
+    const existingClaim = await getClaim(campaignId, currentUser._id);
+    let transactionResult;
+    if (existingClaim) {
+      transactionResult = { alreadyClaimed: true, claim: existingClaim };
+    } else {
+      try {
+        transactionResult = await runTransactionWithRetry(async transaction => {
+          const userRef = transaction.collection(USER_COL).doc(currentUser._id);
+          const campaignRef = transaction.collection(CAMPAIGN_COL).doc(campaignId);
+          const claimRef = transaction.collection(CLAIM_COL).doc(claimId(campaignId, currentUser._id));
+          const userResult = await userRef.get();
+          const campaignResult = await campaignRef.get();
+          const user = userResult && userResult.data;
+          const campaign = campaignResult && campaignResult.data;
+          if (!user || user._openid !== openid) throw businessError('USER_NOT_FOUND', '用户信息不存在');
+          if (!campaign) throw businessError('CAMPAIGN_NOT_FOUND', '福利活动不存在');
 
-      let oldClaim = null;
-      try { oldClaim = await claimRef.get(); } catch (error) {}
-      if (oldClaim && oldClaim.data) {
-        return { alreadyClaimed: true, claim: oldClaim.data };
+          let oldClaim = null;
+          try {
+            const oldClaimResult = await claimRef.get();
+            oldClaim = oldClaimResult && oldClaimResult.data;
+          } catch (error) {
+            if (!isDocumentMissing(error)) throw error;
+          }
+          if (oldClaim) return { alreadyClaimed: true, claim: oldClaim };
+
+          const state = campaignState(campaign, user, null, Date.now());
+          if (state !== 'available') {
+            const messages = {
+              upcoming: '福利活动尚未开始',
+              expired: '福利活动已结束',
+              disabled: '福利活动暂未开放',
+              ineligible: '当前账号不符合领取条件'
+            };
+            throw businessError('CAMPAIGN_' + state.toUpperCase(), messages[state] || '暂时无法领取');
+          }
+
+          const now = new Date().toISOString();
+          const granted = await grantReward(transaction, campaign, user, openid, now);
+          const claim = {
+            _openid: openid,
+            campaignId,
+            campaignTitle: campaign.title,
+            userId: user._id,
+            userNickname: user.nickname || '',
+            rewardType: campaign.rewardType,
+            rewardAmount: campaign.rewardAmount,
+            maxThemePoints: campaign.maxThemePoints || 0,
+            themeKey: campaign.themeKey || '',
+            linkedItemId: campaign.linkedItemId || '',
+            inventoryId: granted.inventoryId,
+            inventoryIds: granted.inventoryIds,
+            status: granted.claimStatus,
+            usedAmount: 0,
+            claimedAt: now,
+            usedAt: '',
+            usedThemeKey: ''
+          };
+          await claimRef.set({ data: claim });
+          return { alreadyClaimed: false, claim, updates: granted.updates };
+        }, 3);
+      } catch (error) {
+        if (!isTransactionBusy(error)) throw error;
+        const recoveredClaim = await getClaim(campaignId, currentUser._id);
+        if (!recoveredClaim) throw error;
+        transactionResult = { alreadyClaimed: true, claim: recoveredClaim };
       }
-
-      const state = campaignState(campaign, user, null, Date.now());
-      if (state !== 'available') {
-        const messages = {
-          upcoming: '福利活动尚未开始',
-          expired: '福利活动已结束',
-          disabled: '福利活动暂未开放',
-          ineligible: '当前账号不符合领取条件'
-        };
-        throw businessError('CAMPAIGN_' + state.toUpperCase(), messages[state] || '暂时无法领取');
-      }
-
-      const now = new Date().toISOString();
-      const granted = await grantReward(transaction, campaign, user, openid, now);
-      const claim = {
-        _openid: openid,
-        campaignId,
-        campaignTitle: campaign.title,
-        userId: user._id,
-        userNickname: user.nickname || '',
-        rewardType: campaign.rewardType,
-        rewardAmount: campaign.rewardAmount,
-        maxThemePoints: campaign.maxThemePoints || 0,
-        themeKey: campaign.themeKey || '',
-        linkedItemId: campaign.linkedItemId || '',
-        inventoryId: granted.inventoryId,
-        inventoryIds: granted.inventoryIds,
-        status: granted.claimStatus,
-        usedAmount: 0,
-        claimedAt: now,
-        usedAt: '',
-        usedThemeKey: ''
-      };
-      await claimRef.set({ data: claim });
-      return { alreadyClaimed: false, claim, updates: granted.updates };
-    }, 3);
+    }
 
     const result = transactionResult && transactionResult.result
       ? transactionResult.result
       : transactionResult;
+    const refreshedUser = await getCurrentUser(openid);
     return {
       code: 0,
-      data: Object.assign({}, await listForUser(await getCurrentUser(openid)), {
+      data: Object.assign({}, await listForUser(refreshedUser, result.claim), {
         alreadyClaimed: !!result.alreadyClaimed,
         latestClaim: result.claim
       })

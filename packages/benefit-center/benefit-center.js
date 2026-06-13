@@ -109,7 +109,17 @@ Page({
       });
     } catch (error) {
       console.error('[benefit-center] claim failed:', error);
-      wx.showToast({ title: error.message || '领取失败，请重试', icon: 'none' });
+      try {
+        const status = await clouddb.getBenefitStatus();
+        const claimed = (status.claims || []).some(item => item.campaignId === campaignId);
+        this.applyStatus(status);
+        wx.showToast({
+          title: claimed ? '福利已到账' : (error.message || '领取失败，请重试'),
+          icon: claimed ? 'success' : 'none'
+        });
+      } catch (refreshError) {
+        wx.showToast({ title: error.message || '领取失败，请重试', icon: 'none' });
+      }
     } finally {
       this.setData({ claimingId: '' });
     }

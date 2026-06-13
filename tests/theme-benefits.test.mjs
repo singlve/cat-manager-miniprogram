@@ -15,6 +15,9 @@ describe('configurable benefit center', () => {
     expect(source).toContain('const userResult = await userRef.get()');
     expect(source).toContain('const campaignResult = await campaignRef.get()');
     expect(source).not.toContain('Promise.all([userRef.get(), campaignRef.get()])');
+    expect(source).toContain('const existingClaim = await getClaim(campaignId, currentUser._id)');
+    expect(source).toContain('const recoveredClaim = await getClaim(campaignId, currentUser._id)');
+    expect(source).toContain('if (!isDocumentMissing(error)) throw error');
     expect(source).toContain("const CAMPAIGN_COL = 'benefit_campaigns'");
     expect(source).toContain("const CLAIM_COL = 'benefit_claims'");
     expect(source).toContain('claimId(campaignId, currentUser._id)');
@@ -74,10 +77,12 @@ describe('configurable benefit center', () => {
   it('keeps benefit actions centered and gives failed loads a retry path', () => {
     const template = read('packages/benefit-center/benefit-center.wxml');
     const styles = read('packages/benefit-center/benefit-center.wxss');
+    const source = read('packages/benefit-center/benefit-center.js');
 
     expect(template).toContain('福利加载失败');
     expect(template).toContain('bindtap="loadBenefit"');
     expect(template).toContain('item._actionText');
+    expect(source).toContain('const claimed = (status.claims || []).some');
     expect(styles).toMatch(/\.benefit-primary-btn,\s*\n\.benefit-secondary-btn\s*\{[\s\S]*?display:\s*flex/);
     expect(styles).toMatch(/align-items:\s*center/);
     expect(styles).toMatch(/justify-content:\s*center/);
