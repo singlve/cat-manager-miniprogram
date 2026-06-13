@@ -58,6 +58,8 @@ page { background: var(--theme-bg, #F7F9FB); }
   box-shadow: 0 12rpx 30rpx rgba(68,92,120,.08);
 }
 .benefit-card.claimed { border-color: rgba(var(--theme-secondary-rgb, 107,198,179), .24); }
+.benefit-card.state-available { border-color: rgba(var(--theme-primary-rgb, 91,167,216), .3); }
+.benefit-card.state-used,.benefit-card.state-expired { opacity: .82; }
 .benefit-card-top { display: flex; gap: 18rpx; }
 .benefit-card-icon { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, var(--theme-primary-soft, #EAF4FB), var(--theme-secondary-soft, #EAF7F5)); }
 .benefit-card-icon image { width: 44rpx; height: 44rpx; }
@@ -65,6 +67,9 @@ page { background: var(--theme-bg, #F7F9FB); }
 .benefit-card-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10rpx; }
 .benefit-card-title { color: var(--theme-text, #243044); font-size: 30rpx; font-weight: 900; }
 .benefit-state { padding: 5rpx 12rpx; border-radius: 999rpx; color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); font-size: 19rpx; font-weight: 900; }
+.benefit-state.claimed { color: var(--theme-secondary-deep, #3F9486); background: var(--theme-secondary-soft, #EAF7F5); }
+.benefit-state.used,.benefit-state.expired { color: var(--theme-text-muted, #A5AFBC); background: var(--theme-surface-muted, #F5F9FC); }
+.benefit-state.upcoming { color: #B36B1A; background: #FFF3E1; }
 .benefit-card-desc { display: block; margin-top: 7rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 23rpx; line-height: 1.55; }
 
 .voucher-face {
@@ -116,6 +121,24 @@ page { background: var(--theme-bg, #F7F9FB); }
 .benefit-secondary-btn { color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); }
 .benefit-primary-btn::after,
 .benefit-secondary-btn::after { border: 0; }
+.benefit-disabled-btn { height: 82rpx; display: flex; align-items: center; justify-content: center; border-radius: 999rpx; color: var(--theme-text-muted, #A5AFBC); background: var(--theme-surface-muted, #F5F9FC); font-size: 26rpx; font-weight: 800; }
+
+.benefit-section-head { display: flex; align-items: center; justify-content: space-between; margin: 26rpx 8rpx 14rpx; }
+.benefit-section-head text:first-child { color: var(--theme-text, #243044); font-size: 29rpx; font-weight: 900; }
+.benefit-section-head text:last-child { color: var(--theme-text-muted, #A5AFBC); font-size: 21rpx; }
+.reward-summary { margin: 22rpx 0; padding: 20rpx 22rpx; border-radius: 20rpx; background: linear-gradient(135deg, var(--theme-primary-soft, #EAF4FB), var(--theme-secondary-soft, #EAF7F5)); }
+.reward-label { display: block; color: var(--theme-text-secondary, #6E7A8A); font-size: 20rpx; }
+.reward-value { display: block; margin-top: 5rpx; color: var(--theme-primary-deep, #2F8DB8); font-size: 31rpx; font-weight: 900; }
+.reward-extra { display: block; margin-top: 5rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 20rpx; }
+.benefit-empty,.claim-empty { margin: 0 24rpx; padding: 70rpx 20rpx; border-radius: 24rpx; background: rgba(255,255,255,.82); color: var(--theme-text-secondary, #6E7A8A); text-align: center; }
+.benefit-empty image { display: block; width: 72rpx; height: 72rpx; margin: 0 auto 16rpx; }
+.history-head { margin-top: 34rpx; }
+.benefit-history-row { margin-bottom: 12rpx; padding: 20rpx 22rpx; display: flex; align-items: center; justify-content: space-between; gap: 16rpx; border-radius: 20rpx; background: rgba(255,255,255,.88); border: 1rpx solid var(--theme-divider, #E8EEF4); }
+.history-title { display: block; color: var(--theme-text, #243044); font-size: 24rpx; font-weight: 900; }
+.history-time { display: block; margin-top: 5rpx; color: var(--theme-text-muted, #A5AFBC); font-size: 19rpx; }
+.history-side { flex-shrink: 0; text-align: right; }
+.history-reward { display: block; color: var(--theme-primary-deep, #2F8DB8); font-size: 22rpx; font-weight: 900; }
+.history-status { display: block; margin-top: 5rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 19rpx; }
 
 .benefit-notes { margin-top: 20rpx; padding: 26rpx 28rpx; border-radius: 24rpx; background: rgba(255,255,255,.88); border: 1rpx solid var(--theme-divider, #E8EEF4); }
 .benefit-notes-title { display: block; margin-bottom: 16rpx; color: var(--theme-text, #243044); font-size: 27rpx; font-weight: 900; }

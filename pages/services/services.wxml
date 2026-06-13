@@ -23,7 +23,7 @@
       <view class="desktop-app" bindtap="goBenefitCenter">
         <view class="desktop-icon icon-benefit">
           <image class="desktop-icon-img" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
-          <view wx:if="{{benefitAvailable}}" class="benefit-dot"></view>
+          <view wx:if="{{benefitAvailable}}" class="benefit-dot">{{benefitHint}}</view>
         </view>
         <text class="desktop-title">福利中心</text>
       </view>
@@ -88,6 +88,13 @@
             <image class="desktop-icon-img" src="/assets/icons/ui/data.png" mode="aspectFit" />
           </view>
           <text class="desktop-title">数据管理</text>
+        </view>
+
+        <view class="desktop-app" bindtap="goAdminBenefits">
+          <view class="desktop-icon icon-orange">
+            <image class="desktop-icon-img" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+          </view>
+          <text class="desktop-title">福利管理</text>
         </view>
       </block>
     </view>

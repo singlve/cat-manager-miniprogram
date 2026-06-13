@@ -13,7 +13,8 @@ const ITEM_COL = 'redeem_items';
 const RECORD_COL = 'redeem_records';
 const INVENTORY_COL = 'user_inventory';
 const REQUEST_COL = 'redeem_requests';
-const THEME_VOUCHER_MAX_POINTS = 1000;
+const BENEFIT_CLAIM_COL = 'benefit_claims';
+const LEGACY_THEME_VOUCHER_MAX_POINTS = 1000;
 
 function buildId(prefix) {
   return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
@@ -89,13 +90,38 @@ exports.main = async event => {
       }
 
       const itemPoints = Math.max(0, parseInt(item.points, 10) || 0);
-      if (useThemeVoucher && itemPoints > THEME_VOUCHER_MAX_POINTS) {
-        throw businessError('VOUCHER_LIMIT_EXCEEDED', '这张兑换券仅支持 1000 积分以内的主题');
-      }
-
       const currentThemeVouchers = Math.max(0, parseInt(user.themeVouchers, 10) || 0);
       if (useThemeVoucher && currentThemeVouchers < 1) {
         throw businessError('VOUCHER_NOT_ENOUGH', '主题兑换券不足');
+      }
+      let voucherClaim = null;
+      let trackedVoucherCount = 0;
+      let voucherClaimsLoaded = false;
+      if (useThemeVoucher) {
+        try {
+          const claimResult = await transaction.collection(BENEFIT_CLAIM_COL)
+            .where({ userId, rewardType: 'theme_voucher' })
+            .get();
+          const activeClaims = (claimResult.data || [])
+            .filter(claim => claim.status === 'unused' || claim.status === 'partially_used')
+            .sort((a, b) => String(a.claimedAt || '').localeCompare(String(b.claimedAt || '')));
+          voucherClaimsLoaded = true;
+          trackedVoucherCount = activeClaims.reduce((total, claim) => total + Math.max(
+            0,
+            (parseInt(claim.rewardAmount, 10) || 1) - (parseInt(claim.usedAmount, 10) || 0)
+          ), 0);
+          voucherClaim = activeClaims
+            .filter(claim => (parseInt(claim.maxThemePoints, 10) || LEGACY_THEME_VOUCHER_MAX_POINTS) >= itemPoints)
+            [0] || null;
+        } catch (error) {
+          voucherClaim = null;
+        }
+        const hasUntrackedLegacyVoucher = !voucherClaimsLoaded ||
+          currentThemeVouchers > trackedVoucherCount;
+        if (!voucherClaim &&
+            (!hasUntrackedLegacyVoucher || itemPoints > LEGACY_THEME_VOUCHER_MAX_POINTS)) {
+          throw businessError('VOUCHER_LIMIT_EXCEEDED', '没有可用于该主题的兑换券');
+        }
       }
 
       const unitPoints = useThemeVoucher ? 0 : itemPoints;
@@ -180,6 +206,18 @@ exports.main = async event => {
           themeVouchers: nextThemeVouchers
         }
       });
+      if (useThemeVoucher && voucherClaim) {
+        const usedAmount = Math.max(0, parseInt(voucherClaim.usedAmount, 10) || 0) + 1;
+        const rewardAmount = Math.max(1, parseInt(voucherClaim.rewardAmount, 10) || 1);
+        await transaction.collection(BENEFIT_CLAIM_COL).doc(voucherClaim._id).update({
+          data: {
+            usedAmount,
+            status: usedAmount >= rewardAmount ? 'used' : 'partially_used',
+            usedAt: new Date().toISOString(),
+            usedThemeKey: item.virtualValue
+          }
+        });
+      }
 
       if (item.type === 'physical') {
         await itemRef.update({

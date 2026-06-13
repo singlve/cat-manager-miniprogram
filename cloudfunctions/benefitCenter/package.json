@@ -1,7 +1,7 @@
 {
   "name": "benefitCenter",
   "version": "1.0.0",
-  "description": "全员福利领取与主题兑换券发放",
+  "description": "可配置福利活动、领取记录与奖励发放",
   "main": "index.js",
   "dependencies": {
     "@cloudbase/node-sdk": "latest",

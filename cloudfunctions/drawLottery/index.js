@@ -273,10 +273,16 @@ exports.main = async event => {
       for (let day = 7; day <= streak; day += 7) {
         if (drawn.indexOf(day) === -1) milestones.push(day);
       }
-      if (!milestones.length) throw businessError('NO_DRAW_CHANCE', '当前没有可用抽奖机会');
-      const milestone = requestedMilestone && milestones.indexOf(requestedMilestone) !== -1
-        ? requestedMilestone
-        : milestones[0];
+      const bonusLotteryDraws = Math.max(0, parseInt(user.bonusLotteryDraws, 10) || 0);
+      if (!milestones.length && bonusLotteryDraws < 1) {
+        throw businessError('NO_DRAW_CHANCE', '当前没有可用抽奖机会');
+      }
+      const useBonusDraw = !milestones.length;
+      const milestone = useBonusDraw
+        ? 0
+        : (requestedMilestone && milestones.indexOf(requestedMilestone) !== -1
+          ? requestedMilestone
+          : milestones[0]);
 
       const prizeResult = await transaction.collection(PRIZE_COL).where({ enabled: true }).get();
       const ownedThemes = normalizeThemes(user.ownedThemes);
@@ -359,13 +365,17 @@ exports.main = async event => {
         }
       }
 
-      const nextDrawn = Array.from(new Set(drawn.concat(milestone))).sort((a, b) => a - b);
+      const nextDrawn = useBonusDraw
+        ? drawn
+        : Array.from(new Set(drawn.concat(milestone))).sort((a, b) => a - b);
+      const nextBonusLotteryDraws = useBonusDraw ? bonusLotteryDraws - 1 : bonusLotteryDraws;
       const month = now.slice(0, 7);
       await userRef.update({
         data: {
           totalPoints: nextPoints,
           makeUpCards: nextCards,
           ownedThemes: nextThemes,
+          bonusLotteryDraws: nextBonusLotteryDraws,
           drawnMilestones: nextDrawn,
           lotteryUsed: nextDrawn.length,
           lotteryUsedMonth: (parseInt(user.lotteryUsedMonth, 10) || 0) + 1,
@@ -393,6 +403,7 @@ exports.main = async event => {
         points: nextPoints,
         makeUpCards: nextCards,
         ownedThemes: nextThemes,
+        bonusLotteryDraws: nextBonusLotteryDraws,
         drawnMilestones: nextDrawn,
         inventoryId,
         stockReserved,

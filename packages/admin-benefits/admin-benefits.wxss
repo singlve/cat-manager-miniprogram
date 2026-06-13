@@ -1,0 +1,49 @@
+page { background: var(--theme-bg, #F7F9FB); }
+.admin-benefit-page { min-height: 100vh; padding-bottom: 60rpx; }
+.benefit-tabs { display: flex; margin: 0 24rpx 20rpx; padding: 6rpx; border-radius: 24rpx; background: var(--theme-card, #FFFFFF); }
+.benefit-tabs view { flex: 1; padding: 16rpx 0; border-radius: 20rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 26rpx; font-weight: 800; text-align: center; }
+.benefit-tabs .active { color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70)); }
+.admin-add-btn { margin: 0 24rpx 18rpx; padding: 22rpx; border-radius: 22rpx; color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70)); font-size: 28rpx; font-weight: 900; text-align: center; }
+.campaign-card,.claim-card { margin: 0 24rpx 18rpx; padding: 24rpx; border-radius: 24rpx; background: var(--theme-card, #FFFFFF); border: 1rpx solid rgba(var(--theme-primary-rgb, 91,167,216), .1); box-shadow: 0 10rpx 28rpx rgba(68,92,120,.07); }
+.campaign-head,.campaign-title-wrap,.campaign-actions,.claim-card,.claim-side { display: flex; align-items: center; }
+.campaign-head,.claim-card { justify-content: space-between; gap: 18rpx; }
+.campaign-title-wrap { flex: 1; min-width: 0; gap: 10rpx; flex-wrap: wrap; }
+.campaign-title,.claim-title { color: var(--theme-text, #243044); font-size: 29rpx; font-weight: 900; }
+.campaign-status { padding: 5rpx 11rpx; border-radius: 999rpx; font-size: 18rpx; font-weight: 800; }
+.campaign-status.enabled { color: var(--theme-secondary-deep, #3F9486); background: var(--theme-secondary-soft, #EAF7F5); }
+.campaign-status.disabled { color: var(--theme-text-muted, #A5AFBC); background: var(--theme-surface-muted, #F5F9FC); }
+.campaign-desc { display: block; margin-top: 10rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 23rpx; line-height: 1.5; }
+.campaign-meta { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 16rpx; }
+.campaign-meta text { padding: 6rpx 12rpx; border-radius: 999rpx; color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-primary-soft, #EAF4FB); font-size: 19rpx; }
+.campaign-actions { justify-content: flex-end; gap: 28rpx; margin-top: 18rpx; padding-top: 16rpx; border-top: 1rpx solid var(--theme-divider, #E8EEF4); color: var(--theme-primary, #5BA7D8); font-size: 23rpx; font-weight: 800; }
+.campaign-actions .danger { color: #F36B6B; }
+.claim-card > view:first-child { flex: 1; min-width: 0; }
+.claim-user,.claim-time { display: block; margin-top: 5rpx; color: var(--theme-text-secondary, #6E7A8A); font-size: 21rpx; }
+.claim-side { flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.claim-reward { color: var(--theme-primary-deep, #2F8DB8); font-size: 23rpx; font-weight: 900; }
+.claim-status { margin-top: 7rpx; color: var(--theme-text-muted, #A5AFBC); font-size: 20rpx; }
+.empty-tip { padding: 100rpx 24rpx; color: var(--theme-text-secondary, #6E7A8A); text-align: center; }
+.editor-mask { position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-end; background: rgba(36,48,68,.46); }
+.editor-sheet { width: 100%; max-height: 88vh; padding: 22rpx 28rpx calc(34rpx + env(safe-area-inset-bottom)); border-radius: 32rpx 32rpx 0 0; background: var(--theme-bg, #F7F9FB); box-sizing: border-box; }
+.sheet-bar { width: 70rpx; height: 7rpx; margin: 0 auto 20rpx; border-radius: 999rpx; background: var(--theme-divider, #E8EEF4); }
+.editor-title { display: block; margin-bottom: 24rpx; color: var(--theme-text, #243044); font-size: 32rpx; font-weight: 900; text-align: center; }
+.form-label { display: block; margin: 20rpx 0 9rpx; color: var(--theme-text, #243044); font-size: 23rpx; font-weight: 800; }
+.form-input,.form-textarea { width: 100%; padding: 20rpx 22rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text, #243044); font-size: 25rpx; box-sizing: border-box; }
+.form-textarea { height: 130rpx; }
+.choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12rpx; }
+.choice-item { padding: 16rpx 8rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text-secondary, #6E7A8A); font-size: 21rpx; font-weight: 800; text-align: center; }
+.choice-item.active,.choice-row.active { color: var(--theme-primary-deep, #2F8DB8); border-color: var(--theme-primary, #5BA7D8); background: var(--theme-primary-soft, #EAF4FB); }
+.choice-list { display: flex; flex-direction: column; gap: 10rpx; }
+.choice-row { display: flex; justify-content: space-between; padding: 18rpx 20rpx; border: 1rpx solid var(--theme-divider, #E8EEF4); border-radius: 18rpx; background: var(--theme-card, #FFFFFF); color: var(--theme-text-secondary, #6E7A8A); font-size: 22rpx; }
+.segment-choice { display: flex; padding: 5rpx; border-radius: 20rpx; background: var(--theme-surface-muted, #F5F9FC); }
+.segment-choice view { flex: 1; padding: 15rpx; border-radius: 16rpx; color: var(--theme-text-secondary, #6E7A8A); text-align: center; }
+.segment-choice .active { color: var(--theme-primary-deep, #2F8DB8); background: var(--theme-card, #FFFFFF); font-weight: 900; }
+.form-switch-row { display: flex; align-items: center; justify-content: space-between; margin-top: 24rpx; padding: 18rpx 4rpx; color: var(--theme-text, #243044); font-size: 24rpx; font-weight: 800; }
+.editor-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.editor-cancel,.editor-confirm { flex: 1; padding: 23rpx 0; border-radius: 999rpx; font-size: 27rpx; font-weight: 900; text-align: center; }
+.editor-cancel { color: var(--theme-text-secondary, #6E7A8A); background: var(--theme-surface-muted, #F5F9FC); }
+.editor-confirm { color: #FFFFFF; background: linear-gradient(135deg, var(--theme-action-start, #25779C), var(--theme-action-end, #327A70)); }
+@media (max-width: 340px) {
+  .choice-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .campaign-card,.claim-card { margin-left: 18rpx; margin-right: 18rpx; }
+}

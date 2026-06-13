@@ -55,12 +55,13 @@ page { background: var(--theme-bg, #F7F9FB); }
 .user-phone  { font-size: 24rpx; color: var(--theme-text-muted, #A5AFBC); }
 
 .user-stats {
-  display: flex; gap: 24rpx;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20rpx 12rpx;
 }
 .stat-item {
   display: flex; flex-direction: column; align-items: center;
-  min-width: 100rpx;
+  min-width: 0;
 }
 .stat-val  { font-size: 28rpx; font-weight: 600; color: var(--theme-primary, #5BA7D8); }
 .stat-label { font-size: 22rpx; color: var(--theme-text-muted, #A5AFBC); }

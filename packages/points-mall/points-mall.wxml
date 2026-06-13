@@ -50,6 +50,7 @@
     <view class="filter-tag {{filter==='all' ? 'active' : ''}}" bindtap="switchFilter" data-filter="all">全部</view>
     <view class="filter-tag {{filter==='virtual' ? 'active' : ''}}" bindtap="switchFilter" data-filter="virtual">虚拟商品</view>
     <view class="filter-tag {{filter==='physical' ? 'active' : ''}}" bindtap="switchFilter" data-filter="physical">实物商品</view>
+    <view wx:if="{{themeVouchers > 0}}" class="filter-tag {{filter==='voucher' ? 'active' : ''}}" bindtap="switchFilter" data-filter="voucher">主题券可兑</view>
   </view>
 
   <!-- 加载中 -->
@@ -102,7 +103,7 @@
               <text>库存：{{item.stock || 0}}</text>
             </view>
             <view wx:elif="{{item._owned}}" class="item-owned">永久拥有</view>
-            <view wx:elif="{{item.virtualType === 'theme' && item.points <= 1000 && themeVouchers > 0}}" class="voucher-usable">可用主题券</view>
+            <view wx:elif="{{item._voucherEligible && themeVouchers > 0}}" class="voucher-usable">可用主题券</view>
           </view>
         </view>
       </view>

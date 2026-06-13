@@ -443,30 +443,36 @@ async function getBenefitStatus() {
     const claimed = Array.isArray(user.claimedBenefits) &&
       user.claimedBenefits.indexOf('theme_launch_2026') !== -1;
     return {
-      campaign: {
-        id: 'theme_launch_2026',
+      campaigns: [{
+        _id: 'theme_launch_2026',
         title: '主题上线礼',
         desc: '领取 1 张主题兑换券，可任选一套价格不超过 1000 积分的主题永久解锁。',
         rewardType: 'theme_voucher',
         rewardAmount: 1,
         maxThemePoints: 1000,
-        active: true
-      },
-      claimed,
-      canClaim: !claimed,
-      themeVouchers: Math.max(0, parseInt(user.themeVouchers, 10) || 0)
+        state: claimed
+          ? ((parseInt(user.themeVouchers, 10) || 0) > 0 ? 'claimed' : 'used')
+          : 'available',
+        canClaim: !claimed,
+        claim: claimed ? { status: (parseInt(user.themeVouchers, 10) || 0) > 0 ? 'unused' : 'used' } : null
+      }],
+      claims: [],
+      themeVouchers: Math.max(0, parseInt(user.themeVouchers, 10) || 0),
+      voucherMaxPoints: (parseInt(user.themeVouchers, 10) || 0) > 0 ? 1000 : 0,
+      pendingClaims: claimed ? 0 : 1,
+      pendingUses: Math.max(0, parseInt(user.themeVouchers, 10) || 0)
     };
   }
   const res = await wx.cloud.callFunction({
     name: 'benefitCenter',
-    data: { action: 'status' }
+    data: { action: 'listActive' }
   });
   const result = res.result || {};
   if (result.code !== 0) throw new Error(result.msg || '福利状态加载失败');
   return result.data;
 }
 
-async function claimBenefit() {
+async function claimBenefit(campaignId) {
   if (!isCloudReady()) {
     const user = wx.getStorageSync('currentUser') || {};
     const claimedBenefits = Array.from(new Set(user.claimedBenefits || []));
@@ -481,11 +487,66 @@ async function claimBenefit() {
   }
   const res = await wx.cloud.callFunction({
     name: 'benefitCenter',
-    data: { action: 'claim' }
+    data: { action: 'claim', campaignId: campaignId }
   });
   const result = res.result || {};
   if (result.code !== 0) throw new Error(result.msg || '福利领取失败');
   return result.data;
+}
+
+async function getBenefitCampaignsAdmin() {
+  if (!isCloudReady()) return [];
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminList' }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利配置加载失败');
+  return result.data || [];
+}
+
+async function getBenefitClaimsAdmin() {
+  if (!isCloudReady()) return [];
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminClaims' }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '领取记录加载失败');
+  return result.data || [];
+}
+
+async function saveBenefitCampaign(id, campaign) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminSave', id: id || '', campaign: campaign }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利配置保存失败');
+  return result;
+}
+
+async function toggleBenefitCampaign(id, enabled) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminToggle', id: id, enabled: enabled }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利状态更新失败');
+  return result;
+}
+
+async function deleteBenefitCampaign(id) {
+  if (!isCloudReady()) throw new Error('云开发不可用');
+  const res = await wx.cloud.callFunction({
+    name: 'benefitCenter',
+    data: { action: 'adminDelete', id: id }
+  });
+  const result = res.result || {};
+  if (result.code !== 0) throw new Error(result.msg || '福利删除失败');
+  return result;
 }
 
 // ════════════════════════════════════════════════════
@@ -1814,6 +1875,8 @@ module.exports = {
   // users
   getUserByOpenid, getUserById, getUserByPhone, addUser, updateUser,
   getBenefitStatus, claimBenefit,
+  getBenefitCampaignsAdmin, getBenefitClaimsAdmin, saveBenefitCampaign,
+  toggleBenefitCampaign, deleteBenefitCampaign,
   searchUsers, adminUpdateUser,
   // feedback
   getFeedback, addFeedback, toggleFeedbackLike, addFeedbackComment, addCommentReply, toggleFeedbackAdopted, deleteFeedback,

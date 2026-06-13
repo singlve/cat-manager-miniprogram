@@ -149,11 +149,17 @@ page { background: var(--theme-bg, #F7F9FB); }
   position: absolute;
   top: -5rpx;
   right: -5rpx;
-  width: 20rpx;
-  height: 20rpx;
-  border: 4rpx solid var(--theme-card, #FFFFFF);
+  min-width: 34rpx;
+  height: 34rpx;
+  padding: 0 7rpx;
+  border: 3rpx solid var(--theme-card, #FFFFFF);
   border-radius: 50%;
   background: #F36B6B;
+  color: #FFFFFF;
+  font-size: 18rpx;
+  font-weight: 900;
+  line-height: 28rpx;
+  text-align: center;
   box-sizing: border-box;
 }
 

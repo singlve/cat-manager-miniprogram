@@ -193,7 +193,8 @@ Page({
 
     // 抽奖次数：每连签7天里程碑给1次，已抽的不计
     var lotteryEarned = getLotteryDrawsForStreak(checkInStreak);
-    var availableDraws = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var bonusLotteryDraws = Math.max(0, parseInt(currentUser.bonusLotteryDraws, 10) || 0);
+    var availableDraws = Math.max(0, lotteryEarned - drawnMilestones.length) + bonusLotteryDraws;
     var canLottery = availableDraws > 0;
 
     var drawnToday = (currentUser && currentUser._lastDrawDate || '') === today;
@@ -450,7 +451,8 @@ Page({
     // 抽奖：每连签7天里程碑给1次，已抽的不计
     var drawnMilestones = currentUser.drawnMilestones || [];
     var lotteryEarned = getLotteryDrawsForStreak(streak);
-    var availableDraws2 = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var availableDraws2 = Math.max(0, lotteryEarned - drawnMilestones.length) +
+      Math.max(0, parseInt(currentUser.bonusLotteryDraws, 10) || 0);
     var canLottery2 = availableDraws2 > 0;
     var nextMilestone2 = streak >= 7 ? (Math.floor(streak / 7) + 1) * 7 : 7;
 
@@ -623,7 +625,8 @@ Page({
     var drawnMilestones = currentUser.drawnMilestones || [];
     var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streakUnchanged, newDates, drawnMilestones);
     var lotteryEarned = getLotteryDrawsForStreak(streakUnchanged);
-    var availableDraws3 = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var availableDraws3 = Math.max(0, lotteryEarned - drawnMilestones.length) +
+      Math.max(0, parseInt(currentUser.bonusLotteryDraws, 10) || 0);
     var nextMilestone3 = streakUnchanged >= 7 ? (Math.floor(streakUnchanged / 7) + 1) * 7 : 7;
 
     self.setData({
@@ -693,7 +696,8 @@ Page({
     var streak = currentUser.checkInStreak || 0;
     var calendarWeek = buildCheckInWeek(currentUser.lastCheckInDate || '', streak, currentUser.makeUpDates || [], drawnMilestones);
     var lotteryEarned = getLotteryDrawsForStreak(streak);
-    var availableDraws4 = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var availableDraws4 = Math.max(0, lotteryEarned - drawnMilestones.length) +
+      Math.max(0, parseInt(currentUser.bonusLotteryDraws, 10) || 0);
     var nextMilestone4 = streak >= 7 ? (Math.floor(streak / 7) + 1) * 7 : 7;
 
     self.setData({
@@ -806,13 +810,15 @@ Page({
     currentUser.makeUpCards = result.makeUpCards;
     currentUser.ownedThemes = result.ownedThemes || currentUser.ownedThemes || ['default'];
     currentUser.drawnMilestones = result.drawnMilestones || currentUser.drawnMilestones || [];
+    currentUser.bonusLotteryDraws = Math.max(0, parseInt(result.bonusLotteryDraws, 10) || 0);
     currentUser.lotteryUsed = currentUser.drawnMilestones.length;
     currentUser._lastDrawDate = todayStr();
     try { wx.setStorageSync('currentUser', currentUser); } catch (e) {}
     var drawnMilestones = currentUser.drawnMilestones;
     var streak = currentUser.checkInStreak || 0;
     var lotteryEarned = getLotteryDrawsForStreak(streak);
-    var newAvailableDraws = Math.max(0, lotteryEarned - drawnMilestones.length);
+    var newAvailableDraws = Math.max(0, lotteryEarned - drawnMilestones.length) +
+      currentUser.bonusLotteryDraws;
     var hint = '';
     if (result.type === 'physical' && result.stockReserved === false) hint = '奖品已放入我的背包，当前等待补货，补货后即可确认兑换';
     else if (result.type === 'physical') hint = '奖品已放入我的背包，请选择地址兑换';

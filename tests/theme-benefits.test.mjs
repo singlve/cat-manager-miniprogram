@@ -5,48 +5,83 @@ import { describe, expect, it } from 'vitest';
 const root = resolve(import.meta.dirname, '..');
 const read = path => readFileSync(resolve(root, path), 'utf8');
 
-describe('theme launch benefit', () => {
-  it('claims the launch benefit once inside a server transaction', () => {
+describe('configurable benefit center', () => {
+  it('seeds the launch benefit and claims every campaign once in a transaction', () => {
     const source = read('cloudfunctions/benefitCenter/index.js');
 
-    expect(source).toContain("id: 'theme_launch_2026'");
+    expect(source).toContain("_id: 'theme_launch_2026'");
     expect(source).toContain('db.runTransaction');
-    expect(source).toContain("const CLAIM_COL = 'redeem_requests'");
-    expect(source).toContain("kind: 'benefit_claim'");
-    expect(source).toContain('claimedBenefits.indexOf(THEME_LAUNCH_BENEFIT.id)');
+    expect(source).toContain("const CAMPAIGN_COL = 'benefit_campaigns'");
+    expect(source).toContain("const CLAIM_COL = 'benefit_claims'");
+    expect(source).toContain('claimId(campaignId, currentUser._id)');
+    expect(source).toContain('await ensureLegacyClaim(currentUser)');
     expect(source).toContain('themeVouchers');
     expect(source).toContain('maxThemePoints: 1000');
   });
 
-  it('allows a theme voucher as an atomic redemption payment method', () => {
+  it('supports configurable rewards and protected admin operations', () => {
+    const source = read('cloudfunctions/benefitCenter/index.js');
+    const adminTemplate = read('packages/admin-benefits/admin-benefits.wxml');
+    const appConfig = read('app.json');
+
+    expect(source).toContain("'points', 'card', 'theme_voucher', 'theme', 'draw', 'physical'");
+    expect(source).toContain("const adminActions = ['adminList', 'adminSave', 'adminToggle', 'adminDelete', 'adminClaims']");
+    expect(source).toContain('await isServerAdmin(openid)');
+    expect(source).toContain('bonusLotteryDraws');
+    expect(source).toContain("source: 'benefit'");
+    expect(adminTemplate).toContain('新建福利活动');
+    expect(adminTemplate).toContain('领取记录');
+    expect(appConfig).toContain('admin-benefits/admin-benefits');
+  });
+
+  it('allows a claim-backed theme voucher as an atomic redemption payment method', () => {
     const source = read('cloudfunctions/redeemItem/index.js');
 
     expect(source).toContain("paymentMethod === 'theme_voucher'");
-    expect(source).toContain('THEME_VOUCHER_MAX_POINTS = 1000');
+    expect(source).toContain("const BENEFIT_CLAIM_COL = 'benefit_claims'");
+    expect(source).toContain('LEGACY_THEME_VOUCHER_MAX_POINTS = 1000');
+    expect(source).toContain("claim.status === 'unused' || claim.status === 'partially_used'");
     expect(source).toContain('nextThemeVouchers -= 1');
     expect(source).toContain('themeVouchers: nextThemeVouchers');
-    expect(source).toContain('pointsSpent: unitPoints');
+    expect(source).toContain("status: usedAmount >= rewardAmount ? 'used' : 'partially_used'");
   });
 
-  it('exposes the benefit center and both theme payment choices', () => {
-    const appConfig = read('app.json');
+  it('exposes pending badges, campaign history and voucher-only theme filtering', () => {
     const services = read('pages/services/services.wxml');
     const mall = read('packages/points-mall/points-mall.wxml');
+    const mallSource = read('packages/points-mall/points-mall.js');
+    const benefitTemplate = read('packages/benefit-center/benefit-center.wxml');
 
-    expect(appConfig).toContain('benefit-center/benefit-center');
     expect(services).toContain('福利中心');
+    expect(services).toContain('{{benefitHint}}');
     expect(mall).toContain('使用主题兑换券');
     expect(mall).toContain('使用积分兑换');
+    expect(mall).toContain('主题券可兑');
+    expect(mallSource).toContain("if (f === 'voucher')");
+    expect(benefitTemplate).toContain('领取记录');
   });
 
-  it('keeps benefit actions centered and labels voucher states clearly', () => {
+  it('keeps benefit actions centered and gives failed loads a retry path', () => {
     const template = read('packages/benefit-center/benefit-center.wxml');
     const styles = read('packages/benefit-center/benefit-center.wxss');
 
-    expect(template).toContain('使用主题兑换券');
-    expect(template).toContain('兑换券已使用 · 查看主题');
+    expect(template).toContain('福利加载失败');
+    expect(template).toContain('bindtap="loadBenefit"');
+    expect(template).toContain('item._actionText');
     expect(styles).toMatch(/\.benefit-primary-btn,\s*\n\.benefit-secondary-btn\s*\{[\s\S]*?display:\s*flex/);
     expect(styles).toMatch(/align-items:\s*center/);
     expect(styles).toMatch(/justify-content:\s*center/);
+  });
+
+  it('lets benefit rewards grant and consume extra lottery chances', () => {
+    const drawSource = read('cloudfunctions/drawLottery/index.js');
+    const mineSource = read('pages/mine/mine.js');
+    const adminUsers = read('cloudfunctions/adminUsers/index.js');
+
+    expect(drawSource).toContain('const bonusLotteryDraws = Math.max');
+    expect(drawSource).toContain('const useBonusDraw = !milestones.length');
+    expect(drawSource).toContain('bonusLotteryDraws: nextBonusLotteryDraws');
+    expect(mineSource).toContain('currentUser.bonusLotteryDraws');
+    expect(adminUsers).toContain("'themeVouchers', 'bonusLotteryDraws'");
   });
 });

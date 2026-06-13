@@ -13,6 +13,7 @@ Page({
     showFeedback: false,
     notifyCount: 0,
     benefitAvailable: false,
+    benefitHint: '',
     themeClass: initialTheme.themeClass,
     themeKey: initialTheme.themeKey,
     themePrimary: initialTheme.themePrimary,
@@ -30,6 +31,7 @@ Page({
       showFeedback: false,
       notifyCount: 0,
       benefitAvailable: false,
+      benefitHint: '',
       themeClass: activeTheme.className,
       themeKey: activeTheme.key,
       themePrimary: activeTheme.primary,
@@ -64,9 +66,14 @@ Page({
   async _loadBenefitStatus() {
     try {
       const status = await clouddb.getBenefitStatus();
-      this.setData({ benefitAvailable: !!status.canClaim });
+      const pendingClaims = Math.max(0, parseInt(status.pendingClaims, 10) || 0);
+      const pendingUses = Math.max(0, parseInt(status.pendingUses, 10) || 0);
+      this.setData({
+        benefitAvailable: pendingClaims > 0 || pendingUses > 0,
+        benefitHint: pendingClaims > 0 ? '领' : (pendingUses > 0 ? '券' : '')
+      });
     } catch (e) {
-      this.setData({ benefitAvailable: false });
+      this.setData({ benefitAvailable: false, benefitHint: '' });
     }
   },
 
@@ -79,5 +86,6 @@ Page({
   goFeedback() { wx.navigateTo({ url: '/pages/feedback/feedback' }); },
   goAdminAnnounce() { wx.navigateTo({ url: '/packages/admin-announcement/admin-announcement' }); },
   goAdmin() { wx.navigateTo({ url: '/packages/admin-items/admin-items' }); },
-  goAdminData() { wx.navigateTo({ url: '/packages/admin-data/admin-data' }); }
+  goAdminData() { wx.navigateTo({ url: '/packages/admin-data/admin-data' }); },
+  goAdminBenefits() { wx.navigateTo({ url: '/packages/admin-benefits/admin-benefits' }); }
 });

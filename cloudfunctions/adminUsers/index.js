@@ -22,6 +22,7 @@ const ALLOWED_UPDATE_FIELDS = [
   'makeUpDates', 'makeUpCards', 'monthlyMakeUpCount',
   'drawnMilestones', 'lotteryUsed', 'lotteryUsedMonth',
   'totalPoints', 'claimedCumulativeMilestones',
+  'themeVouchers', 'bonusLotteryDraws',
   'nickname'
 ];
 

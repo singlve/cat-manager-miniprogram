@@ -68,6 +68,14 @@
           <text class="stat-val">{{item.makeUpCards || 0}}</text>
           <text class="stat-label">补签卡</text>
         </view>
+        <view class="stat-item">
+          <text class="stat-val">{{item.themeVouchers || 0}}</text>
+          <text class="stat-label">主题券</text>
+        </view>
+        <view class="stat-item">
+          <text class="stat-val">{{item.bonusLotteryDraws || 0}}</text>
+          <text class="stat-label">额外抽奖</text>
+        </view>
       </view>
     </view>
   </view>

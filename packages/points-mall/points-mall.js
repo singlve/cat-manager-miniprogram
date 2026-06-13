@@ -19,6 +19,7 @@ Page({
     currentUser: null,
     points: 0,
     themeVouchers: 0,
+    themeVoucherMaxPoints: 0,
     ownedThemes: ['default'],
     themeClass: initialTheme.themeClass,
     themeKey: initialTheme.themeKey,
@@ -76,11 +77,23 @@ Page({
       var points = (user && user.totalPoints) || 0;
       var ownedThemes = normalizeOwnedThemes(user && user.ownedThemes);
       var themeVouchers = Math.max(0, parseInt(user && user.themeVouchers, 10) || 0);
+      var benefitStatus = null;
+      if (user && user._id) {
+        try { benefitStatus = await clouddb.getBenefitStatus(); } catch (e) {}
+      }
+      if (benefitStatus) {
+        themeVouchers = Math.max(0, parseInt(benefitStatus.themeVouchers, 10) || 0);
+        user.themeVouchers = themeVouchers;
+        wx.setStorageSync('currentUser', user);
+      }
       this.setData({
         currentUser: user,
         points: points,
         ownedThemes: ownedThemes,
-        themeVouchers: themeVouchers
+        themeVouchers: themeVouchers,
+        themeVoucherMaxPoints: benefitStatus
+          ? (parseInt(benefitStatus.voucherMaxPoints, 10) || 1000)
+          : (themeVouchers > 0 ? 1000 : 0)
       });
     } catch (e) {}
   },
@@ -107,10 +120,13 @@ Page({
         var themeMeta = isTheme ? getTheme(item.virtualValue) : null;
         return Object.assign({}, item, {
           _owned: isTheme && ownedThemes.indexOf(item.virtualValue) !== -1,
+          _voucherEligible: isTheme &&
+            ownedThemes.indexOf(item.virtualValue) === -1 &&
+            (parseInt(item.points, 10) || 0) <= (this.data.themeVoucherMaxPoints || 0),
           limited: isTheme ? !!themeMeta.limited : !!item.limited,
           badge: isTheme ? (themeMeta.badge || item.badge || '') : (item.badge || '')
         });
-      });
+      }, this);
       var filtered = this._applyFilter(enabled);
       this.setData({ items: enabled, filteredItems: filtered, loading: false });
     } catch (e) {
@@ -167,6 +183,7 @@ Page({
   _applyFilter(items, filter) {
     var f = filter || this.data.filter;
     if (f === 'all') return items;
+    if (f === 'voucher') return items.filter(function(i) { return i._voucherEligible; });
     return items.filter(function(i) { return i.type === f; });
   },
 
@@ -183,7 +200,7 @@ Page({
       if (maxQty < 1) maxQty = 1;
     }
     var voucherEligible = item.virtualType === 'theme' &&
-      (parseInt(item.points, 10) || 0) <= 1000 &&
+      (parseInt(item.points, 10) || 0) <= this.data.themeVoucherMaxPoints &&
       this.data.themeVouchers > 0;
     this.setData({
       showRedeemModal: true,

@@ -14,6 +14,8 @@ const EDIT_FIELDS = [
   { key: 'totalCheckIns',   label: '累积签到天数',    type: 'number' },
   { key: 'totalPoints',     label: '积分',           type: 'number' },
   { key: 'makeUpCards',     label: '补签卡数量',      type: 'number' },
+  { key: 'themeVouchers',   label: '主题兑换券',       type: 'number' },
+  { key: 'bonusLotteryDraws', label: '额外抽奖次数',   type: 'number' },
   { key: 'lotteryUsed',     label: '抽奖已用次数',    type: 'number' },
   { key: 'makeUpDates',     label: '补签日期(逗号分隔)', type: 'text' },
   { key: 'drawnMilestones', label: '已抽里程碑(逗号分隔)', type: 'text' },

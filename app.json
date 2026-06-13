@@ -32,6 +32,7 @@
         "inventory/inventory",
         "theme-center/theme-center",
         "benefit-center/benefit-center",
+        "admin-benefits/admin-benefits",
         "admin-items/admin-items",
         "admin-data/admin-data",
         "admin-announcement/admin-announcement"

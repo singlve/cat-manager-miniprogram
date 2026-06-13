@@ -1,0 +1,142 @@
+<view class="page admin-benefit-page {{themeClass}}">
+  <view wx:if="{{!isAdmin}}" class="empty-tip">无权访问</view>
+  <block wx:else>
+    <view class="service-feature-hero-shell">
+      <view class="service-feature-hero admin">
+        <view class="service-feature-art">
+          <view class="service-feature-art-back"></view>
+          <view class="service-feature-art-mid"></view>
+          <view class="service-feature-art-front">
+            <image class="service-feature-art-icon theme-business-icon" src="/assets/icons/ui/ticket.png" mode="aspectFit" />
+          </view>
+          <view class="service-feature-art-dot"></view>
+        </view>
+        <view class="service-feature-copy">
+          <text class="service-feature-kicker">ADMIN BENEFITS</text>
+          <text class="service-feature-title">福利管理</text>
+          <text class="service-feature-desc">配置版本礼遇、节日福利和用户补偿。</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="benefit-tabs">
+      <view class="{{activeTab === 'campaigns' ? 'active' : ''}}" bindtap="switchTab" data-tab="campaigns">活动配置</view>
+      <view class="{{activeTab === 'claims' ? 'active' : ''}}" bindtap="switchTab" data-tab="claims">领取记录</view>
+    </view>
+
+    <view wx:if="{{loading}}" class="ui-loading-state">
+      <view class="ui-loading-mark"></view><text class="ui-loading-text">正在加载福利数据</text>
+    </view>
+    <view wx:elif="{{loadError}}" class="load-error-state">
+      <text class="load-error-title">福利数据加载失败</text>
+      <button class="load-retry-btn" bindtap="loadAll">重新加载</button>
+    </view>
+
+    <block wx:elif="{{activeTab === 'campaigns'}}">
+      <view class="admin-add-btn" bindtap="openAdd">+ 新建福利活动</view>
+      <view wx:if="{{campaigns.length === 0}}" class="empty-tip">暂无福利活动</view>
+      <view wx:for="{{campaigns}}" wx:key="_id" class="campaign-card">
+        <view class="campaign-head">
+          <view class="campaign-title-wrap">
+            <text class="campaign-title">{{item.title}}</text>
+            <text class="campaign-status {{item.enabled ? 'enabled' : 'disabled'}}">{{item.enabled ? '发放中' : '已停用'}}</text>
+          </view>
+          <switch checked="{{item.enabled !== false}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleCampaign" data-item="{{item}}" />
+        </view>
+        <text class="campaign-desc">{{item.desc || '暂无说明'}}</text>
+        <view class="campaign-meta">
+          <text>{{item._rewardText}}</text>
+          <text>{{item.audience === 'new' ? '新用户' : '全部用户'}}</text>
+          <text>{{item._timeText}}</text>
+        </view>
+        <view class="campaign-actions">
+          <text bindtap="openEdit" data-item="{{item}}">编辑</text>
+          <text class="danger" bindtap="deleteCampaign" data-item="{{item}}">删除</text>
+        </view>
+      </view>
+    </block>
+
+    <block wx:else>
+      <view wx:if="{{claims.length === 0}}" class="empty-tip">暂无领取记录</view>
+      <view wx:for="{{claims}}" wx:key="_id" class="claim-card">
+        <view>
+          <text class="claim-title">{{item.campaignTitle}}</text>
+          <text class="claim-user">{{item.userNickname || '未命名用户'}}</text>
+          <text class="claim-time">{{item._timeText}}</text>
+        </view>
+        <view class="claim-side">
+          <text class="claim-reward">{{item._rewardText}}</text>
+          <text class="claim-status">{{item._statusText}}</text>
+        </view>
+      </view>
+    </block>
+
+    <view wx:if="{{showEditor}}" class="editor-mask" catchtap="closeEditor">
+      <scroll-view class="editor-sheet" scroll-y catchtap="stopBubble">
+        <view class="sheet-bar"></view>
+        <text class="editor-title">{{editingId ? '编辑福利活动' : '新建福利活动'}}</text>
+
+        <text class="form-label">福利名称</text>
+        <input class="form-input" value="{{form.title}}" data-key="title" bindinput="onInput" placeholder="例如：周年庆登录礼" />
+        <text class="form-label">福利说明</text>
+        <textarea class="form-textarea" value="{{form.desc}}" data-key="desc" bindinput="onInput" placeholder="说明领取内容和使用方式" />
+
+        <text class="form-label">奖励类型</text>
+        <view class="choice-grid">
+          <view wx:for="{{rewardTypes}}" wx:key="value" class="choice-item {{form.rewardType === item.value ? 'active' : ''}}" bindtap="selectRewardType" data-value="{{item.value}}">{{item.label}}</view>
+        </view>
+
+        <text class="form-label">奖励数量</text>
+        <input class="form-input" type="number" value="{{form.rewardAmount}}" data-key="rewardAmount" bindinput="onInput" />
+
+        <block wx:if="{{form.rewardType === 'theme_voucher'}}">
+          <text class="form-label">可兑换主题积分上限</text>
+          <input class="form-input" type="number" value="{{form.maxThemePoints}}" data-key="maxThemePoints" bindinput="onInput" />
+        </block>
+
+        <block wx:if="{{form.rewardType === 'theme'}}">
+          <text class="form-label">指定主题</text>
+          <view class="choice-grid">
+            <view wx:for="{{themes}}" wx:key="key" class="choice-item {{form.themeKey === item.key ? 'active' : ''}}" bindtap="selectTheme" data-key="{{item.key}}">{{item.name}}</view>
+          </view>
+        </block>
+
+        <block wx:if="{{form.rewardType === 'physical'}}">
+          <text class="form-label">关联实物商品</text>
+          <view class="choice-list">
+            <view wx:for="{{physicalItems}}" wx:key="_id" class="choice-row {{form.linkedItemId === item._id ? 'active' : ''}}" bindtap="selectPhysical" data-id="{{item._id}}">
+              <text>{{item.name}}</text><text>库存 {{item.stock || 0}}</text>
+            </view>
+          </view>
+        </block>
+
+        <text class="form-label">适用用户</text>
+        <view class="segment-choice">
+          <view class="{{form.audience === 'all' ? 'active' : ''}}" bindtap="selectAudience" data-value="all">全部用户</view>
+          <view class="{{form.audience === 'new' ? 'active' : ''}}" bindtap="selectAudience" data-value="new">新用户</view>
+        </view>
+        <block wx:if="{{form.audience === 'new'}}">
+          <text class="form-label">新用户起算时间</text>
+          <input class="form-input" value="{{form.newUserSince}}" data-key="newUserSince" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" />
+        </block>
+
+        <text class="form-label">开始时间（留空立即开始）</text>
+        <input class="form-input" value="{{form.startAt}}" data-key="startAt" bindinput="onInput" placeholder="2026-06-13T00:00:00+08:00" />
+        <text class="form-label">结束时间（留空长期有效）</text>
+        <input class="form-input" value="{{form.endAt}}" data-key="endAt" bindinput="onInput" placeholder="2026-12-31T23:59:59+08:00" />
+        <text class="form-label">排序</text>
+        <input class="form-input" type="number" value="{{form.sort}}" data-key="sort" bindinput="onInput" />
+
+        <view class="form-switch-row">
+          <text>立即启用</text>
+          <switch checked="{{form.enabled}}" color="{{themePrimary || '#5BA7D8'}}" bindchange="toggleFormEnabled" />
+        </view>
+
+        <view class="editor-actions">
+          <view class="editor-cancel" bindtap="closeEditor">取消</view>
+          <view class="editor-confirm" bindtap="saveCampaign">{{saving ? '保存中' : '保存活动'}}</view>
+        </view>
+      </scroll-view>
+    </view>
+  </block>
+</view>
