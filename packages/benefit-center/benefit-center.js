@@ -67,31 +67,36 @@ Page({
 
   applyStatus(status) {
     const currentUser = wx.getStorageSync('currentUser') || {};
+    const claims = status.claims || [];
+    const claimMap = {};
+    claims.forEach(item => { claimMap[item.campaignId] = item; });
     currentUser.themeVouchers = Math.max(0, parseInt(status.themeVouchers, 10) || 0);
     wx.setStorageSync('currentUser', currentUser);
+    const campaigns = (status.campaigns || []).map(item => {
+      const claim = claimMap[item._id] || item.claim || null;
+      const effectiveItem = claim
+        ? Object.assign({}, item, {
+          claim,
+          canClaim: false,
+          state: claim.status === 'used' ? 'used' : 'claimed'
+        })
+        : item;
+      const meta = stateMeta(effectiveItem);
+      return Object.assign({}, effectiveItem, {
+        _rewardText: rewardText(effectiveItem),
+        _stateText: meta.text,
+        _stateClass: meta.className
+      });
+    });
     this.setData({
-      campaigns: (status.campaigns || []).map(item => {
-        const meta = stateMeta(item);
-        return Object.assign({}, item, {
-          _rewardText: rewardText(item),
-          _stateText: meta.text,
-          _stateClass: meta.className,
-          _actionText: item.rewardType === 'theme_voucher'
-            ? '使用主题兑换券'
-            : (item.rewardType === 'physical'
-              ? '查看我的背包'
-              : (item.rewardType === 'theme'
-                ? '查看主题装扮'
-                : (item.rewardType === 'draw' ? '去抽奖' : '')))
-        });
-      }),
-      claims: (status.claims || []).map(item => Object.assign({}, item, {
+      campaigns,
+      claims: claims.map(item => Object.assign({}, item, {
         _rewardText: rewardText(item),
         _statusText: claimStatusText(item),
         _timeText: String(item.claimedAt || '').slice(0, 16).replace('T', ' ')
       })),
       themeVouchers: currentUser.themeVouchers,
-      pendingClaims: Math.max(0, parseInt(status.pendingClaims, 10) || 0),
+      pendingClaims: campaigns.filter(item => item.canClaim).length,
       pendingUses: Math.max(0, parseInt(status.pendingUses, 10) || 0)
     });
   },
@@ -122,26 +127,6 @@ Page({
       }
     } finally {
       this.setData({ claimingId: '' });
-    }
-  },
-
-  useBenefit(e) {
-    const item = e.currentTarget.dataset.item;
-    if (!item) return;
-    if (item.rewardType === 'theme_voucher') {
-      wx.navigateTo({ url: '/packages/points-mall/points-mall?filter=voucher' });
-      return;
-    }
-    if (item.rewardType === 'theme') {
-      wx.navigateTo({ url: '/packages/theme-center/theme-center' });
-      return;
-    }
-    if (item.rewardType === 'physical') {
-      wx.navigateTo({ url: '/packages/inventory/inventory' });
-      return;
-    }
-    if (item.rewardType === 'draw') {
-      wx.switchTab({ url: '/pages/mine/mine' });
     }
   },
 

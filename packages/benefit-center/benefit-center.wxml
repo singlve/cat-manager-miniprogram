@@ -66,12 +66,8 @@
         bindtap="claimBenefit"
         data-id="{{item._id}}"
       ><text>{{claimingId === item._id ? '领取中' : '立即领取'}}</text></button>
-      <view
-        wx:elif="{{(item.state === 'claimed' || item.state === 'used') && item._actionText}}"
-        class="benefit-secondary-btn"
-        bindtap="useBenefit"
-        data-item="{{item}}"
-      ><text>{{item.state === 'used' && item.rewardType === 'theme_voucher' ? '已使用 · 查看主题' : item._actionText}}</text></view>
+      <view wx:elif="{{item.state === 'claimed'}}" class="benefit-disabled-btn">已领取</view>
+      <view wx:elif="{{item.state === 'used'}}" class="benefit-disabled-btn">已使用</view>
       <view wx:else class="benefit-disabled-btn">{{item._stateText}}</view>
     </view>
 

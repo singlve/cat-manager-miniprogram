@@ -81,9 +81,12 @@ describe('configurable benefit center', () => {
 
     expect(template).toContain('福利加载失败');
     expect(template).toContain('bindtap="loadBenefit"');
-    expect(template).toContain('item._actionText');
+    expect(template).toContain('item.state === \'claimed\'');
+    expect(template).toContain('class="benefit-disabled-btn">已领取');
     expect(source).toContain('const claimed = (status.claims || []).some');
-    expect(styles).toMatch(/\.benefit-primary-btn,\s*\n\.benefit-secondary-btn\s*\{[\s\S]*?display:\s*flex/);
+    expect(source).toContain('canClaim: false');
+    expect(source).toContain("state: claim.status === 'used' ? 'used' : 'claimed'");
+    expect(styles).toMatch(/\.benefit-primary-btn\s*\{[\s\S]*?display:\s*flex/);
     expect(styles).toMatch(/align-items:\s*center/);
     expect(styles).toMatch(/justify-content:\s*center/);
   });
